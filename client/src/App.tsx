@@ -18,6 +18,8 @@ import SurfCamp from "@/pages/SurfCamp";
 import DynamicPage from "@/pages/DynamicPage";
 import AdminDashboard from "@/pages/admin/Dashboard";
 import AdminHeroSlider from "@/pages/admin/HeroSlider";
+import AdminPageHeaders from "@/pages/admin/PageHeaders";
+import AdminCustomPages from "@/pages/admin/CustomPages";
 import NotFound from "@/pages/not-found";
 import { AdminLayout } from "@/components/AdminLayout";
 
@@ -49,18 +51,14 @@ function Router() {
           <Route path="/admin/page-headers">
             {user?.isAdmin ? (
               <AdminLayout>
-                <div className="py-20 text-center text-muted-foreground">
-                  Intestazioni Pagine - In sviluppo
-                </div>
+                <AdminPageHeaders />
               </AdminLayout>
             ) : <NotFound />}
           </Route>
           <Route path="/admin/pages">
             {user?.isAdmin ? (
               <AdminLayout>
-                <div className="py-20 text-center text-muted-foreground">
-                  Pagine Custom - In sviluppo
-                </div>
+                <AdminCustomPages />
               </AdminLayout>
             ) : <NotFound />}
           </Route>
