@@ -92,10 +92,7 @@ export default function AdminCustomPages() {
         </div>
         <Button 
           data-testid="button-new-page" 
-          onClick={() => toast({
-            title: "In arrivo",
-            description: "L'editor per creare nuove pagine sarà disponibile a breve.",
-          })}
+          onClick={() => window.location.href = '/admin/pages/new'}
         >
           <Plus className="mr-2 h-4 w-4" />
           Nuova Pagina
@@ -150,10 +147,7 @@ export default function AdminCustomPages() {
                     <Button
                       variant="outline"
                       size="icon"
-                      onClick={() => toast({
-                        title: "In arrivo",
-                        description: "L'editor blocchi sarà disponibile a breve.",
-                      })}
+                      onClick={() => window.location.href = `/admin/pages/${page.id}/edit`}
                       data-testid={`button-edit-${page.id}`}
                     >
                       <Edit className="h-4 w-4" />

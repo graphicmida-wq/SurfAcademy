@@ -20,6 +20,7 @@ import AdminDashboard from "@/pages/admin/Dashboard";
 import AdminHeroSlider from "@/pages/admin/HeroSlider";
 import AdminPageHeaders from "@/pages/admin/PageHeaders";
 import AdminCustomPages from "@/pages/admin/CustomPages";
+import CustomPageEditor from "@/pages/admin/CustomPageEditor";
 import NotFound from "@/pages/not-found";
 import { AdminLayout } from "@/components/AdminLayout";
 
@@ -59,6 +60,20 @@ function Router() {
             {user?.isAdmin ? (
               <AdminLayout>
                 <AdminCustomPages />
+              </AdminLayout>
+            ) : <NotFound />}
+          </Route>
+          <Route path="/admin/pages/new">
+            {user?.isAdmin ? (
+              <AdminLayout>
+                <CustomPageEditor />
+              </AdminLayout>
+            ) : <NotFound />}
+          </Route>
+          <Route path="/admin/pages/:id/edit">
+            {user?.isAdmin ? (
+              <AdminLayout>
+                <CustomPageEditor />
               </AdminLayout>
             ) : <NotFound />}
           </Route>
