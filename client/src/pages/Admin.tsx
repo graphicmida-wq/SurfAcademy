@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ObjectUploader } from "@/components/ObjectUploader";
+import { MediaUploadZone } from "@/components/MediaUploadZone";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Plus, Trash2, Edit, GripVertical } from "lucide-react";
 import type { HeroSlide, InsertHeroSlide } from "@shared/schema";
@@ -120,37 +120,6 @@ export default function Admin() {
       toast({ title: "Errore durante il riordino", variant: "destructive" });
     },
   });
-
-  const handleUploadComplete = async (result: any) => {
-    if (result.successful && result.successful.length > 0) {
-      const uploadedFile = result.successful[0];
-      const uploadUrl = uploadedFile.uploadURL;
-
-      try {
-        const res = await apiRequest("POST", "/api/object-storage/set-acl", {
-          objectPath: uploadUrl,
-          aclPolicy: {
-            owner: user?.id,
-            visibility: "public",
-          },
-        });
-        const aclResponse = await res.json();
-
-        const normalizedPath = aclResponse.path;
-        form.setValue("mediaUrl", normalizedPath);
-        toast({ title: "Media caricato con successo" });
-      } catch (error) {
-        console.error("Error setting ACL:", error);
-        toast({ title: "Errore durante il caricamento", variant: "destructive" });
-      }
-    }
-  };
-
-  const getUploadUrl = async () => {
-    const res = await apiRequest("POST", "/api/object-storage/upload-url");
-    const response = await res.json();
-    return { method: "PUT" as const, url: response.url };
-  };
 
   const handleEdit = (slide: HeroSlide) => {
     setEditingSlide(slide);
@@ -288,25 +257,22 @@ export default function Admin() {
                   name="mediaUrl"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Media URL</FormLabel>
-                      <div className="flex gap-2">
-                        <FormControl>
-                          <Input
-                            {...field}
-                            placeholder="/objects/..."
-                            data-testid="input-media-url"
-                          />
-                        </FormControl>
-                        <ObjectUploader
-                          maxNumberOfFiles={1}
-                          maxFileSize={52428800}
-                          onGetUploadParameters={getUploadUrl}
-                          onComplete={handleUploadComplete}
-                          buttonClassName="shrink-0"
-                        >
-                          <span data-testid="button-upload">Upload</span>
-                        </ObjectUploader>
-                      </div>
+                      <FormLabel>Media</FormLabel>
+                      <FormControl>
+                        <MediaUploadZone
+                          onUploadComplete={(url) => field.onChange(url)}
+                          currentUrl={field.value}
+                          userId={user?.id}
+                        />
+                      </FormControl>
+                      {field.value && (
+                        <Input
+                          value={field.value}
+                          readOnly
+                          className="mt-2 text-xs"
+                          data-testid="input-media-url"
+                        />
+                      )}
                       <FormMessage />
                     </FormItem>
                   )}
