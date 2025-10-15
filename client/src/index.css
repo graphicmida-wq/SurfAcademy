@@ -76,7 +76,8 @@
   --chart-4: 142 70% 45%;
   --chart-5: 40 60% 60%;
 
-  --font-sans: 'Inter', 'Montserrat', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-display: 'Montserrat', system-ui, sans-serif;
   --font-serif: Georgia, serif;
   --font-mono: 'Menlo', 'Monaco', 'Courier New', monospace;
   --radius: .5rem;

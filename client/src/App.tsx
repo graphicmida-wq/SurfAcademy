@@ -3,26 +3,56 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { ThemeProvider } from "@/components/ThemeProvider";
+import { useAuth } from "@/hooks/useAuth";
+import { Navbar } from "@/components/Navbar";
+import { Footer } from "@/components/Footer";
+
+// Pages
+import Landing from "@/pages/Landing";
+import Courses from "@/pages/Courses";
+import CourseDetail from "@/pages/CourseDetail";
+import Dashboard from "@/pages/Dashboard";
+import Community from "@/pages/Community";
+import SurfCamp from "@/pages/SurfCamp";
 import NotFound from "@/pages/not-found";
 
 function Router() {
+  const { isAuthenticated, isLoading } = useAuth();
+
   return (
-    <Switch>
-      {/* Add pages below */}
-      {/* <Route path="/" component={Home}/> */}
-      {/* Fallback to 404 */}
-      <Route component={NotFound} />
-    </Switch>
+    <div className="flex flex-col min-h-screen">
+      <Navbar />
+      <main className="flex-1">
+        <Switch>
+          {/* Public routes */}
+          <Route path="/" component={isLoading || !isAuthenticated ? Landing : Dashboard} />
+          <Route path="/corsi" component={Courses} />
+          <Route path="/corsi/:id" component={CourseDetail} />
+          <Route path="/surf-camp" component={SurfCamp} />
+          <Route path="/community" component={Community} />
+          
+          {/* Protected routes */}
+          <Route path="/dashboard" component={Dashboard} />
+          
+          {/* Fallback to 404 */}
+          <Route component={NotFound} />
+        </Switch>
+      </main>
+      <Footer />
+    </div>
   );
 }
 
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Router />
-      </TooltipProvider>
+      <ThemeProvider defaultTheme="light">
+        <TooltipProvider>
+          <Toaster />
+          <Router />
+        </TooltipProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }
