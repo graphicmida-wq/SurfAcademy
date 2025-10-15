@@ -650,10 +650,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.delete("/api/admin/page-headers/:page", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      await storage.deletePageHeader(req.params.page);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting page header:", error);
+      res.status(400).json({ message: "Failed to delete page header" });
+    }
+  });
+
   // ========== Custom Page Routes ==========
   app.get("/api/custom-pages", async (req, res) => {
     try {
-      const isAdmin = req.user?.isAdmin === true;
+      const isAdmin = (req.user as any)?.isAdmin === true;
       const publishedOnly = !isAdmin;
       const pages = await storage.getAllCustomPages(publishedOnly);
       res.json(pages);

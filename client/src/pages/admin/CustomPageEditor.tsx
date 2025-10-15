@@ -78,8 +78,8 @@ export default function CustomPageEditor() {
         const newPage = await response.json();
         pageId = newPage.id;
         
-        // Auto-create pageHeader for new custom page
-        await apiRequest("PUT", `/api/admin/page-headers/${newPage.slug}`, {
+        // Auto-create pageHeader for new custom page using NEW slug
+        await apiRequest("PUT", `/api/admin/page-headers/${formData.slug}`, {
           imageUrl: formData.headerImageUrl || '',
           title: formData.headerTitle || formData.title,
           subtitle: formData.headerSubtitle || '',
@@ -90,17 +90,25 @@ export default function CustomPageEditor() {
       } else {
         await apiRequest("PUT", `/api/admin/custom-pages/${id}`, formData);
         
-        // Update pageHeader for custom page if slug matches
-        if (page?.slug) {
-          await apiRequest("PUT", `/api/admin/page-headers/${page.slug}`, {
-            imageUrl: formData.headerImageUrl || '',
-            title: formData.headerTitle || formData.title,
-            subtitle: formData.headerSubtitle || '',
-            paddingTop: 'py-16',
-            paddingBottom: 'py-24',
-            minHeight: 'min-h-96'
-          });
+        // If slug changed, delete old pageHeader and create new one
+        if (page?.slug && page.slug !== formData.slug) {
+          try {
+            await apiRequest("DELETE", `/api/admin/page-headers/${page.slug}`);
+          } catch (error) {
+            console.warn("Could not delete old page header:", error);
+            // Old header might not exist, continue anyway
+          }
         }
+        
+        // Create/update pageHeader using NEW slug from formData
+        await apiRequest("PUT", `/api/admin/page-headers/${formData.slug}`, {
+          imageUrl: formData.headerImageUrl || '',
+          title: formData.headerTitle || formData.title,
+          subtitle: formData.headerSubtitle || '',
+          paddingTop: 'py-16',
+          paddingBottom: 'py-24',
+          minHeight: 'min-h-96'
+        });
       }
 
       // Delete all existing blocks
@@ -127,6 +135,7 @@ export default function CustomPageEditor() {
     },
     onSuccess: (pageId) => {
       queryClient.invalidateQueries({ queryKey: ['/api/custom-pages'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/page-headers'] });
       toast({
         title: "Salvato!",
         description: "La pagina è stata salvata con successo.",
@@ -428,7 +437,7 @@ function BlockEditorItem({ block, index, isEditing, onEdit, onRemove, onMoveUp, 
   );
 }
 
-function BlockForm({ type, content, onChange }: { type: string; content: any; onChange: (content: any) => void }) {
+function BlockForm({ type, content, onChange }: { type: string; content: any; onChange: (content: any) => void }): JSX.Element | null {
   if (type === 'text') {
     return (
       <div className="space-y-2">

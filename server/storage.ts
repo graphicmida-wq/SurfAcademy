@@ -127,6 +127,7 @@ export interface IStorage {
   getAllPageHeaders(): Promise<PageHeader[]>;
   getPageHeader(page: string): Promise<PageHeader | undefined>;
   upsertPageHeader(header: InsertPageHeader): Promise<PageHeader>;
+  deletePageHeader(page: string): Promise<void>;
   
   // Custom page operations
   getAllCustomPages(publishedOnly?: boolean): Promise<CustomPage[]>;
@@ -528,6 +529,10 @@ export class DatabaseStorage implements IStorage {
       })
       .returning();
     return upserted;
+  }
+
+  async deletePageHeader(page: string): Promise<void> {
+    await db.delete(pageHeaders).where(eq(pageHeaders.page, page));
   }
 
   // ========== Custom Page Operations ==========
