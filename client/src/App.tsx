@@ -27,7 +27,7 @@ function Router() {
       <main className="flex-1">
         <Switch>
           {/* Public routes */}
-          <Route path="/" component={isLoading || !isAuthenticated ? Landing : Dashboard} />
+          <Route path="/" component={Landing} />
           <Route path="/corsi" component={Courses} />
           <Route path="/corsi/:id" component={CourseDetail} />
           <Route path="/surf-camp" component={SurfCamp} />
