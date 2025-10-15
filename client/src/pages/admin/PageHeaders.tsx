@@ -12,6 +12,7 @@ import { Loader2, Save } from "lucide-react";
 import type { PageHeader, CustomPage } from "@shared/schema";
 
 const STATIC_PAGES = [
+  { key: 'home', label: 'Home' },
   { key: 'courses', label: 'Corsi' },
   { key: 'surf-camp', label: 'Surf Camp' },
   { key: 'community', label: 'Community' },
