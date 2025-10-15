@@ -1,4 +1,4 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -15,16 +15,82 @@ import CourseDetail from "@/pages/CourseDetail";
 import Dashboard from "@/pages/Dashboard";
 import Community from "@/pages/Community";
 import SurfCamp from "@/pages/SurfCamp";
-import Admin from "@/pages/Admin";
+import AdminDashboard from "@/pages/admin/Dashboard";
+import AdminHeroSlider from "@/pages/admin/HeroSlider";
 import NotFound from "@/pages/not-found";
+import { AdminLayout } from "@/components/AdminLayout";
 
 function Router() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
+  const [location] = useLocation();
+  const isAdminPage = location.startsWith("/admin");
+  const hasAdminBar = user?.isAdmin && !isAdminPage;
+
+  // Admin pages have their own layout, don't render navbar/footer
+  if (isAdminPage) {
+    return (
+      <div className="flex flex-col min-h-screen">
+        <Switch>
+          <Route path="/admin">
+            {user?.isAdmin ? (
+              <AdminLayout>
+                <AdminDashboard />
+              </AdminLayout>
+            ) : <NotFound />}
+          </Route>
+          <Route path="/admin/slider">
+            {user?.isAdmin ? (
+              <AdminLayout>
+                <AdminHeroSlider />
+              </AdminLayout>
+            ) : <NotFound />}
+          </Route>
+          <Route path="/admin/surf-camp">
+            {user?.isAdmin ? (
+              <AdminLayout>
+                <div className="py-20 text-center text-muted-foreground">
+                  Gestione Surf Camp - In sviluppo
+                </div>
+              </AdminLayout>
+            ) : <NotFound />}
+          </Route>
+          <Route path="/admin/corsi">
+            {user?.isAdmin ? (
+              <AdminLayout>
+                <div className="py-20 text-center text-muted-foreground">
+                  Gestione Corsi - In sviluppo
+                </div>
+              </AdminLayout>
+            ) : <NotFound />}
+          </Route>
+          <Route path="/admin/newsletter">
+            {user?.isAdmin ? (
+              <AdminLayout>
+                <div className="py-20 text-center text-muted-foreground">
+                  Newsletter - In sviluppo
+                </div>
+              </AdminLayout>
+            ) : <NotFound />}
+          </Route>
+          <Route path="/admin/eventi">
+            {user?.isAdmin ? (
+              <AdminLayout>
+                <div className="py-20 text-center text-muted-foreground">
+                  Gestione Eventi - In sviluppo
+                </div>
+              </AdminLayout>
+            ) : <NotFound />}
+          </Route>
+          <Route component={NotFound} />
+        </Switch>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
-      <main className="flex-1">
+      <main className={`flex-1 ${hasAdminBar ? 'pt-8' : ''}`}>
         <Switch>
           {/* Public routes */}
           <Route path="/" component={Landing} />
@@ -35,7 +101,6 @@ function Router() {
           
           {/* Protected routes */}
           <Route path="/dashboard" component={Dashboard} />
-          <Route path="/admin" component={Admin} />
           
           {/* Fallback to 404 */}
           <Route component={NotFound} />

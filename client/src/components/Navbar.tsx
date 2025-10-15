@@ -27,6 +27,7 @@ export function Navbar() {
   }, []);
 
   const isLandingPage = location === "/";
+  const isAdminPage = location.startsWith("/admin");
 
   const navLinks = [
     { href: "/", label: "Home" },
@@ -34,7 +35,6 @@ export function Navbar() {
     { href: "/surf-camp", label: "Surf Camp" },
     { href: "/community", label: "Community" },
     ...(isAuthenticated ? [{ href: "/dashboard", label: "Dashboard" }] : []),
-    ...(isAuthenticated && user?.isAdmin ? [{ href: "/admin", label: "Admin" }] : []),
   ];
 
   const transparentNav = isLandingPage && isOnHero && !isScrolled;
@@ -43,11 +43,25 @@ export function Navbar() {
   const textColorMuted = transparentNav ? "text-white/80" : "text-foreground/80";
 
   return (
-    <nav className={`fixed top-0 z-50 w-full transition-all duration-300 ${
-      transparentNav 
-        ? "border-b-0 bg-transparent" 
-        : "border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
-    }`}>
+    <>
+      {/* WordPress-style Admin Bar */}
+      {user?.isAdmin && !isAdminPage && (
+        <div className="fixed top-0 left-0 right-0 z-[60] bg-gray-900 text-white h-8 flex items-center px-4 text-sm">
+          <a 
+            href="/admin" 
+            className="hover:bg-gray-800 px-3 py-1 rounded transition-colors"
+            data-testid="link-admin-bar"
+          >
+            Dashboard Admin
+          </a>
+        </div>
+      )}
+      
+      <nav className={`fixed ${user?.isAdmin && !isAdminPage ? 'top-8' : 'top-0'} z-50 w-full transition-all duration-300 ${
+        transparentNav 
+          ? "border-b-0 bg-transparent" 
+          : "border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
+      }`}>
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-28 items-center justify-between py-2">
           {/* Logo */}
@@ -208,5 +222,6 @@ export function Navbar() {
         )}
       </div>
     </nav>
+    </>
   );
 }
