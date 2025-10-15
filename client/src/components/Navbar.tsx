@@ -29,6 +29,7 @@ export function Navbar() {
   const isLandingPage = location === "/";
 
   const navLinks = [
+    { href: "/", label: "Home" },
     { href: "/corsi", label: "Corsi" },
     { href: "/surf-camp", label: "Surf Camp" },
     { href: "/community", label: "Community" },
