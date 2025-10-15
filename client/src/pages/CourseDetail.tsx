@@ -83,6 +83,9 @@ export default function CourseDetail() {
         imageUrl={course.thumbnailUrl ?? undefined}
         title={course.title}
         subtitle={course.description ?? undefined}
+        paddingTop="py-16"
+        paddingBottom="py-24"
+        minHeight="min-h-96"
       />
 
       {/* Course Info and Enrollment Card */}

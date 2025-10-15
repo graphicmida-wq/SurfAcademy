@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useParams } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { PageHeader } from "@/components/PageHeader";
+import { usePageHeader } from "@/hooks/usePageHeader";
 import { TextBlock, ImageBlock, CTABlock, GalleryBlock, VideoBlock } from "@/components/PageBlocks";
 import type { CustomPage, PageBlock } from "@shared/schema";
 
@@ -17,6 +18,8 @@ export default function DynamicPage() {
     queryKey: page?.id ? ['/api/custom-pages', page.id, 'blocks'] : ['disabled-blocks'],
     enabled: !!page?.id,
   });
+
+  const { data: pageHeader } = usePageHeader(slug || '');
 
   useEffect(() => {
     if (page) {
@@ -80,9 +83,12 @@ export default function DynamicPage() {
   return (
     <div className="min-h-screen">
       <PageHeader 
-        imageUrl={page.headerImageUrl || undefined}
-        title={page.headerTitle || page.title}
-        subtitle={page.headerSubtitle || undefined}
+        imageUrl={pageHeader?.imageUrl || page.headerImageUrl || undefined}
+        title={pageHeader?.title || page.headerTitle || page.title}
+        subtitle={pageHeader?.subtitle || page.headerSubtitle || undefined}
+        paddingTop={pageHeader?.paddingTop || undefined}
+        paddingBottom={pageHeader?.paddingBottom || undefined}
+        minHeight={pageHeader?.minHeight || undefined}
       />
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
