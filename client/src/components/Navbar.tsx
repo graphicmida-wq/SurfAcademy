@@ -49,14 +49,14 @@ export function Navbar() {
         : "border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
     }`}>
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex h-20 items-center justify-between py-2">
+        <div className="flex h-28 items-center justify-between py-2">
           {/* Logo */}
           <Link 
             href="/" 
             className="flex items-center space-x-2 hover-elevate active-elevate-2 rounded-lg px-2 py-1 -ml-2" 
             data-testid="link-home"
           >
-            <img src={currentLogo} alt="Scuola di Longboard" className="h-16 w-auto" />
+            <img src={currentLogo} alt="Scuola di Longboard" className="h-24 w-auto" />
           </Link>
 
           {/* Desktop Navigation */}
