@@ -48,7 +48,7 @@
 
   --popover-border: 0 0% 86%;
 
-  --primary: 174 85% 43%;
+  --primary: 174.04deg 58.51% 47.25%;
 
   --primary-foreground: 0 0% 100%;
 
@@ -69,17 +69,17 @@
   --destructive-foreground: 0 0% 100%;
 
   --input: 0 0% 70%;
-  --ring: 174 85% 43%;
-  --chart-1: 174 85% 43%;
+  --ring: 174.04deg 58.51% 47.25%;
+  --chart-1: 174.04deg 58.51% 47.25%;
   --chart-2: 200 23% 36%;
   --chart-3: 15 85% 65%;
   --chart-4: 142 70% 45%;
   --chart-5: 40 60% 60%;
 
-  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-sans: 'Montserrat', sans-serif;
   --font-display: 'Montserrat', system-ui, sans-serif;
   --font-serif: Georgia, serif;
-  --font-mono: 'Menlo', 'Monaco', 'Courier New', monospace;
+  --font-mono: 'Montserrat', sans-serif;
   --radius: .5rem;
   --shadow-2xs: 0px 1px 2px 0px hsl(200 23% 36% / 0.05);
   --shadow-xs: 0px 1px 3px 0px hsl(200 23% 36% / 0.08);
@@ -95,31 +95,31 @@
   /* Automatically computed borders - intensity can be controlled by the user by the --opaque-button-border-intensity setting */
 
   /* Fallback for older browsers */
-  --sidebar-primary-border: hsl(var(--sidebar-primary));
+  --sidebar-primary-border: hsl(from hsl(var(--sidebar-primary)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
   --sidebar-primary-border: hsl(from hsl(var(--sidebar-primary)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
 
   /* Fallback for older browsers */
-  --sidebar-accent-border: hsl(var(--sidebar-accent));
+  --sidebar-accent-border: hsl(from hsl(var(--sidebar-accent)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
   --sidebar-accent-border: hsl(from hsl(var(--sidebar-accent)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
 
   /* Fallback for older browsers */
-  --primary-border: hsl(var(--primary));
+  --primary-border: hsl(from hsl(var(--primary)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
   --primary-border: hsl(from hsl(var(--primary)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
 
   /* Fallback for older browsers */
-  --secondary-border: hsl(var(--secondary));
+  --secondary-border: hsl(from hsl(var(--secondary)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
   --secondary-border: hsl(from hsl(var(--secondary)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
 
   /* Fallback for older browsers */
-  --muted-border: hsl(var(--muted));
+  --muted-border: hsl(from hsl(var(--muted)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
   --muted-border: hsl(from hsl(var(--muted)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
 
   /* Fallback for older browsers */
-  --accent-border: hsl(var(--accent));
+  --accent-border: hsl(from hsl(var(--accent)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
   --accent-border: hsl(from hsl(var(--accent)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
 
   /* Fallback for older browsers */
-  --destructive-border: hsl(var(--destructive));
+  --destructive-border: hsl(from hsl(var(--destructive)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
   --destructive-border: hsl(from hsl(var(--destructive)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
 }
 

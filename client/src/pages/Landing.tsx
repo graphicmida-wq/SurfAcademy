@@ -35,17 +35,17 @@ export default function Landing() {
     <div className="flex flex-col">
       {/* Fullscreen Hero Section */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden" data-testid="section-hero">
-        {/* Gradient Background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-primary via-chart-2 to-primary/80" />
-        
         {/* Hero Background Image */}
-        <div className="absolute inset-0 opacity-20">
+        <div className="absolute inset-0">
           <img 
             src={heroImageUrl} 
             alt="Surfista in azione" 
             className="w-full h-full object-cover"
           />
         </div>
+        
+        {/* Gradient Overlay - più trasparente per vedere meglio i colori della foto */}
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/40 via-chart-2/30 to-primary/50" />
 
         {/* Content */}
         <div className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8 text-center">
