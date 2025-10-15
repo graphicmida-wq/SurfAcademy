@@ -222,6 +222,8 @@ export const pageHeaders = pgTable("page_headers", {
   imageUrl: varchar("image_url"),
   title: varchar("title", { length: 255 }),
   subtitle: text("subtitle"),
+  paddingTop: varchar("padding_top").default("py-16"), // Tailwind padding class for top
+  paddingBottom: varchar("padding_bottom").default("py-24"), // Tailwind padding class for bottom
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 

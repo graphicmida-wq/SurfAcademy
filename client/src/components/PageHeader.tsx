@@ -2,11 +2,15 @@ interface PageHeaderProps {
   imageUrl?: string;
   title: string;
   subtitle?: string;
+  paddingTop?: string;
+  paddingBottom?: string;
 }
 
-export function PageHeader({ imageUrl, title, subtitle }: PageHeaderProps) {
+export function PageHeader({ imageUrl, title, subtitle, paddingTop = 'py-16', paddingBottom = 'py-24' }: PageHeaderProps) {
+  const paddingClass = `${paddingTop.replace('py-', 'pt-')} ${paddingBottom.replace('py-', 'pb-')}`;
+  
   return (
-    <div className="relative w-full h-64 md:h-80 overflow-hidden">
+    <div className={`relative w-full overflow-hidden ${paddingClass}`}>
       {imageUrl ? (
         <>
           <img

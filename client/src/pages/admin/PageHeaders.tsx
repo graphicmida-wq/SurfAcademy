@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState, useEffect } from "react";
 import { Loader2, Save } from "lucide-react";
 import type { PageHeader } from "@shared/schema";
@@ -30,7 +31,9 @@ export default function AdminPageHeaders() {
   const [formData, setFormData] = useState({
     imageUrl: '',
     title: '',
-    subtitle: ''
+    subtitle: '',
+    paddingTop: 'py-16',
+    paddingBottom: 'py-24'
   });
 
   // Sync form data when pageHeaders or selectedPage changes
@@ -39,13 +42,15 @@ export default function AdminPageHeaders() {
       setFormData({
         imageUrl: currentHeader.imageUrl || '',
         title: currentHeader.title || '',
-        subtitle: currentHeader.subtitle || ''
+        subtitle: currentHeader.subtitle || '',
+        paddingTop: currentHeader.paddingTop || 'py-16',
+        paddingBottom: currentHeader.paddingBottom || 'py-24'
       });
     }
   }, [currentHeader]);
 
   const updateMutation = useMutation({
-    mutationFn: async (data: { imageUrl: string; title: string; subtitle: string }) => {
+    mutationFn: async (data: { imageUrl: string; title: string; subtitle: string; paddingTop: string; paddingBottom: string }) => {
       await apiRequest("PUT", `/api/page-headers/${selectedPage}`, data);
     },
     onSuccess: () => {
@@ -70,7 +75,9 @@ export default function AdminPageHeaders() {
     setFormData({
       imageUrl: header?.imageUrl || '',
       title: header?.title || '',
-      subtitle: header?.subtitle || ''
+      subtitle: header?.subtitle || '',
+      paddingTop: header?.paddingTop || 'py-16',
+      paddingBottom: header?.paddingBottom || 'py-24'
     });
   };
 
@@ -163,6 +170,46 @@ export default function AdminPageHeaders() {
                   rows={3}
                   data-testid="input-subtitle"
                 />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="paddingTop">Padding Superiore</Label>
+                  <Select
+                    value={formData.paddingTop}
+                    onValueChange={(value) => setFormData({ ...formData, paddingTop: value })}
+                  >
+                    <SelectTrigger id="paddingTop" data-testid="select-padding-top">
+                      <SelectValue placeholder="Seleziona padding" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="py-8">Piccolo (32px)</SelectItem>
+                      <SelectItem value="py-12">Medio (48px)</SelectItem>
+                      <SelectItem value="py-16">Grande (64px)</SelectItem>
+                      <SelectItem value="py-20">Molto Grande (80px)</SelectItem>
+                      <SelectItem value="py-24">Extra Grande (96px)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="paddingBottom">Padding Inferiore</Label>
+                  <Select
+                    value={formData.paddingBottom}
+                    onValueChange={(value) => setFormData({ ...formData, paddingBottom: value })}
+                  >
+                    <SelectTrigger id="paddingBottom" data-testid="select-padding-bottom">
+                      <SelectValue placeholder="Seleziona padding" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="py-8">Piccolo (32px)</SelectItem>
+                      <SelectItem value="py-12">Medio (48px)</SelectItem>
+                      <SelectItem value="py-16">Grande (64px)</SelectItem>
+                      <SelectItem value="py-20">Molto Grande (80px)</SelectItem>
+                      <SelectItem value="py-24">Extra Grande (96px)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
               {formData.imageUrl && (

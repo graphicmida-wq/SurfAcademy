@@ -90,7 +90,13 @@ export default function AdminCustomPages() {
             Gestisci le pagine personalizzate con sistema a blocchi
           </p>
         </div>
-        <Button data-testid="button-new-page" disabled>
+        <Button 
+          data-testid="button-new-page" 
+          onClick={() => toast({
+            title: "In arrivo",
+            description: "L'editor per creare nuove pagine sarà disponibile a breve.",
+          })}
+        >
           <Plus className="mr-2 h-4 w-4" />
           Nuova Pagina
         </Button>
@@ -144,7 +150,10 @@ export default function AdminCustomPages() {
                     <Button
                       variant="outline"
                       size="icon"
-                      disabled
+                      onClick={() => toast({
+                        title: "In arrivo",
+                        description: "L'editor blocchi sarà disponibile a breve.",
+                      })}
                       data-testid={`button-edit-${page.id}`}
                     >
                       <Edit className="h-4 w-4" />
