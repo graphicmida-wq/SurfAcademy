@@ -379,7 +379,7 @@ export default function CustomPageEditor() {
                       onRemove={() => removeBlock(index)}
                       onMoveUp={() => moveBlock(index, 'up')}
                       onMoveDown={() => moveBlock(index, 'down')}
-                      onUpdate={(content) => updateBlockContent(index, content)}
+                      onUpdate={(content: any) => updateBlockContent(index, content)}
                       canMoveUp={index > 0}
                       canMoveDown={index < blocks.length - 1}
                     />
