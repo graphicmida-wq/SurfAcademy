@@ -20,7 +20,7 @@ export function MediaUploadZone({ onUploadComplete, currentUrl, userId }: MediaU
 
       // Get upload URL
       const urlRes = await apiRequest("POST", "/api/object-storage/upload-url");
-      const { url } = await urlRes.json();
+      const { url, objectPath } = await urlRes.json();
 
       // Upload file
       await fetch(url, {
@@ -33,7 +33,7 @@ export function MediaUploadZone({ onUploadComplete, currentUrl, userId }: MediaU
 
       // Set ACL
       const aclRes = await apiRequest("POST", "/api/object-storage/set-acl", {
-        objectPath: url,
+        objectPath: objectPath,
         aclPolicy: {
           owner: userId,
           visibility: "public",
