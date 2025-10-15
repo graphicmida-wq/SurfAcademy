@@ -9,9 +9,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState, useEffect } from "react";
 import { Loader2, Save } from "lucide-react";
-import type { PageHeader } from "@shared/schema";
+import type { PageHeader, CustomPage } from "@shared/schema";
 
-const PAGE_KEYS = [
+const STATIC_PAGES = [
   { key: 'courses', label: 'Corsi' },
   { key: 'surf-camp', label: 'Surf Camp' },
   { key: 'community', label: 'Community' },
@@ -22,18 +22,32 @@ export default function AdminPageHeaders() {
   const { toast } = useToast();
   const [selectedPage, setSelectedPage] = useState<string>('courses');
   
-  const { data: pageHeaders, isLoading } = useQuery<PageHeader[]>({
+  const { data: pageHeaders, isLoading: headersLoading } = useQuery<PageHeader[]>({
     queryKey: ['/api/page-headers'],
   });
 
+  const { data: customPages, isLoading: pagesLoading } = useQuery<CustomPage[]>({
+    queryKey: ['/api/custom-pages'],
+  });
+
   const currentHeader = pageHeaders?.find(h => h.page === selectedPage);
+
+  // Combine static pages + custom pages
+  const allPages = [
+    ...STATIC_PAGES,
+    ...(customPages || []).map(page => ({
+      key: page.slug,
+      label: `${page.title} (custom)`
+    }))
+  ];
 
   const [formData, setFormData] = useState({
     imageUrl: '',
     title: '',
     subtitle: '',
     paddingTop: 'py-16',
-    paddingBottom: 'py-24'
+    paddingBottom: 'py-24',
+    minHeight: 'min-h-96'
   });
 
   // Sync form data when pageHeaders or selectedPage changes
@@ -44,14 +58,15 @@ export default function AdminPageHeaders() {
         title: currentHeader.title || '',
         subtitle: currentHeader.subtitle || '',
         paddingTop: currentHeader.paddingTop || 'py-16',
-        paddingBottom: currentHeader.paddingBottom || 'py-24'
+        paddingBottom: currentHeader.paddingBottom || 'py-24',
+        minHeight: currentHeader.minHeight || 'min-h-96'
       });
     }
   }, [currentHeader]);
 
   const updateMutation = useMutation({
-    mutationFn: async (data: { imageUrl: string; title: string; subtitle: string; paddingTop: string; paddingBottom: string }) => {
-      await apiRequest("PUT", `/api/page-headers/${selectedPage}`, data);
+    mutationFn: async (data: { imageUrl: string; title: string; subtitle: string; paddingTop: string; paddingBottom: string; minHeight: string }) => {
+      await apiRequest("PUT", `/api/admin/page-headers/${selectedPage}`, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/page-headers'] });
@@ -77,7 +92,8 @@ export default function AdminPageHeaders() {
       title: header?.title || '',
       subtitle: header?.subtitle || '',
       paddingTop: header?.paddingTop || 'py-16',
-      paddingBottom: header?.paddingBottom || 'py-24'
+      paddingBottom: header?.paddingBottom || 'py-24',
+      minHeight: header?.minHeight || 'min-h-96'
     });
   };
 
@@ -86,7 +102,7 @@ export default function AdminPageHeaders() {
     updateMutation.mutate(formData);
   };
 
-  if (isLoading) {
+  if (headersLoading || pagesLoading) {
     return (
       <div className="flex items-center justify-center py-20">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -99,7 +115,7 @@ export default function AdminPageHeaders() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold font-display mb-2">Intestazioni Pagine</h1>
         <p className="text-muted-foreground">
-          Gestisci le intestazioni hero delle pagine esistenti (Corsi, Surf Camp, Community, Dashboard)
+          Gestisci le intestazioni hero di tutte le pagine (esistenti e custom)
         </p>
       </div>
 
@@ -110,13 +126,14 @@ export default function AdminPageHeaders() {
             <CardTitle>Seleziona Pagina</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {PAGE_KEYS.map(({ key, label }) => (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+              {allPages.map(({ key, label }) => (
                 <Button
                   key={key}
                   variant={selectedPage === key ? 'default' : 'outline'}
                   onClick={() => handlePageChange(key)}
                   data-testid={`button-page-${key}`}
+                  className="text-sm"
                 >
                   {label}
                 </Button>
@@ -129,7 +146,7 @@ export default function AdminPageHeaders() {
         <Card>
           <CardHeader>
             <CardTitle>
-              Modifica Intestazione: {PAGE_KEYS.find(p => p.key === selectedPage)?.label}
+              Modifica Intestazione: {allPages.find(p => p.key === selectedPage)?.label}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -170,6 +187,25 @@ export default function AdminPageHeaders() {
                   rows={3}
                   data-testid="input-subtitle"
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="minHeight">Altezza Banner</Label>
+                <Select
+                  value={formData.minHeight}
+                  onValueChange={(value) => setFormData({ ...formData, minHeight: value })}
+                >
+                  <SelectTrigger id="minHeight" data-testid="select-min-height">
+                    <SelectValue placeholder="Seleziona altezza" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="min-h-64">Piccolo (256px)</SelectItem>
+                    <SelectItem value="min-h-80">Medio (320px)</SelectItem>
+                    <SelectItem value="min-h-96">Grande (384px)</SelectItem>
+                    <SelectItem value="min-h-[28rem]">Molto Grande (448px)</SelectItem>
+                    <SelectItem value="min-h-[32rem]">Extra Grande (512px)</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -225,24 +261,25 @@ export default function AdminPageHeaders() {
                 </div>
               )}
 
-              <Button
-                type="submit"
-                disabled={updateMutation.isPending || !formData.title}
-                className="w-full"
-                data-testid="button-save"
-              >
-                {updateMutation.isPending ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Salvataggio...
-                  </>
-                ) : (
-                  <>
-                    <Save className="mr-2 h-4 w-4" />
-                    Salva Modifiche
-                  </>
-                )}
-              </Button>
+              <div className="flex justify-end">
+                <Button
+                  type="submit"
+                  disabled={updateMutation.isPending}
+                  data-testid="button-save"
+                >
+                  {updateMutation.isPending ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Salvataggio...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="mr-2 h-4 w-4" />
+                      Salva Modifiche
+                    </>
+                  )}
+                </Button>
+              </div>
             </form>
           </CardContent>
         </Card>

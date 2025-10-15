@@ -218,12 +218,13 @@ export const heroSlides = pgTable("hero_slides", {
 // ============================================================================
 
 export const pageHeaders = pgTable("page_headers", {
-  page: varchar("page").primaryKey(), // courses, surf-camp, community, dashboard
+  page: varchar("page").primaryKey(), // courses, surf-camp, community, dashboard, or custom page slugs
   imageUrl: varchar("image_url"),
   title: varchar("title", { length: 255 }),
   subtitle: text("subtitle"),
   paddingTop: varchar("padding_top").default("py-16"), // Tailwind padding class for top
   paddingBottom: varchar("padding_bottom").default("py-24"), // Tailwind padding class for bottom
+  minHeight: varchar("min_height").default("min-h-96"), // Tailwind min-height class
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 

@@ -34,7 +34,7 @@ export default function CustomPageEditor() {
   const [editingBlock, setEditingBlock] = useState<number | null>(null);
 
   const { data: page, isLoading } = useQuery<CustomPage>({
-    queryKey: id && id !== 'new' ? [`/api/custom-pages/${id}`] : ['disabled'],
+    queryKey: id && id !== 'new' ? [`/api/admin/custom-pages/${id}`] : ['disabled'],
     enabled: !isNew,
   });
 
@@ -74,18 +74,40 @@ export default function CustomPageEditor() {
       let pageId = id;
       
       if (isNew) {
-        const response = await apiRequest("POST", "/api/custom-pages", formData);
+        const response = await apiRequest("POST", "/api/admin/custom-pages", formData);
         const newPage = await response.json();
         pageId = newPage.id;
+        
+        // Auto-create pageHeader for new custom page
+        await apiRequest("PUT", `/api/admin/page-headers/${newPage.slug}`, {
+          imageUrl: formData.headerImageUrl || '',
+          title: formData.headerTitle || formData.title,
+          subtitle: formData.headerSubtitle || '',
+          paddingTop: 'py-16',
+          paddingBottom: 'py-24',
+          minHeight: 'min-h-96'
+        });
       } else {
-        await apiRequest("PUT", `/api/custom-pages/${id}`, formData);
+        await apiRequest("PUT", `/api/admin/custom-pages/${id}`, formData);
+        
+        // Update pageHeader for custom page if slug matches
+        if (page?.slug) {
+          await apiRequest("PUT", `/api/admin/page-headers/${page.slug}`, {
+            imageUrl: formData.headerImageUrl || '',
+            title: formData.headerTitle || formData.title,
+            subtitle: formData.headerSubtitle || '',
+            paddingTop: 'py-16',
+            paddingBottom: 'py-24',
+            minHeight: 'min-h-96'
+          });
+        }
       }
 
       // Delete all existing blocks
       if (!isNew && existingBlocks) {
         await Promise.all(
           existingBlocks.map(b => 
-            apiRequest("DELETE", `/api/page-blocks/${b.id}`)
+            apiRequest("DELETE", `/api/admin/page-blocks/${b.id}`)
           )
         );
       }
@@ -93,7 +115,7 @@ export default function CustomPageEditor() {
       // Create new blocks
       await Promise.all(
         blocks.map((block, index) =>
-          apiRequest("POST", `/api/custom-pages/${pageId}/blocks`, {
+          apiRequest("POST", `/api/admin/custom-pages/${pageId}/blocks`, {
             type: block.type,
             orderIndex: index + 1,
             contentJson: block.content
