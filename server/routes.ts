@@ -14,6 +14,9 @@ import {
   insertCampRegistrationSchema,
   insertCertificateSchema,
   insertHeroSlideSchema,
+  insertPageHeaderSchema,
+  insertCustomPageSchema,
+  insertPageBlockSchema,
 } from "@shared/schema";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import { ObjectAclPolicy, ObjectPermission } from "./objectAcl";
@@ -609,6 +612,184 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error reordering hero slides:", error);
       res.status(400).json({ message: "Failed to reorder hero slides" });
+    }
+  });
+
+  // ========== Page Header Routes (for existing pages) ==========
+  app.get("/api/page-headers", async (req, res) => {
+    try {
+      const headers = await storage.getAllPageHeaders();
+      res.json(headers);
+    } catch (error) {
+      console.error("Error fetching page headers:", error);
+      res.status(500).json({ message: "Failed to fetch page headers" });
+    }
+  });
+
+  app.get("/api/page-headers/:page", async (req, res) => {
+    try {
+      const header = await storage.getPageHeader(req.params.page);
+      if (!header) {
+        return res.status(404).json({ message: "Page header not found" });
+      }
+      res.json(header);
+    } catch (error) {
+      console.error("Error fetching page header:", error);
+      res.status(500).json({ message: "Failed to fetch page header" });
+    }
+  });
+
+  app.put("/api/admin/page-headers/:page", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const validatedData = insertPageHeaderSchema.parse({ ...req.body, page: req.params.page });
+      const header = await storage.upsertPageHeader(validatedData);
+      res.json(header);
+    } catch (error) {
+      console.error("Error upserting page header:", error);
+      res.status(400).json({ message: "Failed to update page header" });
+    }
+  });
+
+  // ========== Custom Page Routes ==========
+  app.get("/api/custom-pages", async (req, res) => {
+    try {
+      const isAdmin = req.user?.isAdmin === true;
+      const publishedOnly = !isAdmin;
+      const pages = await storage.getAllCustomPages(publishedOnly);
+      res.json(pages);
+    } catch (error) {
+      console.error("Error fetching custom pages:", error);
+      res.status(500).json({ message: "Failed to fetch custom pages" });
+    }
+  });
+
+  app.get("/api/custom-pages/slug/:slug", async (req, res) => {
+    try {
+      const page = await storage.getCustomPageBySlug(req.params.slug);
+      if (!page) {
+        return res.status(404).json({ message: "Page not found" });
+      }
+      if (!page.published && !req.user) {
+        return res.status(403).json({ message: "Page not published" });
+      }
+      res.json(page);
+    } catch (error) {
+      console.error("Error fetching custom page:", error);
+      res.status(500).json({ message: "Failed to fetch custom page" });
+    }
+  });
+
+  app.get("/api/admin/custom-pages/:id", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const page = await storage.getCustomPage(req.params.id);
+      if (!page) {
+        return res.status(404).json({ message: "Page not found" });
+      }
+      res.json(page);
+    } catch (error) {
+      console.error("Error fetching custom page:", error);
+      res.status(500).json({ message: "Failed to fetch custom page" });
+    }
+  });
+
+  app.post("/api/admin/custom-pages", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const validatedData = insertCustomPageSchema.parse(req.body);
+      const page = await storage.createCustomPage(validatedData);
+      res.status(201).json(page);
+    } catch (error) {
+      console.error("Error creating custom page:", error);
+      res.status(400).json({ message: "Failed to create custom page" });
+    }
+  });
+
+  app.put("/api/admin/custom-pages/:id", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const validatedData = insertCustomPageSchema.partial().parse(req.body);
+      const page = await storage.updateCustomPage(req.params.id, validatedData);
+      if (!page) {
+        return res.status(404).json({ message: "Custom page not found" });
+      }
+      res.json(page);
+    } catch (error) {
+      console.error("Error updating custom page:", error);
+      res.status(400).json({ message: "Failed to update custom page" });
+    }
+  });
+
+  app.delete("/api/admin/custom-pages/:id", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      await storage.deleteCustomPage(req.params.id);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting custom page:", error);
+      res.status(400).json({ message: "Failed to delete custom page" });
+    }
+  });
+
+  // ========== Page Block Routes ==========
+  app.get("/api/custom-pages/:pageId/blocks", async (req, res) => {
+    try {
+      const blocks = await storage.getBlocksByCustomPage(req.params.pageId);
+      res.json(blocks);
+    } catch (error) {
+      console.error("Error fetching page blocks:", error);
+      res.status(500).json({ message: "Failed to fetch page blocks" });
+    }
+  });
+
+  app.post("/api/admin/custom-pages/:pageId/blocks", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const validatedData = insertPageBlockSchema.parse({ 
+        ...req.body, 
+        customPageId: req.params.pageId 
+      });
+      const block = await storage.createPageBlock(validatedData);
+      res.status(201).json(block);
+    } catch (error) {
+      console.error("Error creating page block:", error);
+      res.status(400).json({ message: "Failed to create page block" });
+    }
+  });
+
+  app.put("/api/admin/page-blocks/:id", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const validatedData = insertPageBlockSchema.partial().parse(req.body);
+      const block = await storage.updatePageBlock(req.params.id, validatedData);
+      if (!block) {
+        return res.status(404).json({ message: "Page block not found" });
+      }
+      res.json(block);
+    } catch (error) {
+      console.error("Error updating page block:", error);
+      res.status(400).json({ message: "Failed to update page block" });
+    }
+  });
+
+  app.delete("/api/admin/page-blocks/:id", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      await storage.deletePageBlock(req.params.id);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting page block:", error);
+      res.status(400).json({ message: "Failed to delete page block" });
+    }
+  });
+
+  app.put("/api/admin/page-blocks/reorder", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const reorderSchema = z.object({
+        blocks: z.array(z.object({
+          id: z.string(),
+          orderIndex: z.number(),
+        })),
+      });
+      const { blocks } = reorderSchema.parse(req.body);
+      await storage.reorderPageBlocks(blocks);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error reordering page blocks:", error);
+      res.status(400).json({ message: "Failed to reorder page blocks" });
     }
   });
 

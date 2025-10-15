@@ -14,6 +14,9 @@ import {
   campRegistrations,
   certificates,
   heroSlides,
+  pageHeaders,
+  customPages,
+  pageBlocks,
   type User,
   type UpsertUser,
   type Course,
@@ -38,6 +41,12 @@ import {
   type InsertCertificate,
   type HeroSlide,
   type InsertHeroSlide,
+  type PageHeader,
+  type InsertPageHeader,
+  type CustomPage,
+  type InsertCustomPage,
+  type PageBlock,
+  type InsertPageBlock,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql } from "drizzle-orm";
@@ -113,6 +122,26 @@ export interface IStorage {
   updateHeroSlide(id: string, slide: Partial<InsertHeroSlide>): Promise<HeroSlide>;
   deleteHeroSlide(id: string): Promise<void>;
   reorderHeroSlides(slides: { id: string; orderIndex: number }[]): Promise<void>;
+  
+  // Page header operations (for existing pages)
+  getAllPageHeaders(): Promise<PageHeader[]>;
+  getPageHeader(page: string): Promise<PageHeader | undefined>;
+  upsertPageHeader(header: InsertPageHeader): Promise<PageHeader>;
+  
+  // Custom page operations
+  getAllCustomPages(publishedOnly?: boolean): Promise<CustomPage[]>;
+  getCustomPageBySlug(slug: string): Promise<CustomPage | undefined>;
+  getCustomPage(id: string): Promise<CustomPage | undefined>;
+  createCustomPage(page: InsertCustomPage): Promise<CustomPage>;
+  updateCustomPage(id: string, page: Partial<InsertCustomPage>): Promise<CustomPage>;
+  deleteCustomPage(id: string): Promise<void>;
+  
+  // Page block operations
+  getBlocksByCustomPage(customPageId: string): Promise<PageBlock[]>;
+  createPageBlock(block: InsertPageBlock): Promise<PageBlock>;
+  updatePageBlock(id: string, block: Partial<InsertPageBlock>): Promise<PageBlock>;
+  deletePageBlock(id: string): Promise<void>;
+  reorderPageBlocks(blocks: { id: string; orderIndex: number }[]): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -475,6 +504,103 @@ export class DatabaseStorage implements IStorage {
     await Promise.all(
       slides.map(({ id, orderIndex }) =>
         db.update(heroSlides).set({ orderIndex, updatedAt: new Date() }).where(eq(heroSlides.id, id))
+      )
+    );
+  }
+
+  // ========== Page Header Operations ==========
+  async getAllPageHeaders(): Promise<PageHeader[]> {
+    return await db.select().from(pageHeaders);
+  }
+
+  async getPageHeader(page: string): Promise<PageHeader | undefined> {
+    const [header] = await db.select().from(pageHeaders).where(eq(pageHeaders.page, page));
+    return header;
+  }
+
+  async upsertPageHeader(header: InsertPageHeader): Promise<PageHeader> {
+    const [upserted] = await db
+      .insert(pageHeaders)
+      .values({ ...header, updatedAt: new Date() })
+      .onConflictDoUpdate({
+        target: pageHeaders.page,
+        set: { ...header, updatedAt: new Date() },
+      })
+      .returning();
+    return upserted;
+  }
+
+  // ========== Custom Page Operations ==========
+  async getAllCustomPages(publishedOnly?: boolean): Promise<CustomPage[]> {
+    if (publishedOnly) {
+      return await db
+        .select()
+        .from(customPages)
+        .where(eq(customPages.published, true))
+        .orderBy(desc(customPages.createdAt));
+    }
+    return await db.select().from(customPages).orderBy(desc(customPages.createdAt));
+  }
+
+  async getCustomPageBySlug(slug: string): Promise<CustomPage | undefined> {
+    const [page] = await db.select().from(customPages).where(eq(customPages.slug, slug));
+    return page;
+  }
+
+  async getCustomPage(id: string): Promise<CustomPage | undefined> {
+    const [page] = await db.select().from(customPages).where(eq(customPages.id, id));
+    return page;
+  }
+
+  async createCustomPage(page: InsertCustomPage): Promise<CustomPage> {
+    const [newPage] = await db.insert(customPages).values(page).returning();
+    return newPage;
+  }
+
+  async updateCustomPage(id: string, page: Partial<InsertCustomPage>): Promise<CustomPage> {
+    const [updatedPage] = await db
+      .update(customPages)
+      .set({ ...page, updatedAt: new Date() })
+      .where(eq(customPages.id, id))
+      .returning();
+    return updatedPage;
+  }
+
+  async deleteCustomPage(id: string): Promise<void> {
+    await db.delete(customPages).where(eq(customPages.id, id));
+  }
+
+  // ========== Page Block Operations ==========
+  async getBlocksByCustomPage(customPageId: string): Promise<PageBlock[]> {
+    return await db
+      .select()
+      .from(pageBlocks)
+      .where(eq(pageBlocks.customPageId, customPageId))
+      .orderBy(pageBlocks.orderIndex);
+  }
+
+  async createPageBlock(block: InsertPageBlock): Promise<PageBlock> {
+    const [newBlock] = await db.insert(pageBlocks).values(block).returning();
+    return newBlock;
+  }
+
+  async updatePageBlock(id: string, block: Partial<InsertPageBlock>): Promise<PageBlock> {
+    const [updatedBlock] = await db
+      .update(pageBlocks)
+      .set({ ...block, updatedAt: new Date() })
+      .where(eq(pageBlocks.id, id))
+      .returning();
+    return updatedBlock;
+  }
+
+  async deletePageBlock(id: string): Promise<void> {
+    await db.delete(pageBlocks).where(eq(pageBlocks.id, id));
+  }
+
+  async reorderPageBlocks(blocks: { id: string; orderIndex: number }[]): Promise<void> {
+    await Promise.all(
+      blocks.map(({ id, orderIndex }) =>
+        db.update(pageBlocks).set({ orderIndex, updatedAt: new Date() }).where(eq(pageBlocks.id, id))
       )
     );
   }

@@ -214,6 +214,42 @@ export const heroSlides = pgTable("hero_slides", {
 });
 
 // ============================================================================
+// CMS - PAGE HEADERS & CUSTOM PAGES
+// ============================================================================
+
+export const pageHeaders = pgTable("page_headers", {
+  page: varchar("page").primaryKey(), // courses, surf-camp, community, dashboard
+  imageUrl: varchar("image_url"),
+  title: varchar("title", { length: 255 }),
+  subtitle: text("subtitle"),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const customPages = pgTable("custom_pages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  slug: varchar("slug").unique().notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  headerImageUrl: varchar("header_image_url"),
+  headerTitle: varchar("header_title", { length: 255 }),
+  headerSubtitle: text("header_subtitle"),
+  published: boolean("published").default(false),
+  seoTitle: varchar("seo_title", { length: 255 }),
+  seoDescription: text("seo_description"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const pageBlocks = pgTable("page_blocks", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  customPageId: varchar("custom_page_id").notNull().references(() => customPages.id, { onDelete: 'cascade' }),
+  type: varchar("type").notNull(), // text, image, cta, gallery, video
+  orderIndex: integer("order_index").notNull(),
+  contentJson: jsonb("content_json").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// ============================================================================
 // RELATIONS
 // ============================================================================
 
@@ -293,6 +329,17 @@ export const campRegistrationsRelations = relations(campRegistrations, ({ one })
   }),
 }));
 
+export const customPagesRelations = relations(customPages, ({ many }) => ({
+  blocks: many(pageBlocks),
+}));
+
+export const pageBlocksRelations = relations(pageBlocks, ({ one }) => ({
+  customPage: one(customPages, {
+    fields: [pageBlocks.customPageId],
+    references: [customPages.id],
+  }),
+}));
+
 // ============================================================================
 // INSERT SCHEMAS FOR VALIDATION
 // ============================================================================
@@ -356,6 +403,22 @@ export const insertHeroSlideSchema = createInsertSchema(heroSlides).omit({
   updatedAt: true,
 });
 
+export const insertPageHeaderSchema = createInsertSchema(pageHeaders).omit({
+  updatedAt: true,
+});
+
+export const insertCustomPageSchema = createInsertSchema(customPages).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertPageBlockSchema = createInsertSchema(pageBlocks).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // ============================================================================
 // TYPES
 // ============================================================================
@@ -397,3 +460,12 @@ export type InsertCertificate = z.infer<typeof insertCertificateSchema>;
 
 export type HeroSlide = typeof heroSlides.$inferSelect;
 export type InsertHeroSlide = z.infer<typeof insertHeroSlideSchema>;
+
+export type PageHeader = typeof pageHeaders.$inferSelect;
+export type InsertPageHeader = z.infer<typeof insertPageHeaderSchema>;
+
+export type CustomPage = typeof customPages.$inferSelect;
+export type InsertCustomPage = z.infer<typeof insertCustomPageSchema>;
+
+export type PageBlock = typeof pageBlocks.$inferSelect;
+export type InsertPageBlock = z.infer<typeof insertPageBlockSchema>;
