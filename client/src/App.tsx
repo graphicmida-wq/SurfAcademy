@@ -15,6 +15,7 @@ import CourseDetail from "@/pages/CourseDetail";
 import Dashboard from "@/pages/Dashboard";
 import Community from "@/pages/Community";
 import SurfCamp from "@/pages/SurfCamp";
+import DynamicPage from "@/pages/DynamicPage";
 import AdminDashboard from "@/pages/admin/Dashboard";
 import AdminHeroSlider from "@/pages/admin/HeroSlider";
 import NotFound from "@/pages/not-found";
@@ -101,6 +102,9 @@ function Router() {
           
           {/* Protected routes */}
           <Route path="/dashboard" component={Dashboard} />
+          
+          {/* Dynamic custom pages */}
+          <Route path="/p/:slug" component={DynamicPage} />
           
           {/* Fallback to 404 */}
           <Route component={NotFound} />
