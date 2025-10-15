@@ -61,8 +61,21 @@ export default function AdminPageHeaders() {
         paddingBottom: currentHeader.paddingBottom || 'py-24',
         minHeight: currentHeader.minHeight || 'min-h-96'
       });
+    } else {
+      // If no header exists, check if it's a custom page
+      const customPage = customPages?.find(p => p.slug === selectedPage);
+      if (customPage) {
+        setFormData({
+          imageUrl: customPage.headerImageUrl || '',
+          title: customPage.headerTitle || customPage.title || '',
+          subtitle: customPage.headerSubtitle || '',
+          paddingTop: 'py-16',
+          paddingBottom: 'py-24',
+          minHeight: 'min-h-96'
+        });
+      }
     }
-  }, [currentHeader]);
+  }, [currentHeader, customPages, selectedPage]);
 
   const updateMutation = useMutation({
     mutationFn: async (data: { imageUrl: string; title: string; subtitle: string; paddingTop: string; paddingBottom: string; minHeight: string }) => {
@@ -87,6 +100,23 @@ export default function AdminPageHeaders() {
   const handlePageChange = (pageKey: string) => {
     setSelectedPage(pageKey);
     const header = pageHeaders?.find(h => h.page === pageKey);
+    
+    // If no header exists, check if it's a custom page and use its data as defaults
+    if (!header) {
+      const customPage = customPages?.find(p => p.slug === pageKey);
+      if (customPage) {
+        setFormData({
+          imageUrl: customPage.headerImageUrl || '',
+          title: customPage.headerTitle || customPage.title || '',
+          subtitle: customPage.headerSubtitle || '',
+          paddingTop: 'py-16',
+          paddingBottom: 'py-24',
+          minHeight: 'min-h-96'
+        });
+        return;
+      }
+    }
+    
     setFormData({
       imageUrl: header?.imageUrl || '',
       title: header?.title || '',
