@@ -2,7 +2,8 @@ import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Waves, Users, Award, Calendar, ArrowRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
+import { GiSurfBoard, GiWaveSurfer, GiWaves, GiPalmTree, GiTrophy } from "react-icons/gi";
 import { HeroSlider } from "@/components/HeroSlider";
 
 export default function Landing() {
@@ -11,21 +12,21 @@ export default function Landing() {
       id: "beginner",
       title: "Principiante",
       description: "Inizia il tuo viaggio nel surf. Impara le basi, la sicurezza in acqua e le prime tecniche di remata.",
-      icon: Waves,
+      icon: GiSurfBoard,
       color: "from-chart-4/20 to-chart-4/5",
     },
     {
       id: "intermediate",
       title: "Intermedio",
       description: "Perfeziona la tua tecnica. Manovre avanzate, lettura delle onde e stile personale.",
-      icon: Users,
+      icon: GiWaveSurfer,
       color: "from-primary/20 to-primary/5",
     },
     {
       id: "advanced",
       title: "Avanzato",
       description: "Diventa un maestro del longboard. Nose riding, hang ten e competizioni.",
-      icon: Award,
+      icon: GiWaves,
       color: "from-chart-3/20 to-chart-3/5",
     },
   ];
@@ -53,8 +54,8 @@ export default function Landing() {
               return (
                 <Card key={level.id} className="group hover-elevate active-elevate-2 transition-all duration-300 border-2" data-testid={`card-level-${level.id}`}>
                   <CardContent className="p-6">
-                    <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${level.color} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
-                      <Icon className="h-8 w-8 text-primary" />
+                    <div className={`w-20 h-20 rounded-2xl bg-gradient-to-br ${level.color} flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300`}>
+                      <Icon className="h-10 w-10 text-primary" />
                     </div>
                     <h3 className="font-display font-semibold text-2xl mb-3">{level.title}</h3>
                     <p className="text-muted-foreground mb-4">{level.description}</p>
@@ -119,13 +120,17 @@ export default function Landing() {
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <Card className="p-6 text-center">
-                <Users className="h-12 w-12 text-primary mx-auto mb-3" />
+              <Card className="p-6 text-center hover-elevate transition-all duration-300">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center mx-auto mb-3">
+                  <GiWaveSurfer className="h-10 w-10 text-primary" />
+                </div>
                 <div className="font-display font-bold text-3xl mb-1">1000+</div>
                 <div className="text-sm text-muted-foreground">Surfisti</div>
               </Card>
-              <Card className="p-6 text-center">
-                <Award className="h-12 w-12 text-chart-4 mx-auto mb-3" />
+              <Card className="p-6 text-center hover-elevate transition-all duration-300">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-chart-4/20 to-chart-4/5 flex items-center justify-center mx-auto mb-3">
+                  <GiTrophy className="h-10 w-10 text-chart-4" />
+                </div>
                 <div className="font-display font-bold text-3xl mb-1">500+</div>
                 <div className="text-sm text-muted-foreground">Badge Ottenuti</div>
               </Card>
@@ -138,7 +143,9 @@ export default function Landing() {
       <section className="py-16 sm:py-24 bg-gradient-to-r from-primary to-chart-2 text-white" data-testid="section-surf-camp">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-4xl mx-auto text-center">
-            <Calendar className="h-16 w-16 mx-auto mb-6 opacity-90" />
+            <div className="w-24 h-24 rounded-3xl bg-white/10 backdrop-blur-sm flex items-center justify-center mx-auto mb-6 hover:scale-105 transition-transform duration-300">
+              <GiPalmTree className="h-16 w-16 opacity-90" />
+            </div>
             <h2 className="font-display font-bold text-3xl sm:text-4xl md:text-5xl mb-6">
               Vivi l'Esperienza Surf Camp
             </h2>
