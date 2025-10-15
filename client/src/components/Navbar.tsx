@@ -33,6 +33,7 @@ export function Navbar() {
     { href: "/surf-camp", label: "Surf Camp" },
     { href: "/community", label: "Community" },
     ...(isAuthenticated ? [{ href: "/dashboard", label: "Dashboard" }] : []),
+    ...(isAuthenticated && user?.isAdmin ? [{ href: "/admin", label: "Admin" }] : []),
   ];
 
   const transparentNav = isLandingPage && isOnHero && !isScrolled;
