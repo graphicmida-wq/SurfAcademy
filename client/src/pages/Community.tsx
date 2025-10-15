@@ -13,6 +13,8 @@ import { isUnauthorizedError } from "@/lib/authUtils";
 import { MessageSquare, Send, User, Clock } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { it } from "date-fns/locale";
+import { PageHeader } from "@/components/PageHeader";
+import { usePageHeader } from "@/hooks/usePageHeader";
 import type { Post, Comment, User as UserType } from "@shared/schema";
 
 export default function Community() {
@@ -26,6 +28,8 @@ export default function Community() {
   const { data: posts, isLoading } = useQuery<(Post & { user: UserType; _count: { comments: number } })[]>({
     queryKey: ["/api/posts", selectedLevel],
   });
+
+  const { data: pageHeader } = usePageHeader('community');
 
   const createPostMutation = useMutation({
     mutationFn: async (data: { title: string; content: string; level: string }) => {
@@ -82,17 +86,14 @@ export default function Community() {
   );
 
   return (
-    <div className="min-h-screen pt-36 pb-12">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="mb-12">
-          <h1 className="font-display font-bold text-4xl md:text-5xl mb-4" data-testid="text-community-title">
-            Community
-          </h1>
-          <p className="text-lg text-muted-foreground max-w-3xl">
-            Condividi la tua passione per il surf, chiedi consigli e discuti con altri surfisti.
-          </p>
-        </div>
+    <div className="min-h-screen">
+      <PageHeader 
+        imageUrl={pageHeader?.imageUrl || undefined}
+        title={pageHeader?.title || "Community"}
+        subtitle={pageHeader?.subtitle || "Condividi la tua passione per il surf, chiedi consigli e discuti con altri surfisti."}
+      />
+      
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Feed */}

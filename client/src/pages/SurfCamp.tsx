@@ -9,6 +9,8 @@ import { isUnauthorizedError } from "@/lib/authUtils";
 import { Calendar, MapPin, Users, Euro, Clock } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
+import { PageHeader } from "@/components/PageHeader";
+import { usePageHeader } from "@/hooks/usePageHeader";
 import type { SurfCamp as SurfCampType, CampRegistration } from "@shared/schema";
 
 export default function SurfCamp() {
@@ -23,6 +25,8 @@ export default function SurfCamp() {
     queryKey: ["/api/camp-registrations"],
     enabled: isAuthenticated,
   });
+
+  const { data: pageHeader } = usePageHeader('surf-camp');
 
   const registerMutation = useMutation({
     mutationFn: async (campId: string) => {
@@ -61,18 +65,14 @@ export default function SurfCamp() {
   };
 
   return (
-    <div className="min-h-screen pt-36 pb-12">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="mb-12 text-center">
-          <h1 className="font-display font-bold text-4xl md:text-5xl mb-4" data-testid="text-surf-camp-title">
-            Surf Camp
-          </h1>
-          <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-            Vivi un'esperienza indimenticabile nelle più belle location italiane. 
-            Settimane intensive di surf, lezioni con istruttori esperti e una community appassionata.
-          </p>
-        </div>
+    <div className="min-h-screen">
+      <PageHeader 
+        imageUrl={pageHeader?.imageUrl || undefined}
+        title={pageHeader?.title || "Surf Camp"}
+        subtitle={pageHeader?.subtitle || "Vivi un'esperienza indimenticabile nelle più belle location italiane. Settimane intensive di surf, lezioni con istruttori esperti e una community appassionata."}
+      />
+      
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
 
         {/* Camps Grid */}
         {isLoading ? (

@@ -9,6 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { LevelBadge } from "@/components/LevelBadge";
 import { Link } from "wouter";
 import { Play, Trophy, Target, Clock, Award, ArrowRight } from "lucide-react";
+import { PageHeader } from "@/components/PageHeader";
+import { usePageHeader } from "@/hooks/usePageHeader";
 import type { Enrollment, Course, Badge as BadgeType } from "@shared/schema";
 
 export default function Dashboard() {
@@ -43,6 +45,8 @@ export default function Dashboard() {
     enabled: isAuthenticated,
   });
 
+  const { data: pageHeader } = usePageHeader('dashboard');
+
   if (isLoading || !isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -55,17 +59,14 @@ export default function Dashboard() {
   const inProgressCourses = enrollments?.filter(e => e.progress > 0 && e.progress < 100) || [];
 
   return (
-    <div className="min-h-screen pt-36 pb-12">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Welcome Header */}
-        <div className="mb-12" data-testid="section-welcome">
-          <h1 className="font-display font-bold text-4xl md:text-5xl mb-2" data-testid="text-welcome">
-            Ciao, {user?.firstName || "Surfista"}!
-          </h1>
-          <p className="text-lg text-muted-foreground">
-            Continua il tuo percorso di apprendimento
-          </p>
-        </div>
+    <div className="min-h-screen">
+      <PageHeader 
+        imageUrl={pageHeader?.imageUrl || undefined}
+        title={pageHeader?.title || `Ciao, ${user?.firstName || "Surfista"}!`}
+        subtitle={pageHeader?.subtitle || "Continua il tuo percorso di apprendimento"}
+      />
+      
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">

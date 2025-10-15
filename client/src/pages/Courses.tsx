@@ -9,6 +9,8 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Card } from "@/components/ui/card";
 import { Search, Filter } from "lucide-react";
+import { PageHeader } from "@/components/PageHeader";
+import { usePageHeader } from "@/hooks/usePageHeader";
 import type { Course } from "@shared/schema";
 
 export default function Courses() {
@@ -24,6 +26,8 @@ export default function Courses() {
     queryKey: ["/api/courses"],
   });
 
+  const { data: pageHeader } = usePageHeader('courses');
+
   const filteredCourses = courses?.filter((course) => {
     const matchesLevel = selectedLevel === "all" || course.level === selectedLevel;
     const matchesFree = !showFreeOnly || course.isFree;
@@ -35,17 +39,14 @@ export default function Courses() {
   });
 
   return (
-    <div className="min-h-screen pt-36 pb-12">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="mb-12">
-          <h1 className="font-display font-bold text-4xl md:text-5xl mb-4" data-testid="text-courses-title">
-            Catalogo Corsi
-          </h1>
-          <p className="text-lg text-muted-foreground max-w-3xl">
-            Scopri i nostri corsi di surf e longboard. Trova il percorso perfetto per il tuo livello.
-          </p>
-        </div>
+    <div className="min-h-screen">
+      <PageHeader 
+        imageUrl={pageHeader?.imageUrl || undefined}
+        title={pageHeader?.title || "Catalogo Corsi"}
+        subtitle={pageHeader?.subtitle || "Scopri i nostri corsi di surf e longboard. Trova il percorso perfetto per il tuo livello."}
+      />
+      
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Filters Sidebar */}
