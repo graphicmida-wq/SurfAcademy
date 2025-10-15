@@ -55,7 +55,7 @@ export default function Dashboard() {
   const inProgressCourses = enrollments?.filter(e => e.progress > 0 && e.progress < 100) || [];
 
   return (
-    <div className="min-h-screen py-12">
+    <div className="min-h-screen pt-36 pb-12">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         {/* Welcome Header */}
         <div className="mb-12" data-testid="section-welcome">
