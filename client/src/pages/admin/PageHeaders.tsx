@@ -12,9 +12,8 @@ import { Loader2, Save } from "lucide-react";
 import type { PageHeader, CustomPage } from "@shared/schema";
 
 const STATIC_PAGES = [
-  { key: 'home', label: 'Home' },
-  { key: 'courses', label: 'Corsi' },
-  { key: 'surf-camp', label: 'Surf Camp' },
+  { key: 'courses', label: 'Corsi (lista)' },
+  { key: 'surf-camp', label: 'Surf Camp (lista)' },
   { key: 'community', label: 'Community' },
   { key: 'dashboard', label: 'Dashboard' }
 ];
@@ -31,11 +30,27 @@ export default function AdminPageHeaders() {
     queryKey: ['/api/custom-pages'],
   });
 
+  const { data: courses } = useQuery<any[]>({
+    queryKey: ['/api/courses'],
+  });
+
+  const { data: surfCamps } = useQuery<any[]>({
+    queryKey: ['/api/surf-camps'],
+  });
+
   const currentHeader = pageHeaders?.find(h => h.page === selectedPage);
 
-  // Combine static pages + custom pages
+  // Combine static pages + courses + surf camps + custom pages
   const allPages = [
     ...STATIC_PAGES,
+    ...(courses || []).map(course => ({
+      key: `course-${course.id}`,
+      label: `${course.title} (corso)`
+    })),
+    ...(surfCamps || []).map(camp => ({
+      key: `surf-camp-${camp.id}`,
+      label: `${camp.name} (camp)`
+    })),
     ...(customPages || []).map(page => ({
       key: page.slug,
       label: `${page.title} (custom)`
@@ -63,20 +78,52 @@ export default function AdminPageHeaders() {
         minHeight: currentHeader.minHeight || 'min-h-96'
       });
     } else {
-      // If no header exists, check if it's a custom page
-      const customPage = customPages?.find(p => p.slug === selectedPage);
-      if (customPage) {
-        setFormData({
-          imageUrl: customPage.headerImageUrl || '',
-          title: customPage.headerTitle || customPage.title || '',
-          subtitle: customPage.headerSubtitle || '',
-          paddingTop: 'py-16',
-          paddingBottom: 'py-24',
-          minHeight: 'min-h-96'
-        });
+      // If no header exists, try to pre-fill with content data
+      if (selectedPage.startsWith('course-')) {
+        const courseId = parseInt(selectedPage.replace('course-', ''));
+        const course = courses?.find(c => c.id === courseId);
+        if (course) {
+          setFormData({
+            imageUrl: course.imageUrl || '',
+            title: course.title || '',
+            subtitle: course.description || '',
+            paddingTop: 'py-16',
+            paddingBottom: 'py-24',
+            minHeight: 'min-h-96'
+          });
+          return;
+        }
+      } else if (selectedPage.startsWith('surf-camp-')) {
+        const campId = parseInt(selectedPage.replace('surf-camp-', ''));
+        const camp = surfCamps?.find(c => c.id === campId);
+        if (camp) {
+          setFormData({
+            imageUrl: camp.imageUrl || '',
+            title: camp.name || '',
+            subtitle: camp.description || '',
+            paddingTop: 'py-16',
+            paddingBottom: 'py-24',
+            minHeight: 'min-h-96'
+          });
+          return;
+        }
+      } else {
+        // Custom page
+        const customPage = customPages?.find(p => p.slug === selectedPage);
+        if (customPage) {
+          setFormData({
+            imageUrl: customPage.headerImageUrl || '',
+            title: customPage.headerTitle || customPage.title || '',
+            subtitle: customPage.headerSubtitle || '',
+            paddingTop: 'py-16',
+            paddingBottom: 'py-24',
+            minHeight: 'min-h-96'
+          });
+          return;
+        }
       }
     }
-  }, [currentHeader, customPages, selectedPage]);
+  }, [currentHeader, customPages, courses, surfCamps, selectedPage]);
 
   const updateMutation = useMutation({
     mutationFn: async (data: { imageUrl: string; title: string; subtitle: string; paddingTop: string; paddingBottom: string; minHeight: string }) => {
@@ -102,19 +149,49 @@ export default function AdminPageHeaders() {
     setSelectedPage(pageKey);
     const header = pageHeaders?.find(h => h.page === pageKey);
     
-    // If no header exists, check if it's a custom page and use its data as defaults
+    // If no header exists, check content type and use its data as defaults
     if (!header) {
-      const customPage = customPages?.find(p => p.slug === pageKey);
-      if (customPage) {
-        setFormData({
-          imageUrl: customPage.headerImageUrl || '',
-          title: customPage.headerTitle || customPage.title || '',
-          subtitle: customPage.headerSubtitle || '',
-          paddingTop: 'py-16',
-          paddingBottom: 'py-24',
-          minHeight: 'min-h-96'
-        });
-        return;
+      if (pageKey.startsWith('course-')) {
+        const courseId = parseInt(pageKey.replace('course-', ''));
+        const course = courses?.find(c => c.id === courseId);
+        if (course) {
+          setFormData({
+            imageUrl: course.imageUrl || '',
+            title: course.title || '',
+            subtitle: course.description || '',
+            paddingTop: 'py-16',
+            paddingBottom: 'py-24',
+            minHeight: 'min-h-96'
+          });
+          return;
+        }
+      } else if (pageKey.startsWith('surf-camp-')) {
+        const campId = parseInt(pageKey.replace('surf-camp-', ''));
+        const camp = surfCamps?.find(c => c.id === campId);
+        if (camp) {
+          setFormData({
+            imageUrl: camp.imageUrl || '',
+            title: camp.name || '',
+            subtitle: camp.description || '',
+            paddingTop: 'py-16',
+            paddingBottom: 'py-24',
+            minHeight: 'min-h-96'
+          });
+          return;
+        }
+      } else {
+        const customPage = customPages?.find(p => p.slug === pageKey);
+        if (customPage) {
+          setFormData({
+            imageUrl: customPage.headerImageUrl || '',
+            title: customPage.headerTitle || customPage.title || '',
+            subtitle: customPage.headerSubtitle || '',
+            paddingTop: 'py-16',
+            paddingBottom: 'py-24',
+            minHeight: 'min-h-96'
+          });
+          return;
+        }
       }
     }
     

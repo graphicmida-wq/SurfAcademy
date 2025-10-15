@@ -12,12 +12,15 @@ import { isUnauthorizedError } from "@/lib/authUtils";
 import { Play, Clock, Lock, CheckCircle2, Award } from "lucide-react";
 import type { Course, Module, Lesson } from "@shared/schema";
 import { PageHeader } from "@/components/PageHeader";
+import { usePageHeader } from "@/hooks/usePageHeader";
 
 export default function CourseDetail() {
   const { id } = useParams<{ id: string }>();
   const [, setLocation] = useLocation();
   const { isAuthenticated } = useAuth();
   const { toast } = useToast();
+  
+  const { data: pageHeader } = usePageHeader(`course-${id}`);
 
   const { data: course, isLoading: courseLoading } = useQuery<Course>({
     queryKey: [`/api/courses/${id}`],
@@ -80,12 +83,12 @@ export default function CourseDetail() {
   return (
     <div className="min-h-screen">
       <PageHeader
-        imageUrl={course.thumbnailUrl ?? undefined}
-        title={course.title}
-        subtitle={course.description ?? undefined}
-        paddingTop="py-16"
-        paddingBottom="py-24"
-        minHeight="min-h-96"
+        imageUrl={pageHeader?.imageUrl || course.thumbnailUrl || undefined}
+        title={pageHeader?.title || course.title}
+        subtitle={pageHeader?.subtitle || course.description || undefined}
+        paddingTop={pageHeader?.paddingTop || "py-16"}
+        paddingBottom={pageHeader?.paddingBottom || "py-24"}
+        minHeight={pageHeader?.minHeight || "min-h-96"}
       />
 
       {/* Course Info and Enrollment Card */}
