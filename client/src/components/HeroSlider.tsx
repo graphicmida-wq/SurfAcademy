@@ -114,7 +114,7 @@ export function HeroSlider() {
                   <img 
                     src={logoUrl} 
                     alt="Scuola di Longboard" 
-                    className="mx-auto mb-8 h-24 sm:h-32 md:h-40 w-auto drop-shadow-2xl"
+                    className="mx-auto mb-8 h-40 sm:h-52 md:h-64 w-auto drop-shadow-2xl"
                     data-testid={`img-logo-${slide.id}`}
                   />
                   
