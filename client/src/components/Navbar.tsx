@@ -28,6 +28,7 @@ export function Navbar() {
 
   const isLandingPage = location === "/";
   const isAdminPage = location.startsWith("/admin");
+  const hasPageHeader = !isAdminPage; // All non-admin pages have headers now
 
   const navLinks = [
     { href: "/", label: "Home" },
@@ -37,7 +38,7 @@ export function Navbar() {
     ...(isAuthenticated ? [{ href: "/dashboard", label: "Dashboard" }] : []),
   ];
 
-  const transparentNav = isLandingPage && isOnHero && !isScrolled;
+  const transparentNav = hasPageHeader && isOnHero && !isScrolled;
   const currentLogo = transparentNav ? logoLightUrl : logoUrl;
   const textColor = transparentNav ? "text-white" : "text-foreground";
   const textColorMuted = transparentNav ? "text-white/80" : "text-foreground/80";

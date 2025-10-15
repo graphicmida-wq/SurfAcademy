@@ -91,6 +91,9 @@ export default function Community() {
         imageUrl={pageHeader?.imageUrl || undefined}
         title={pageHeader?.title || "Community"}
         subtitle={pageHeader?.subtitle || "Condividi la tua passione per il surf, chiedi consigli e discuti con altri surfisti."}
+        paddingTop={pageHeader?.paddingTop || undefined}
+        paddingBottom={pageHeader?.paddingBottom || undefined}
+        minHeight={pageHeader?.minHeight || undefined}
       />
       
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">

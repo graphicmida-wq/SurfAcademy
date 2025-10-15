@@ -70,6 +70,9 @@ export default function SurfCamp() {
         imageUrl={pageHeader?.imageUrl || undefined}
         title={pageHeader?.title || "Surf Camp"}
         subtitle={pageHeader?.subtitle || "Vivi un'esperienza indimenticabile nelle più belle location italiane. Settimane intensive di surf, lezioni con istruttori esperti e una community appassionata."}
+        paddingTop={pageHeader?.paddingTop || undefined}
+        paddingBottom={pageHeader?.paddingBottom || undefined}
+        minHeight={pageHeader?.minHeight || undefined}
       />
       
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
