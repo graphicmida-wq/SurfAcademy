@@ -46,6 +46,24 @@ function Router() {
               </AdminLayout>
             ) : <NotFound />}
           </Route>
+          <Route path="/admin/page-headers">
+            {user?.isAdmin ? (
+              <AdminLayout>
+                <div className="py-20 text-center text-muted-foreground">
+                  Intestazioni Pagine - In sviluppo
+                </div>
+              </AdminLayout>
+            ) : <NotFound />}
+          </Route>
+          <Route path="/admin/pages">
+            {user?.isAdmin ? (
+              <AdminLayout>
+                <div className="py-20 text-center text-muted-foreground">
+                  Pagine Custom - In sviluppo
+                </div>
+              </AdminLayout>
+            ) : <NotFound />}
+          </Route>
           <Route path="/admin/surf-camp">
             {user?.isAdmin ? (
               <AdminLayout>

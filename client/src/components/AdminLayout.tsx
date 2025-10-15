@@ -12,7 +12,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { Sliders, Waves, BookOpen, Mail, Calendar, LayoutDashboard } from "lucide-react";
+import { Sliders, Waves, BookOpen, Mail, Calendar, LayoutDashboard, FileText, FilePlus2 } from "lucide-react";
 
 const adminMenuItems = [
   {
@@ -24,6 +24,16 @@ const adminMenuItems = [
     title: "Hero Slider",
     url: "/admin/slider",
     icon: Sliders,
+  },
+  {
+    title: "Intestazioni Pagine",
+    url: "/admin/page-headers",
+    icon: FileText,
+  },
+  {
+    title: "Pagine Custom",
+    url: "/admin/pages",
+    icon: FilePlus2,
   },
   {
     title: "Gestione Surf Camp",

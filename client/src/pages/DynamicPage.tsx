@@ -9,12 +9,12 @@ export default function DynamicPage() {
   const { slug } = useParams<{ slug: string }>();
 
   const { data: page, isLoading: pageLoading, error: pageError } = useQuery<CustomPage>({
-    queryKey: [`/api/custom-pages/slug/${slug}`],
+    queryKey: ['/api/custom-pages/slug', slug],
     enabled: !!slug,
   });
 
   const { data: blocks = [], isLoading: blocksLoading } = useQuery<PageBlock[]>({
-    queryKey: [`/api/custom-pages/${page?.id}/blocks`],
+    queryKey: page?.id ? ['/api/custom-pages', page.id, 'blocks'] : ['disabled-blocks'],
     enabled: !!page?.id,
   });
 
