@@ -1,4 +1,4 @@
-import type { Express } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
@@ -13,11 +13,34 @@ import {
   insertSurfCampSchema,
   insertCampRegistrationSchema,
   insertCertificateSchema,
+  insertHeroSlideSchema,
 } from "@shared/schema";
+import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
+import { ObjectAclPolicy, ObjectPermission } from "./objectAcl";
+import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // ========== Auth Setup ==========
   await setupAuth(app);
+
+  // ========== Middleware ==========
+  const objectStorageService = new ObjectStorageService();
+
+  const isAdmin = async (req: any, res: Response, next: NextFunction) => {
+    try {
+      if (!req.user?.claims?.sub) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      const user = await storage.getUser(req.user.claims.sub);
+      if (!user?.isAdmin) {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+      next();
+    } catch (error) {
+      console.error("Error checking admin status:", error);
+      res.status(500).json({ message: "Failed to verify admin status" });
+    }
+  };
 
   // ========== Auth Routes ==========
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
@@ -504,7 +527,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               </div>
             </div>
             <div class="date">
-              Rilasciato il ${new Date(certificate.issuedAt).toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })}
+              Rilasciato il ${new Date(certificate.issuedAt || new Date()).toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })}
             </div>
           </div>
         </body>
@@ -516,6 +539,127 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error viewing certificate:", error);
       res.status(500).json({ message: "Failed to view certificate" });
+    }
+  });
+
+  // ========== Hero Slide Routes ==========
+  app.get("/api/hero-slides", async (req, res) => {
+    try {
+      const slides = await storage.getActiveHeroSlides();
+      res.json(slides);
+    } catch (error) {
+      console.error("Error fetching hero slides:", error);
+      res.status(500).json({ message: "Failed to fetch hero slides" });
+    }
+  });
+
+  app.get("/api/admin/hero-slides", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const slides = await storage.getAllHeroSlides();
+      res.json(slides);
+    } catch (error) {
+      console.error("Error fetching all hero slides:", error);
+      res.status(500).json({ message: "Failed to fetch hero slides" });
+    }
+  });
+
+  app.post("/api/admin/hero-slides", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const validatedData = insertHeroSlideSchema.parse(req.body);
+      const slide = await storage.createHeroSlide(validatedData);
+      res.status(201).json(slide);
+    } catch (error) {
+      console.error("Error creating hero slide:", error);
+      res.status(400).json({ message: "Failed to create hero slide" });
+    }
+  });
+
+  app.patch("/api/admin/hero-slides/:id", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const validatedData = insertHeroSlideSchema.partial().parse(req.body);
+      const slide = await storage.updateHeroSlide(req.params.id, validatedData);
+      res.json(slide);
+    } catch (error) {
+      console.error("Error updating hero slide:", error);
+      res.status(400).json({ message: "Failed to update hero slide" });
+    }
+  });
+
+  app.delete("/api/admin/hero-slides/:id", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      await storage.deleteHeroSlide(req.params.id);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting hero slide:", error);
+      res.status(400).json({ message: "Failed to delete hero slide" });
+    }
+  });
+
+  app.put("/api/admin/hero-slides/reorder", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const reorderSchema = z.object({
+        slides: z.array(z.object({
+          id: z.string(),
+          orderIndex: z.number(),
+        })),
+      });
+      const { slides } = reorderSchema.parse(req.body);
+      await storage.reorderHeroSlides(slides);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error reordering hero slides:", error);
+      res.status(400).json({ message: "Failed to reorder hero slides" });
+    }
+  });
+
+  // ========== Object Storage Routes ==========
+  app.post("/api/object-storage/upload-url", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const uploadUrl = await objectStorageService.getObjectEntityUploadURL();
+      res.json({ url: uploadUrl });
+    } catch (error) {
+      console.error("Error generating upload URL:", error);
+      res.status(500).json({ message: "Failed to generate upload URL" });
+    }
+  });
+
+  app.post("/api/object-storage/set-acl", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { objectPath, aclPolicy } = req.body;
+      const normalizedPath = await objectStorageService.trySetObjectEntityAclPolicy(
+        objectPath,
+        aclPolicy as ObjectAclPolicy
+      );
+      res.json({ path: normalizedPath });
+    } catch (error) {
+      console.error("Error setting ACL policy:", error);
+      res.status(500).json({ message: "Failed to set ACL policy" });
+    }
+  });
+
+  app.get("/objects/*", async (req: any, res) => {
+    try {
+      const objectPath = `/${req.params[0]}`;
+      const objectFile = await objectStorageService.getObjectEntityFile(objectPath);
+      
+      const userId = req.user?.claims?.sub;
+      const canAccess = await objectStorageService.canAccessObjectEntity({
+        userId,
+        objectFile,
+        requestedPermission: ObjectPermission.READ,
+      });
+
+      if (!canAccess) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      await objectStorageService.downloadObject(objectFile, res);
+    } catch (error) {
+      if (error instanceof ObjectNotFoundError) {
+        return res.status(404).json({ message: "Object not found" });
+      }
+      console.error("Error downloading object:", error);
+      res.status(500).json({ message: "Failed to download object" });
     }
   });
 

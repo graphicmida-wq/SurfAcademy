@@ -36,6 +36,7 @@ export const users = pgTable("users", {
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
   userLevel: varchar("user_level").default("beginner"), // beginner, intermediate, advanced
+  isAdmin: boolean("is_admin").default(false),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -192,6 +193,24 @@ export const campRegistrations = pgTable("camp_registrations", {
 });
 
 // ============================================================================
+// HERO SLIDER MANAGEMENT
+// ============================================================================
+
+export const heroSlides = pgTable("hero_slides", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  type: varchar("type").notNull(), // image or video
+  mediaUrl: varchar("media_url").notNull(),
+  title: varchar("title", { length: 255 }),
+  subtitle: text("subtitle"),
+  ctaText: varchar("cta_text"),
+  ctaLink: varchar("cta_link"),
+  orderIndex: integer("order_index").notNull(),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// ============================================================================
 // RELATIONS
 // ============================================================================
 
@@ -328,6 +347,12 @@ export const insertCertificateSchema = createInsertSchema(certificates).omit({
   issuedAt: true,
 });
 
+export const insertHeroSlideSchema = createInsertSchema(heroSlides).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // ============================================================================
 // TYPES
 // ============================================================================
@@ -366,3 +391,6 @@ export type InsertCampRegistration = z.infer<typeof insertCampRegistrationSchema
 
 export type Certificate = typeof certificates.$inferSelect;
 export type InsertCertificate = z.infer<typeof insertCertificateSchema>;
+
+export type HeroSlide = typeof heroSlides.$inferSelect;
+export type InsertHeroSlide = z.infer<typeof insertHeroSlideSchema>;

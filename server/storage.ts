@@ -13,6 +13,7 @@ import {
   surfCamps,
   campRegistrations,
   certificates,
+  heroSlides,
   type User,
   type UpsertUser,
   type Course,
@@ -35,6 +36,8 @@ import {
   type InsertCampRegistration,
   type Certificate,
   type InsertCertificate,
+  type HeroSlide,
+  type InsertHeroSlide,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql } from "drizzle-orm";
@@ -101,6 +104,15 @@ export interface IStorage {
   getCertificateByUserAndCourse(userId: string, courseId: string): Promise<Certificate | undefined>;
   createCertificate(certificate: InsertCertificate): Promise<Certificate>;
   getCertificatesByUser(userId: string): Promise<(Certificate & { course: Course })[]>;
+  
+  // Hero slide operations
+  getAllHeroSlides(): Promise<HeroSlide[]>;
+  getActiveHeroSlides(): Promise<HeroSlide[]>;
+  getHeroSlide(id: string): Promise<HeroSlide | undefined>;
+  createHeroSlide(slide: InsertHeroSlide): Promise<HeroSlide>;
+  updateHeroSlide(id: string, slide: Partial<InsertHeroSlide>): Promise<HeroSlide>;
+  deleteHeroSlide(id: string): Promise<void>;
+  reorderHeroSlides(slides: { id: string; orderIndex: number }[]): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -421,6 +433,50 @@ export class DatabaseStorage implements IStorage {
       ...certificate,
       course,
     }));
+  }
+
+  // ========== Hero Slide Operations ==========
+  async getAllHeroSlides(): Promise<HeroSlide[]> {
+    return await db.select().from(heroSlides).orderBy(heroSlides.orderIndex);
+  }
+
+  async getActiveHeroSlides(): Promise<HeroSlide[]> {
+    return await db
+      .select()
+      .from(heroSlides)
+      .where(eq(heroSlides.isActive, true))
+      .orderBy(heroSlides.orderIndex);
+  }
+
+  async getHeroSlide(id: string): Promise<HeroSlide | undefined> {
+    const [slide] = await db.select().from(heroSlides).where(eq(heroSlides.id, id));
+    return slide;
+  }
+
+  async createHeroSlide(slide: InsertHeroSlide): Promise<HeroSlide> {
+    const [newSlide] = await db.insert(heroSlides).values(slide).returning();
+    return newSlide;
+  }
+
+  async updateHeroSlide(id: string, slide: Partial<InsertHeroSlide>): Promise<HeroSlide> {
+    const [updatedSlide] = await db
+      .update(heroSlides)
+      .set({ ...slide, updatedAt: new Date() })
+      .where(eq(heroSlides.id, id))
+      .returning();
+    return updatedSlide;
+  }
+
+  async deleteHeroSlide(id: string): Promise<void> {
+    await db.delete(heroSlides).where(eq(heroSlides.id, id));
+  }
+
+  async reorderHeroSlides(slides: { id: string; orderIndex: number }[]): Promise<void> {
+    await Promise.all(
+      slides.map(({ id, orderIndex }) =>
+        db.update(heroSlides).set({ orderIndex, updatedAt: new Date() }).where(eq(heroSlides.id, id))
+      )
+    );
   }
 }
 

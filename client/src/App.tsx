@@ -15,6 +15,7 @@ import CourseDetail from "@/pages/CourseDetail";
 import Dashboard from "@/pages/Dashboard";
 import Community from "@/pages/Community";
 import SurfCamp from "@/pages/SurfCamp";
+import Admin from "@/pages/Admin";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -34,6 +35,7 @@ function Router() {
           
           {/* Protected routes */}
           <Route path="/dashboard" component={Dashboard} />
+          <Route path="/admin" component={Admin} />
           
           {/* Fallback to 404 */}
           <Route component={NotFound} />

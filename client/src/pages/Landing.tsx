@@ -2,9 +2,8 @@ import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Waves, Users, Award, Calendar, ArrowRight, Play } from "lucide-react";
-import logoUrl from "@assets/web_logo_1760523001836.webp";
-import heroImageUrl from "@assets/535999700_1280076383904390_8637028697374410736_n_1760535684158.jpg";
+import { Waves, Users, Award, Calendar, ArrowRight } from "lucide-react";
+import { HeroSlider } from "@/components/HeroSlider";
 
 export default function Landing() {
   const levels = [
@@ -33,57 +32,8 @@ export default function Landing() {
 
   return (
     <div className="flex flex-col">
-      {/* Fullscreen Hero Section */}
-      <section className="relative min-h-screen flex items-center justify-center overflow-hidden" data-testid="section-hero">
-        {/* Hero Background Image */}
-        <div className="absolute inset-0">
-          <img 
-            src={heroImageUrl} 
-            alt="Surfista in azione" 
-            className="w-full h-full object-cover"
-          />
-        </div>
-        
-        {/* Gradient Overlay - più trasparente per vedere meglio i colori della foto */}
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/40 via-chart-2/30 to-primary/50" />
-
-        {/* Content */}
-        <div className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <img 
-            src={logoUrl} 
-            alt="Scuola di Longboard" 
-            className="mx-auto mb-8 h-32 sm:h-40 md:h-48 w-auto drop-shadow-2xl"
-            data-testid="img-logo"
-          />
-          
-          <h1 className="font-display font-bold text-4xl sm:text-5xl md:text-6xl lg:text-7xl text-white mb-6 drop-shadow-lg" data-testid="text-hero-title">
-            La prima vera scuola di SURF in Italia<br />dedicata al LONGBOARD.
-          </h1>
-          
-          <p className="text-lg sm:text-xl md:text-2xl text-white/90 mb-8 max-w-3xl mx-auto drop-shadow-md" data-testid="text-hero-subtitle">
-            Corsi online, esercizi propedeutici, community appassionata e surf camp in Italia
-          </p>
-          
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Button size="lg" variant="default" asChild className="bg-chart-3 hover:bg-chart-3/90 text-white border-0 text-lg px-8 py-6 rounded-full shadow-2xl" data-testid="button-start-free">
-              <Link href="/corsi" className="flex items-center gap-2">
-                <Play className="h-5 w-5" />
-                Inizia Gratis
-              </Link>
-            </Button>
-            <Button size="lg" variant="outline" asChild className="backdrop-blur-md bg-white/20 border-white/40 text-white hover:bg-white/30 text-lg px-8 py-6 rounded-full shadow-xl no-default-hover-elevate" data-testid="button-explore-courses">
-              <Link href="/corsi">Scopri i Corsi</Link>
-            </Button>
-          </div>
-        </div>
-
-        {/* Scroll Indicator */}
-        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
-          <div className="w-6 h-10 rounded-full border-2 border-white/60 flex items-start justify-center p-2">
-            <div className="w-1 h-3 bg-white/60 rounded-full" />
-          </div>
-        </div>
-      </section>
+      {/* Dynamic Hero Slider */}
+      <HeroSlider />
 
       {/* Levels Overview Section */}
       <section className="py-16 sm:py-24 bg-background" data-testid="section-levels">
