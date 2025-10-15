@@ -37,17 +37,12 @@ export default function Admin() {
   const { toast } = useToast();
   const [editingSlide, setEditingSlide] = useState<HeroSlide | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [localSlides, setLocalSlides] = useState<HeroSlide[]>([]);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
   const { data: slides = [], isLoading: slidesLoading } = useQuery<HeroSlide[]>({
     queryKey: ["/api/admin/hero-slides"],
     enabled: !!user?.isAdmin,
   });
-
-  useEffect(() => {
-    setLocalSlides(slides);
-  }, [slides]);
 
   const form = useForm<InsertHeroSlide>({
     resolver: zodResolver(insertHeroSlideSchema),
@@ -201,28 +196,20 @@ export default function Admin() {
     setDraggedIndex(index);
   };
 
-  const handleDragOver = (e: React.DragEvent, index: number) => {
+  const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
-    if (draggedIndex === null || draggedIndex === index) return;
-
-    const newSlides = [...localSlides];
-    const draggedSlide = newSlides[draggedIndex];
-    newSlides.splice(draggedIndex, 1);
-    newSlides.splice(index, 0, draggedSlide);
-
-    const reindexedSlides = newSlides.map((slide, idx) => ({
-      ...slide,
-      orderIndex: idx,
-    }));
-
-    setLocalSlides(reindexedSlides);
-    setDraggedIndex(index);
   };
 
-  const handleDragEnd = () => {
-    if (draggedIndex === null) return;
+  const handleDrop = (e: React.DragEvent, dropIndex: number) => {
+    e.preventDefault();
+    if (draggedIndex === null || draggedIndex === dropIndex) return;
 
-    const reorderedSlides = localSlides.map((slide, index) => ({
+    const newSlides = [...slides];
+    const draggedSlide = newSlides[draggedIndex];
+    newSlides.splice(draggedIndex, 1);
+    newSlides.splice(dropIndex, 0, draggedSlide);
+
+    const reorderedSlides = newSlides.map((slide, index) => ({
       id: slide.id,
       orderIndex: index,
     }));
@@ -429,7 +416,7 @@ export default function Admin() {
         <div className="flex items-center justify-center py-20">
           <Loader2 className="w-8 h-8 animate-spin text-primary" data-testid="loader-slides" />
         </div>
-      ) : localSlides.length === 0 ? (
+      ) : slides.length === 0 ? (
         <Card>
           <CardContent className="py-20 text-center">
             <p className="text-muted-foreground" data-testid="text-no-slides">
@@ -439,13 +426,13 @@ export default function Admin() {
         </Card>
       ) : (
         <div className="space-y-4">
-          {localSlides.map((slide, index) => (
+          {slides.map((slide, index) => (
             <Card
               key={slide.id}
               draggable
               onDragStart={() => handleDragStart(index)}
-              onDragOver={(e) => handleDragOver(e, index)}
-              onDragEnd={handleDragEnd}
+              onDragOver={handleDragOver}
+              onDrop={(e) => handleDrop(e, index)}
               className="cursor-move hover-elevate"
               data-testid={`card-slide-${slide.id}`}
             >
