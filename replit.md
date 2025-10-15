@@ -6,6 +6,28 @@ Scuola di Longboard is a comprehensive web-based learning management system (LMS
 
 The application is built as a full-stack TypeScript monorepo using React for the frontend, Express for the backend, and PostgreSQL (via Neon) for data persistence. It incorporates Replit's authentication system for user management and follows a modern, surf-culture-inspired design aesthetic with a turquoise and ocean-blue color palette.
 
+## Recent Changes (October 15, 2025)
+
+### Hero Slider Enhancement - Optional Logo System
+- **Removed fixed logo** from hero slider that was appearing on all slides
+- **Added optional per-slide logo** feature with full customization:
+  - `logoUrl`: Optional image upload for each slide (MediaUploadZone component)
+  - `logoSize`: Three size options (small: h-24-40, medium: h-32-52, large: h-48-72)
+  - `logoPosition`: Display logo before or after text content
+- **Admin interface updated** with new logo upload zone and size/position controls in dedicated section
+- **Database schema updated** with new columns: logo_url (nullable), logo_size (default 'medium'), logo_position (default 'before')
+- **Zod schema automatically updated** via createInsertSchema to include logo fields
+
+### Object Storage Bug Fix
+- **Fixed critical bug** in GET /objects/* endpoint that was preventing images from loading
+- Corrected path construction from `/${req.params[0]}` to `/objects/${req.params[0]}`
+- All uploaded images now serve correctly from Object Storage
+
+### UI Size Adjustments
+- **Hero slider logo sizes** increased 60%: h-40 sm:h-52 md:h-64 (was h-24 sm:h-32 md:h-40)
+- **Navbar logo size** increased 50%: h-24 (was h-16)
+- **Navbar height** adjusted to h-28 (was h-20) to accommodate larger logo
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.

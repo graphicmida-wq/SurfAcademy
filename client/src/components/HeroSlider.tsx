@@ -6,7 +6,6 @@ import type { HeroSlide } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import logoUrl from "@assets/web_logo_1760523001836.webp";
 import surferImageUrl from "@assets/535999700_1280076383904390_8637028697374410736_n_1760535684158.jpg";
 
 // Map database URLs to imported assets
@@ -60,12 +59,6 @@ export function HeroSlider() {
     return (
       <section className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/20 via-chart-2/10 to-primary/30" data-testid="section-hero-loading">
         <div className="container mx-auto px-4 text-center">
-          <img 
-            src={logoUrl} 
-            alt="Scuola di Longboard" 
-            className="mx-auto mb-8 h-32 sm:h-40 md:h-48 w-auto"
-            data-testid="img-logo-loading"
-          />
           <h1 className="font-display font-bold text-4xl sm:text-5xl md:text-6xl lg:text-7xl mb-6">
             Scuola di Longboard
           </h1>
@@ -111,12 +104,19 @@ export function HeroSlider() {
               {/* Content */}
               <div className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8 h-screen flex items-center justify-center">
                 <div className="text-center max-w-4xl">
-                  <img 
-                    src={logoUrl} 
-                    alt="Scuola di Longboard" 
-                    className="mx-auto mb-8 h-40 sm:h-52 md:h-64 w-auto drop-shadow-2xl"
-                    data-testid={`img-logo-${slide.id}`}
-                  />
+                  {/* Logo before text (if position is 'before') */}
+                  {slide.logoUrl && slide.logoPosition === 'before' && (
+                    <img 
+                      src={slide.logoUrl} 
+                      alt="Logo" 
+                      className={`mx-auto mb-8 w-auto drop-shadow-2xl ${
+                        slide.logoSize === 'small' ? 'h-24 sm:h-32 md:h-40' :
+                        slide.logoSize === 'large' ? 'h-48 sm:h-60 md:h-72' :
+                        'h-32 sm:h-40 md:h-52' // medium default
+                      }`}
+                      data-testid={`img-logo-${slide.id}`}
+                    />
+                  )}
                   
                   {slide.title && (
                     <h1 className="font-display font-bold text-4xl sm:text-5xl md:text-6xl lg:text-7xl text-white mb-6 drop-shadow-lg" data-testid={`slide-title-${slide.id}`}>
@@ -128,6 +128,20 @@ export function HeroSlider() {
                     <p className="text-lg sm:text-xl md:text-2xl text-white/90 mb-8 max-w-3xl mx-auto drop-shadow-md" data-testid={`slide-subtitle-${slide.id}`}>
                       {slide.subtitle}
                     </p>
+                  )}
+
+                  {/* Logo after text (if position is 'after') */}
+                  {slide.logoUrl && slide.logoPosition === 'after' && (
+                    <img 
+                      src={slide.logoUrl} 
+                      alt="Logo" 
+                      className={`mx-auto mb-8 w-auto drop-shadow-2xl ${
+                        slide.logoSize === 'small' ? 'h-24 sm:h-32 md:h-40' :
+                        slide.logoSize === 'large' ? 'h-48 sm:h-60 md:h-72' :
+                        'h-32 sm:h-40 md:h-52' // medium default
+                      }`}
+                      data-testid={`img-logo-${slide.id}`}
+                    />
                   )}
                   
                   {slide.ctaText && slide.ctaLink && (

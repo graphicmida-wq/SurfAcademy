@@ -53,6 +53,9 @@ export default function Admin() {
       subtitle: "",
       ctaText: "",
       ctaLink: "",
+      logoUrl: "",
+      logoSize: "medium",
+      logoPosition: "before",
       orderIndex: slides.length,
       isActive: true,
     },
@@ -130,6 +133,9 @@ export default function Admin() {
       subtitle: slide.subtitle || "",
       ctaText: slide.ctaText || "",
       ctaLink: slide.ctaLink || "",
+      logoUrl: slide.logoUrl || "",
+      logoSize: slide.logoSize || "medium",
+      logoPosition: slide.logoPosition || "before",
       orderIndex: slide.orderIndex,
       isActive: slide.isActive ?? true,
     });
@@ -147,6 +153,9 @@ export default function Admin() {
         subtitle: "",
         ctaText: "",
         ctaLink: "",
+        logoUrl: "",
+        logoSize: "medium",
+        logoPosition: "before",
         orderIndex: slides.length,
         isActive: true,
       });
@@ -333,6 +342,76 @@ export default function Admin() {
                     </FormItem>
                   )}
                 />
+
+                {/* Logo opzionale */}
+                <div className="border-t pt-4 mt-4">
+                  <h3 className="text-sm font-medium mb-4">Logo Opzionale</h3>
+                  
+                  <FormField
+                    control={form.control}
+                    name="logoUrl"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Logo (opzionale)</FormLabel>
+                        <FormControl>
+                          <MediaUploadZone
+                            currentUrl={field.value}
+                            onUploadComplete={field.onChange}
+                            userId={user?.id}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="grid grid-cols-2 gap-4 mt-4">
+                    <FormField
+                      control={form.control}
+                      name="logoSize"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Dimensione Logo</FormLabel>
+                          <Select value={field.value} onValueChange={field.onChange}>
+                            <FormControl>
+                              <SelectTrigger data-testid="select-logo-size">
+                                <SelectValue placeholder="Seleziona dimensione" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="small">Piccolo</SelectItem>
+                              <SelectItem value="medium">Medio</SelectItem>
+                              <SelectItem value="large">Grande</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="logoPosition"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Posizione Logo</FormLabel>
+                          <Select value={field.value} onValueChange={field.onChange}>
+                            <FormControl>
+                              <SelectTrigger data-testid="select-logo-position">
+                                <SelectValue placeholder="Seleziona posizione" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="before">Prima del testo</SelectItem>
+                              <SelectItem value="after">Dopo il testo</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
 
                 <FormField
                   control={form.control}

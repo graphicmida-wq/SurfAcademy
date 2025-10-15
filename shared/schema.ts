@@ -204,6 +204,9 @@ export const heroSlides = pgTable("hero_slides", {
   subtitle: text("subtitle"),
   ctaText: varchar("cta_text"),
   ctaLink: varchar("cta_link"),
+  logoUrl: varchar("logo_url"), // Optional logo image
+  logoSize: varchar("logo_size").default("medium"), // small, medium, large
+  logoPosition: varchar("logo_position").default("before"), // before or after text
   orderIndex: integer("order_index").notNull(),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
