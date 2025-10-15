@@ -54,7 +54,7 @@ export function Navbar() {
             className="flex items-center space-x-2 hover-elevate active-elevate-2 rounded-lg px-2 py-1 -ml-2" 
             data-testid="link-home"
           >
-            <img src={currentLogo} alt="Scuola di Longboard" className="h-12 w-auto" />
+            <img src={currentLogo} alt="Scuola di Longboard" className="h-16 w-auto" />
           </Link>
 
           {/* Desktop Navigation */}
