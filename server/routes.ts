@@ -639,7 +639,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/objects/*", async (req: any, res) => {
     try {
-      const objectPath = `/${req.params[0]}`;
+      const objectPath = `/objects/${req.params[0]}`;
       const objectFile = await objectStorageService.getObjectEntityFile(objectPath);
       
       const userId = req.user?.claims?.sub;
