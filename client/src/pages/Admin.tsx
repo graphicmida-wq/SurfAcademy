@@ -238,7 +238,7 @@ export default function Admin() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 pt-28 pb-8">
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-4xl font-bold" data-testid="text-admin-title">Gestione Hero Slides</h1>
         

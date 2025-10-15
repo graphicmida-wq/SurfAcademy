@@ -7,6 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import logoUrl from "@assets/web_logo_1760523001836.webp";
+import surferImageUrl from "@assets/535999700_1280076383904390_8637028697374410736_n_1760535684158.jpg";
+
+// Map database URLs to imported assets
+const assetMap: Record<string, string> = {
+  "@assets/535999700_1280076383904390_8637028697374410736_n_1760535684158.jpg": surferImageUrl,
+};
 
 export function HeroSlider() {
   const { data: slides = [], isLoading } = useQuery<HeroSlide[]>({
@@ -81,14 +87,14 @@ export function HeroSlider() {
               <div className="absolute inset-0">
                 {slide.type === "image" ? (
                   <img
-                    src={slide.mediaUrl}
+                    src={assetMap[slide.mediaUrl] || slide.mediaUrl}
                     alt={slide.title || "Hero slide"}
                     className="w-full h-full object-cover"
                     data-testid={`slide-image-${slide.id}`}
                   />
                 ) : (
                   <video
-                    src={slide.mediaUrl}
+                    src={assetMap[slide.mediaUrl] || slide.mediaUrl}
                     autoPlay
                     loop
                     muted
