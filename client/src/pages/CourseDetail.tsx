@@ -11,6 +11,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { Play, Clock, Lock, CheckCircle2, Award } from "lucide-react";
 import type { Course, Module, Lesson } from "@shared/schema";
+import { PageHeader } from "@/components/PageHeader";
 
 export default function CourseDetail() {
   const { id } = useParams<{ id: string }>();
@@ -78,93 +79,91 @@ export default function CourseDetail() {
 
   return (
     <div className="min-h-screen">
-      {/* Hero Section */}
-      <div className="relative bg-gradient-to-br from-primary/20 to-chart-2/20 py-16 sm:py-24" data-testid="section-course-hero">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2">
-              <div className="mb-4">
-                <LevelBadge level={course.level} className="text-base" />
+      <PageHeader
+        imageUrl={course.thumbnailUrl ?? undefined}
+        title={course.title}
+        subtitle={course.description ?? undefined}
+      />
+
+      {/* Course Info and Enrollment Card */}
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2">
+            <div className="mb-6">
+              <LevelBadge level={course.level} className="text-base" />
+            </div>
+            <div className="flex flex-wrap gap-6 text-sm mb-8">
+              <div className="flex items-center gap-2">
+                <Clock className="h-4 w-4 text-primary" />
+                <span>{course.duration} minuti totali</span>
               </div>
-              <h1 className="font-display font-bold text-4xl md:text-5xl mb-4" data-testid="text-course-title">
-                {course.title}
-              </h1>
-              <p className="text-lg text-muted-foreground mb-6" data-testid="text-course-description">
-                {course.description}
-              </p>
-              <div className="flex flex-wrap gap-4 text-sm">
-                <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-primary" />
-                  <span>{course.duration} minuti totali</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Play className="h-4 w-4 text-primary" />
-                  <span>{totalLessons} lezioni</span>
-                </div>
+              <div className="flex items-center gap-2">
+                <Play className="h-4 w-4 text-primary" />
+                <span>{totalLessons} lezioni</span>
               </div>
             </div>
+          </div>
 
-            <Card className="lg:sticky lg:top-20 h-fit">
-              <CardHeader>
-                <div className="aspect-video bg-muted rounded-lg overflow-hidden mb-4">
-                  {course.trailerUrl ? (
-                    <video src={course.trailerUrl} controls className="w-full h-full" />
-                  ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-primary/20 to-chart-2/20 flex items-center justify-center">
-                      <Play className="h-16 w-16 text-primary/40" />
-                    </div>
-                  )}
-                </div>
-                <CardTitle className="text-3xl font-display" data-testid="text-course-price">
-                  {course.isFree ? "Gratis" : `€${(course.price! / 100).toFixed(2)}`}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {course.isFree ? (
-                  <p className="text-sm text-muted-foreground">
-                    Questo corso è completamente gratuito. Inizia subito!
-                  </p>
-                ) : isEnrolled ? (
-                  <Badge className="w-full justify-center py-2 bg-chart-4 text-white border-0">
-                    <CheckCircle2 className="h-4 w-4 mr-2" />
-                    Iscritto
-                  </Badge>
-                ) : canEnroll ? (
-                  <Button
-                    className="w-full"
-                    size="lg"
-                    onClick={() => enrollMutation.mutate()}
-                    disabled={enrollMutation.isPending}
-                    data-testid="button-enroll-course"
-                  >
-                    {enrollMutation.isPending ? "Iscrizione..." : "Iscriviti al Corso"}
-                  </Button>
-                ) : !isAuthenticated ? (
-                  <Button className="w-full" size="lg" asChild data-testid="button-login-to-enroll">
-                    <a href="/api/login">Accedi per Iscriverti</a>
-                  </Button>
-                ) : null}
-
-                {course.instructorName && (
-                  <div className="pt-4 border-t">
-                    <p className="text-sm text-muted-foreground mb-2">Istruttore</p>
-                    <div className="flex items-center gap-3">
-                      {course.instructorAvatar && (
-                        <img
-                          src={course.instructorAvatar}
-                          alt={course.instructorName}
-                          className="h-12 w-12 rounded-full object-cover"
-                        />
-                      )}
-                      <div>
-                        <p className="font-medium">{course.instructorName}</p>
-                      </div>
-                    </div>
+          <Card className="lg:sticky lg:top-28 h-fit">
+            <CardHeader>
+              <div className="aspect-video bg-muted rounded-lg overflow-hidden mb-4">
+                {course.trailerUrl ? (
+                  <video src={course.trailerUrl} controls className="w-full h-full" />
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-br from-primary/20 to-chart-2/20 flex items-center justify-center">
+                    <Play className="h-16 w-16 text-primary/40" />
                   </div>
                 )}
-              </CardContent>
-            </Card>
-          </div>
+              </div>
+              <CardTitle className="text-3xl font-display" data-testid="text-course-price">
+                {course.isFree ? "Gratis" : `€${(course.price! / 100).toFixed(2)}`}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {course.isFree ? (
+                <p className="text-sm text-muted-foreground">
+                  Questo corso è completamente gratuito. Inizia subito!
+                </p>
+              ) : isEnrolled ? (
+                <Badge className="w-full justify-center py-2 bg-chart-4 text-white border-0">
+                  <CheckCircle2 className="h-4 w-4 mr-2" />
+                  Iscritto
+                </Badge>
+              ) : canEnroll ? (
+                <Button
+                  className="w-full"
+                  size="lg"
+                  onClick={() => enrollMutation.mutate()}
+                  disabled={enrollMutation.isPending}
+                  data-testid="button-enroll-course"
+                >
+                  {enrollMutation.isPending ? "Iscrizione..." : "Iscriviti al Corso"}
+                </Button>
+              ) : !isAuthenticated ? (
+                <Button className="w-full" size="lg" asChild data-testid="button-login-to-enroll">
+                  <a href="/api/login">Accedi per Iscriverti</a>
+                </Button>
+              ) : null}
+
+              {course.instructorName && (
+                <div className="pt-4 border-t">
+                  <p className="text-sm text-muted-foreground mb-2">Istruttore</p>
+                  <div className="flex items-center gap-3">
+                    {course.instructorAvatar && (
+                      <img
+                        src={course.instructorAvatar}
+                        alt={course.instructorName}
+                        className="h-12 w-12 rounded-full object-cover"
+                      />
+                    )}
+                    <div>
+                      <p className="font-medium">{course.instructorName}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
 

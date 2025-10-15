@@ -8,6 +8,35 @@ The application is built as a full-stack TypeScript monorepo using React for the
 
 ## Recent Changes (October 15, 2025)
 
+### Hybrid CMS System - Complete Implementation
+- **Implemented full hybrid CMS** with two complementary subsystems:
+  1. **PageHeaders System**: Customizable hero headers for existing pages (Courses, Surf Camp, Community, Dashboard)
+  2. **Custom Pages System**: Fully CMS-managed pages with block-based content builder
+
+- **Database Schema (3 tables)**:
+  - `page_headers`: Header customization for existing pages (page key, imageUrl, title, subtitle)
+  - `custom_pages`: Custom pages with SEO (slug, title, headerImageUrl, published, seoTitle, seoDescription)
+  - `page_blocks`: Composable blocks for custom pages (type, order, contentJson)
+
+- **Backend API (15+ routes)**:
+  - PageHeaders: GET /api/page-headers, GET /api/page-headers/:page, PUT /api/page-headers/:page
+  - Custom Pages: GET /api/custom-pages, GET /api/custom-pages/slug/:slug, POST/PUT/DELETE
+  - Page Blocks: GET/POST/PUT/DELETE blocks, PUT /api/page-blocks/reorder
+  - Security: Public API filters unpublished pages, 404 handling for missing records
+
+- **Frontend Components**:
+  - **PageHeader**: Reusable hero component with background image, title, subtitle overlay
+  - **Block Renderers**: TextBlock (HTML), ImageBlock (image+caption), CTABlock (call-to-action), GalleryBlock (multi-image), VideoBlock (embedded video)
+  - **DynamicPage**: Route /p/:slug for custom pages with SEO metadata
+  - **Integration**: PageHeader integrated in all existing pages + CourseDetail
+
+- **Initial Data**:
+  - 4 pageHeaders created for existing pages with Italian content
+  - Example custom page "Chi Siamo" (/p/chi-siamo) with 3 blocks demonstrating system
+  - All using existing object storage images
+
+- **Admin Menu**: Added "Intestazioni Pagine" and "Pagine Custom" entries (implementation pending)
+
 ### Hero Slider Enhancement - Optional Logo System
 - **Removed fixed logo** from hero slider that was appearing on all slides
 - **Added optional per-slide logo** feature with full customization:
