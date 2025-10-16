@@ -12,6 +12,7 @@ import { useState, useEffect } from "react";
 import { Loader2, Save, ArrowLeft, Plus, Trash2, GripVertical } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { CustomPage, PageBlock } from "@shared/schema";
+import { RichTextEditor } from "@/components/RichTextEditor";
 
 export default function CustomPageEditor() {
   const { id } = useParams<{ id?: string }>();
@@ -440,16 +441,12 @@ function BlockEditorItem({ block, index, isEditing, onEdit, onRemove, onMoveUp, 
 function BlockForm({ type, content, onChange }: { type: string; content: any; onChange: (content: any) => void }): JSX.Element | null {
   if (type === 'text') {
     return (
-      <div className="space-y-2">
-        <Label>Contenuto HTML</Label>
-        <Textarea
-          value={content.html || ''}
-          onChange={(e) => onChange({ html: e.target.value })}
-          rows={8}
-          placeholder="<h2>Titolo</h2><p>Il tuo contenuto HTML...</p>"
-          className="font-mono text-sm"
-        />
-      </div>
+      <RichTextEditor
+        html={content.html || ''}
+        typography={content.typography}
+        spacing={content.spacing}
+        onChange={onChange}
+      />
     );
   }
 
