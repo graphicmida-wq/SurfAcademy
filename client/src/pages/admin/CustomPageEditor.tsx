@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import type { CustomPage, PageBlock } from "@shared/schema";
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { ImageBlockEditor } from "@/components/ImageBlockEditor";
+import BannerBlockEditor from "@/components/BannerBlockEditor";
 
 export default function CustomPageEditor() {
   const { id } = useParams<{ id?: string }>();
@@ -357,6 +358,7 @@ export default function CustomPageEditor() {
                   <SelectContent>
                     <SelectItem value="text">Testo</SelectItem>
                     <SelectItem value="image">Immagine</SelectItem>
+                    <SelectItem value="banner">Banner</SelectItem>
                     <SelectItem value="cta">Call-to-Action</SelectItem>
                     <SelectItem value="gallery">Galleria</SelectItem>
                     <SelectItem value="video">Video</SelectItem>
@@ -453,6 +455,10 @@ function BlockForm({ type, content, onChange }: { type: string; content: any; on
 
   if (type === 'image') {
     return <ImageBlockEditor content={content} onChange={onChange} />;
+  }
+
+  if (type === 'banner') {
+    return <BannerBlockEditor content={content} onChange={onChange} />;
   }
 
   if (type === 'cta') {
@@ -566,6 +572,8 @@ function getDefaultContent(type: string): any {
       return { html: '<p>Il tuo contenuto qui...</p>' };
     case 'image':
       return { url: '', alt: '', caption: '' };
+    case 'banner':
+      return { variant: 'boxed', content: {}, cta: {} };
     case 'cta':
       return { title: '', description: '', buttonText: '', buttonUrl: '' };
     case 'gallery':
