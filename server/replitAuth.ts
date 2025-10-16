@@ -32,7 +32,7 @@ export function getSession() {
     tableName: "sessions",
   });
   
-  // Use secure cookies only in production (HTTPS), not in development (HTTP)
+  // Replit dev URLs use HTTPS, so we need secure cookies
   const isProduction = process.env.NODE_ENV === 'production';
   
   return session({
@@ -42,9 +42,9 @@ export function getSession() {
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      secure: isProduction,
+      secure: true, // Always use secure cookies (Replit uses HTTPS everywhere)
       maxAge: sessionTtl,
-      sameSite: isProduction ? 'none' : 'lax',
+      sameSite: 'lax', // Use 'lax' for better compatibility
     },
   });
 }
