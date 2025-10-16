@@ -165,6 +165,51 @@
       "duration": 240,
       "createdAt": "2025-10-15T10:32:28.284Z",
       "updatedAt": "2025-10-15T10:32:28.284Z"
+    },
+    {
+      "id": "6d0a22fd-bc9e-47d7-b868-da8446298730",
+      "title": "Surf per Principianti",
+      "description": "Impara le basi del surf con questo corso completo per principianti. Scopri come scegliere la tavola giusta, come remare efficacemente e come prendere le tue prime onde.",
+      "level": "beginner",
+      "thumbnailUrl": null,
+      "trailerUrl": null,
+      "isFree": true,
+      "price": 0,
+      "instructorName": "Marco Rossi",
+      "instructorAvatar": null,
+      "duration": 120,
+      "createdAt": "2025-10-16T09:22:41.101Z",
+      "updatedAt": "2025-10-16T09:22:41.101Z"
+    },
+    {
+      "id": "980e1996-025b-4718-8278-e48be1cbc5ac",
+      "title": "Tecniche Intermedie di Surf",
+      "description": "Perfeziona la tua tecnica con manovre avanzate come il cutback, il floater e il bottom turn. Corso per surfisti con esperienza di base.",
+      "level": "intermediate",
+      "thumbnailUrl": null,
+      "trailerUrl": null,
+      "isFree": false,
+      "price": 4900,
+      "instructorName": "Laura Bianchi",
+      "instructorAvatar": null,
+      "duration": 180,
+      "createdAt": "2025-10-16T09:22:41.533Z",
+      "updatedAt": "2025-10-16T09:22:41.533Z"
+    },
+    {
+      "id": "f418eb0f-77c0-4587-b751-1a96f71a2996",
+      "title": "Surf Avanzato e Performance",
+      "description": "Porta il tuo surf al livello successivo con tecniche di performance avanzate, aerial tricks e surfing in onde grandi.",
+      "level": "advanced",
+      "thumbnailUrl": null,
+      "trailerUrl": null,
+      "isFree": false,
+      "price": 9900,
+      "instructorName": "Alessio Marino",
+      "instructorAvatar": null,
+      "duration": 240,
+      "createdAt": "2025-10-16T09:22:42.474Z",
+      "updatedAt": "2025-10-16T09:22:42.474Z"
     }
   ],
   "surfCamps": [
@@ -206,6 +251,45 @@
       "availableSpots": 0,
       "imageUrl": null,
       "createdAt": "2025-10-15T10:32:28.831Z"
+    },
+    {
+      "id": "ce58936f-ff78-4956-9d7f-e4f086789703",
+      "title": "Surf Camp Liguria",
+      "description": "Una settimana intensiva di surf sulle migliori onde della Liguria. Include 10 lezioni, noleggio attrezzatura e alloggio.",
+      "location": "Varazze, Liguria",
+      "startDate": "2025-07-01T00:00:00.000Z",
+      "endDate": "2025-07-07T00:00:00.000Z",
+      "price": 59900,
+      "totalSpots": 12,
+      "availableSpots": 12,
+      "imageUrl": null,
+      "createdAt": "2025-10-16T09:22:44.789Z"
+    },
+    {
+      "id": "3e074401-fc77-46c9-aef5-001f024597d7",
+      "title": "Surf Camp Sardegna",
+      "description": "Vivi il surf nell'isola più bella d'Italia. 7 giorni di onde cristalline, spiagge paradisiache e istruttori esperti.",
+      "location": "Capo Mannu, Sardegna",
+      "startDate": "2025-08-15T00:00:00.000Z",
+      "endDate": "2025-08-22T00:00:00.000Z",
+      "price": 79900,
+      "totalSpots": 8,
+      "availableSpots": 3,
+      "imageUrl": null,
+      "createdAt": "2025-10-16T09:22:44.838Z"
+    },
+    {
+      "id": "d938e7df-8641-4f2d-a49c-8e8656935f95",
+      "title": "Surf Camp Toscana",
+      "description": "Surf e cultura nella splendida Toscana. Onde perfette per principianti e intermedi.",
+      "location": "Marina di Pisa, Toscana",
+      "startDate": "2025-06-20T00:00:00.000Z",
+      "endDate": "2025-06-26T00:00:00.000Z",
+      "price": 49900,
+      "totalSpots": 10,
+      "availableSpots": 0,
+      "imageUrl": null,
+      "createdAt": "2025-10-16T09:22:44.885Z"
     }
   ],
   "customPages": [
@@ -263,5 +347,5 @@
       "updatedAt": "2025-10-15T21:08:57.847Z"
     }
   ],
-  "exportedAt": "2025-10-16T09:22:35.126Z"
+  "exportedAt": "2025-10-16T10:11:45.964Z"
 }
