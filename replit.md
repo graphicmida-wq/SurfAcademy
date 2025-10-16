@@ -6,6 +6,15 @@ Scuola di Longboard is a comprehensive web-based learning management system (LMS
 
 The application is built as a full-stack TypeScript monorepo using React for the frontend, Express for the backend, and PostgreSQL (via Neon) for data persistence. It incorporates Replit's authentication system for user management and follows a modern, surf-culture-inspired design aesthetic with a turquoise and ocean-blue color palette.
 
+## Recent Changes (October 16, 2025)
+
+### Production Image Access Fix
+- **Fixed 401 Unauthorized errors** for images in production
+- Modified ACL logic in `server/objectAcl.ts` to allow public READ access by default when no ACL policy exists
+- This ensures backward compatibility for all uploaded images
+- Images are now accessible to all users without authentication while respecting explicit ACL policies
+- Re-exported production data with latest database content (9 courses, 6 surf camps, 2 hero slides, 4 page headers)
+
 ## Recent Changes (October 15, 2025)
 
 ### Hybrid CMS System - Complete Implementation
