@@ -1,4 +1,100 @@
 import { storage } from "./storage";
+import { neonConfig, Pool } from "@neondatabase/serverless";
+import { drizzle } from "drizzle-orm/neon-serverless";
+import ws from "ws";
+import { heroSlides, pageHeaders, courses, surfCamps, customPages, pageBlocks } from "../shared/schema";
+import { readFileSync, existsSync } from "fs";
+import { join } from "path";
+import { fileURLToPath } from "url";
+import { dirname } from "path";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+neonConfig.webSocketConstructor = ws;
+
+export async function seedProductionDatabase() {
+  // Only run in production
+  if (process.env.NODE_ENV !== "production") {
+    return;
+  }
+
+  const databaseUrl = process.env.DATABASE_URL;
+  if (!databaseUrl) {
+    console.error("❌ DATABASE_URL not set, skipping seed");
+    return;
+  }
+
+  const pool = new Pool({ connectionString: databaseUrl });
+  const db = drizzle(pool);
+
+  try {
+    console.log("🌱 Checking if production database needs seeding...");
+
+    // Check if database is already seeded
+    const existingSlides = await db.select().from(heroSlides);
+    if (existingSlides.length > 0) {
+      console.log("✅ Database already seeded");
+      await pool.end();
+      return;
+    }
+
+    // Check if data file exists
+    const dataPath = join(__dirname, "..", "scripts", "production-seed-data.json");
+    if (!existsSync(dataPath)) {
+      console.log("⚠️  No seed data file found, skipping seed");
+      await pool.end();
+      return;
+    }
+
+    // Read seed data
+    const seedData = JSON.parse(readFileSync(dataPath, "utf-8"));
+    console.log(`📦 Loading seed data from ${seedData.exportedAt}`);
+
+    // Seed hero slides
+    if (seedData.heroSlides?.length > 0) {
+      await db.insert(heroSlides).values(seedData.heroSlides);
+      console.log(`✅ Seeded ${seedData.heroSlides.length} hero slides`);
+    }
+
+    // Seed page headers
+    if (seedData.pageHeaders?.length > 0) {
+      await db.insert(pageHeaders).values(seedData.pageHeaders);
+      console.log(`✅ Seeded ${seedData.pageHeaders.length} page headers`);
+    }
+
+    // Seed courses
+    if (seedData.courses?.length > 0) {
+      await db.insert(courses).values(seedData.courses);
+      console.log(`✅ Seeded ${seedData.courses.length} courses`);
+    }
+
+    // Seed surf camps
+    if (seedData.surfCamps?.length > 0) {
+      await db.insert(surfCamps).values(seedData.surfCamps);
+      console.log(`✅ Seeded ${seedData.surfCamps.length} surf camps`);
+    }
+
+    // Seed custom pages
+    if (seedData.customPages?.length > 0) {
+      await db.insert(customPages).values(seedData.customPages);
+      console.log(`✅ Seeded ${seedData.customPages.length} custom pages`);
+    }
+
+    // Seed page blocks (depends on custom pages)
+    if (seedData.pageBlocks?.length > 0) {
+      await db.insert(pageBlocks).values(seedData.pageBlocks);
+      console.log(`✅ Seeded ${seedData.pageBlocks.length} page blocks`);
+    }
+
+    console.log("✨ Production database seeded successfully!");
+
+    await pool.end();
+  } catch (error) {
+    console.error("❌ Seed failed:", error);
+    await pool.end();
+  }
+}
 
 async function seed() {
   console.log("🌱 Seeding database...");
