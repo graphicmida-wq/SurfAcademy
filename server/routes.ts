@@ -32,10 +32,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   const isAdmin = async (req: any, res: Response, next: NextFunction) => {
     try {
-      if (!req.user?.claims?.sub) {
+      // Support both Replit Auth (req.user.claims.sub) and local auth (req.user.id)
+      const userId = req.user?.claims?.sub || req.user?.id;
+      
+      if (!userId) {
         return res.status(401).json({ message: "Not authenticated" });
       }
-      const user = await storage.getUser(req.user.claims.sub);
+      
+      const user = await storage.getUser(userId);
       if (!user?.isAdmin) {
         return res.status(403).json({ message: "Admin access required" });
       }
