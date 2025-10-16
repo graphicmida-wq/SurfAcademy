@@ -39,8 +39,8 @@ export async function seedProductionDatabase() {
       return;
     }
 
-    // Check if data file exists
-    const dataPath = join(__dirname, "..", "scripts", "production-seed-data.json");
+    // Check if data file exists (use process.cwd() to work in both dev and production)
+    const dataPath = join(process.cwd(), "scripts", "production-seed-data.json");
     if (!existsSync(dataPath)) {
       console.log("⚠️  No seed data file found, skipping seed");
       await pool.end();
@@ -253,9 +253,6 @@ async function seed() {
   }
 }
 
-seed()
-  .then(() => process.exit(0))
-  .catch((error) => {
-    console.error(error);
-    process.exit(1);
-  });
+// Legacy seed() function is available but not auto-executed
+// To run it manually: tsx server/seed.ts
+// Note: In production, seedProductionDatabase() is used instead

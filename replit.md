@@ -57,6 +57,74 @@ The application is built as a full-stack TypeScript monorepo using React for the
 - **Navbar logo size** increased 50%: h-24 (was h-16)
 - **Navbar height** adjusted to h-28 (was h-20) to accommodate larger logo
 
+## Production Database Seeding
+
+The platform includes an automated system to populate the production database with content from development. This ensures uploaded images, configured headers, and created content are available when publishing the app.
+
+### How It Works
+
+1. **Export Development Data** (run in development):
+   ```bash
+   tsx scripts/export-data.ts
+   ```
+   This exports the following data from your development database:
+   - Hero slider slides (images, text, CTAs, logos)
+   - Page headers (for all pages including custom course/camp pages)
+   - Courses (basic info - modules/lessons not included)
+   - Surf camps
+   - Custom pages with their content blocks
+
+2. **Data File**: Exported to `scripts/production-seed-data.json` (~11KB with current data)
+
+3. **Automatic Production Seed**: When the app starts in production (NODE_ENV=production):
+   - Checks if database is already seeded (looks for existing hero slides)
+   - If empty, loads data from `scripts/production-seed-data.json`
+   - Inserts all exported data into production database
+   - Runs only once (won't overwrite existing data)
+
+### Workflow for Publishing
+
+1. **In Development**:
+   - Upload images via admin panels
+   - Configure hero slides, page headers
+   - Create courses, surf camps, custom pages
+   - Run export: `tsx scripts/export-data.ts`
+   - Commit changes (includes the JSON file)
+
+2. **Publishing**:
+   - Click "Publish" button in Replit
+   - Production server starts and auto-seeds database
+   - All your content and images are live!
+
+3. **Updating Content**:
+   - Make changes in development
+   - Re-export: `tsx scripts/export-data.ts`
+   - Commit and re-publish
+   - **Note**: Production seed only runs on EMPTY database. To update existing production data, you'll need to manually clear the production database first or implement a migration strategy.
+
+### Technical Details
+
+**Files**:
+- `scripts/export-data.ts`: Export script for development data
+- `server/seed.ts`: Contains `seedProductionDatabase()` function
+- `server/index.ts`: Calls seed function on startup (production only)
+- `scripts/production-seed-data.json`: Committed data file
+
+**What's Included**:
+- ✅ Hero slides with images from Object Storage
+- ✅ Page headers (static pages + dynamic course/camp pages)
+- ✅ Courses (basic info only - for display in course list)
+- ✅ Surf camps
+- ✅ Custom pages + content blocks
+
+**What's NOT Included**:
+- ❌ Users (managed by Replit Auth)
+- ❌ Course modules/lessons (too much data, not needed for production display)
+- ❌ Enrollments/progress tracking
+- ❌ Community posts/comments
+
+**Object Storage**: Images are stored in Replit Object Storage (bucket ID in env vars). The same bucket is used in both development and production, so image URLs work seamlessly.
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
