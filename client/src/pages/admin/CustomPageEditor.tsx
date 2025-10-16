@@ -13,6 +13,7 @@ import { Loader2, Save, ArrowLeft, Plus, Trash2, GripVertical } from "lucide-rea
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { CustomPage, PageBlock } from "@shared/schema";
 import { RichTextEditor } from "@/components/RichTextEditor";
+import { ImageBlockEditor } from "@/components/ImageBlockEditor";
 
 export default function CustomPageEditor() {
   const { id } = useParams<{ id?: string }>();
@@ -451,34 +452,7 @@ function BlockForm({ type, content, onChange }: { type: string; content: any; on
   }
 
   if (type === 'image') {
-    return (
-      <div className="space-y-4">
-        <div className="space-y-2">
-          <Label>URL Immagine</Label>
-          <Input
-            value={content.imageUrl || ''}
-            onChange={(e) => onChange({ ...content, imageUrl: e.target.value })}
-            placeholder="/objects/uploads/..."
-          />
-        </div>
-        <div className="space-y-2">
-          <Label>Alt Text</Label>
-          <Input
-            value={content.alt || ''}
-            onChange={(e) => onChange({ ...content, alt: e.target.value })}
-            placeholder="Descrizione immagine"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label>Didascalia</Label>
-          <Input
-            value={content.caption || ''}
-            onChange={(e) => onChange({ ...content, caption: e.target.value })}
-            placeholder="Didascalia opzionale"
-          />
-        </div>
-      </div>
-    );
+    return <ImageBlockEditor content={content} onChange={onChange} />;
   }
 
   if (type === 'cta') {
@@ -591,7 +565,7 @@ function getDefaultContent(type: string): any {
     case 'text':
       return { html: '<p>Il tuo contenuto qui...</p>' };
     case 'image':
-      return { imageUrl: '', alt: '', caption: '' };
+      return { url: '', alt: '', caption: '' };
     case 'cta':
       return { title: '', description: '', buttonText: '', buttonUrl: '' };
     case 'gallery':
