@@ -229,6 +229,15 @@ export const pageHeaders = pgTable("page_headers", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Global spacing configuration for entire page
+export interface GlobalPageSpacing {
+  blockMarginTop?: string; // Default margin between blocks (top)
+  blockMarginBottom?: string; // Default margin between blocks (bottom)
+  blockPaddingTop?: string; // Default padding inside blocks (top)
+  blockPaddingBottom?: string; // Default padding inside blocks (bottom)
+  containerPadding?: string; // Default padding for container blocks
+}
+
 export const customPages = pgTable("custom_pages", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   slug: varchar("slug").unique().notNull(),
@@ -237,18 +246,230 @@ export const customPages = pgTable("custom_pages", {
   headerTitle: varchar("header_title", { length: 255 }),
   headerSubtitle: text("header_subtitle"),
   published: boolean("published").default(false),
+  menuLocation: varchar("menu_location").default("none"), // 'header', 'footer', 'none'
+  globalSpacing: jsonb("global_spacing").$type<GlobalPageSpacing>(),
   seoTitle: varchar("seo_title", { length: 255 }),
   seoDescription: text("seo_description"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// ============================================================================
+// PAGE BLOCK CONTENT TYPES (Must be defined before pageBlocks schema)
+// ============================================================================
+
+export interface BlockTypography {
+  fontFamily?: string;
+  fontSize?: string;
+  fontWeight?: string;
+  lineHeight?: string;
+  letterSpacing?: string;
+  color?: string;
+  textAlign?: string;
+}
+
+export interface BlockSpacing {
+  marginTop?: string;
+  marginBottom?: string;
+  marginLeft?: string;
+  marginRight?: string;
+  paddingTop?: string;
+  paddingBottom?: string;
+  paddingLeft?: string;
+  paddingRight?: string;
+}
+
+export interface TextBlockContent {
+  html: string;
+  typography?: BlockTypography;
+  spacing?: BlockSpacing;
+}
+
+export interface ImageBlockContent {
+  url: string;
+  alt?: string;
+  caption?: string;
+  link?: string;
+  dimensions?: {
+    width?: string;
+    height?: string;
+    aspectRatio?: string;
+  };
+  alignment?: 'left' | 'center' | 'right';
+  spacing?: BlockSpacing;
+}
+
+export interface BannerBlockContent {
+  variant: 'boxed' | 'fullwidth';
+  backgroundImage?: string;
+  backgroundColor?: string;
+  content?: {
+    title?: string;
+    subtitle?: string;
+    titleTypography?: Partial<BlockTypography>;
+    subtitleTypography?: Partial<BlockTypography>;
+  };
+  cta?: {
+    text?: string;
+    link?: string;
+    buttonStyle?: {
+      variant?: string;
+      size?: string;
+      backgroundColor?: string;
+      textColor?: string;
+    };
+  };
+  spacing?: BlockSpacing;
+}
+
+export interface GalleryBlockContent {
+  images: Array<{
+    url: string;
+    alt?: string;
+    caption?: string;
+  }>;
+  variant: 'carousel' | 'masonry' | 'grid';
+  columns?: number;
+  columnsTablet?: number;
+  columnsMobile?: number;
+  gap?: string;
+  itemsPerPage?: number;
+  autoplay?: boolean;
+  loop?: boolean;
+  showArrows?: boolean;
+  showDots?: boolean;
+  spacing?: BlockSpacing;
+}
+
+export interface CtaBlockContent {
+  text: string;
+  link: string;
+  buttonStyle?: {
+    variant?: string;
+    size?: string;
+    backgroundColor?: string;
+    textColor?: string;
+  };
+  alignment?: 'left' | 'center' | 'right';
+  spacing?: BlockSpacing;
+}
+
+export interface VideoBlockContent {
+  url: string;
+  thumbnail?: string;
+  caption?: string;
+  autoplay?: boolean;
+  loop?: boolean;
+  controls?: boolean;
+  dimensions?: {
+    width?: string;
+    height?: string;
+    aspectRatio?: string;
+  };
+  spacing?: BlockSpacing;
+}
+
+export interface ContainerBlockContent {
+  layout: 'columns' | 'rows';
+  columns?: number;
+  gap?: string;
+  children: Array<BlockContent>; // Forward reference
+  spacing?: BlockSpacing;
+}
+
+export type BlockContent = 
+  | ({ type: 'text' } & TextBlockContent)
+  | ({ type: 'image' } & ImageBlockContent)
+  | ({ type: 'banner' } & BannerBlockContent)
+  | ({ type: 'container' } & Omit<ContainerBlockContent, 'children'> & { children: BlockContent[] })
+  | ({ type: 'gallery' } & GalleryBlockContent)
+  | ({ type: 'cta' } & CtaBlockContent)
+  | ({ type: 'video' } & VideoBlockContent);
+
+// Page Blocks - Advanced Content Builder (Elementor-style)
+// Supported types: text, image, cta, gallery, video, banner, container
+// 
+// contentJson structure by type:
+// 
+// text: {
+//   type: 'text',
+//   html: string,
+//   typography?: { fontFamily?, fontSize?, fontWeight?, lineHeight?, letterSpacing?, color?, textAlign? },
+//   spacing?: { marginTop?, marginBottom?, marginLeft?, marginRight?, paddingTop?, paddingBottom?, paddingLeft?, paddingRight? }
+// }
+// 
+// image: {
+//   type: 'image',
+//   url: string,
+//   alt?: string,
+//   caption?: string,
+//   link?: string,
+//   dimensions?: { width?, height?, aspectRatio? },
+//   alignment?: 'left' | 'center' | 'right',
+//   spacing?: { marginTop?, marginBottom?, marginLeft?, marginRight?, paddingTop?, paddingBottom?, paddingLeft?, paddingRight? }
+// }
+// 
+// cta: {
+//   type: 'cta',
+//   text: string,
+//   link: string,
+//   buttonStyle?: { variant?, size?, backgroundColor?, textColor? },
+//   alignment?: 'left' | 'center' | 'right',
+//   spacing?: { marginTop?, marginBottom?, marginLeft?, marginRight?, paddingTop?, paddingBottom?, paddingLeft?, paddingRight? }
+// }
+// 
+// video: {
+//   type: 'video',
+//   url: string,
+//   thumbnail?: string,
+//   caption?: string,
+//   autoplay?: boolean,
+//   loop?: boolean,
+//   controls?: boolean,
+//   dimensions?: { width?, height?, aspectRatio? },
+//   spacing?: { marginTop?, marginBottom?, marginLeft?, marginRight?, paddingTop?, paddingBottom?, paddingLeft?, paddingRight? }
+// }
+// 
+// banner: {
+//   type: 'banner',
+//   variant: 'boxed' | 'fullwidth',
+//   backgroundImage?: string,
+//   backgroundColor?: string,
+//   content?: { title?, subtitle?, titleTypography?, subtitleTypography? },
+//   cta?: { text?, link?, buttonStyle? },
+//   spacing?: { paddingTop?, paddingBottom?, paddingLeft?, paddingRight?, marginTop?, marginBottom? }
+// }
+// 
+// container: {
+//   type: 'container',
+//   layout: 'columns' | 'rows',
+//   columns?: number,
+//   gap?: string,
+//   children: Array<BlockContent>, // Strongly typed nested blocks
+//   spacing?: { marginTop?, marginBottom?, marginLeft?, marginRight?, paddingTop?, paddingBottom?, paddingLeft?, paddingRight? }
+// }
+// 
+// gallery: {
+//   type: 'gallery',
+//   images: Array<{ url, alt?, caption? }>,
+//   variant: 'carousel' | 'masonry' | 'grid',
+//   columns?: number,
+//   columnsTablet?: number,
+//   columnsMobile?: number,
+//   gap?: string,
+//   itemsPerPage?: number,
+//   autoplay?: boolean,
+//   loop?: boolean,
+//   showArrows?: boolean,
+//   showDots?: boolean,
+//   spacing?: { marginTop?, marginBottom?, marginLeft?, marginRight?, paddingTop?, paddingBottom?, paddingLeft?, paddingRight? }
+// }
 export const pageBlocks = pgTable("page_blocks", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   customPageId: varchar("custom_page_id").notNull().references(() => customPages.id, { onDelete: 'cascade' }),
-  type: varchar("type").notNull(), // text, image, cta, gallery, video
+  type: varchar("type").notNull(), // text, image, cta, gallery, video, banner, container
   orderIndex: integer("order_index").notNull(),
-  contentJson: jsonb("content_json").notNull(),
+  contentJson: jsonb("content_json").notNull(), // Type-safe via BlockContent interface
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

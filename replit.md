@@ -24,11 +24,22 @@ PostgreSQL, hosted on Neon, is the primary database, accessed via the `@neondata
 
 ### Authentication & Authorization
 
-Replit Auth (OpenID Connect) handles user authentication using a Passport.js strategy. Session management uses Express sessions stored in PostgreSQL with secure HTTP-only cookies. The `users` table stores profile data synced from Replit Auth. The `isAuthenticated` middleware protects API routes. Authorization is supported via a `userLevel` field. Security measures include `httpOnly` and `secure` cookie flags, and CSRF protection.
+The platform supports **dual authentication**: Replit Auth (OpenID Connect) and local email/password authentication. Both systems use Passport.js strategies. Session management uses Express sessions stored in PostgreSQL with secure HTTP-only cookies. The `users` table stores profile data from both auth methods. The `isAuthenticated` and `isAdmin` middleware support both auth types using the pattern: `req.user?.claims?.sub || req.user?.id`. Authorization is supported via `userLevel` and `isAdmin` fields. Admin users can access all content regardless of creator. Security measures include `httpOnly` and `secure` cookie flags, password hashing with bcrypt, and CSRF protection.
 
 ### UI/UX Decisions
 
-The design features a surf-culture aesthetic with a turquoise and ocean-blue color palette. Hero sliders and page headers are customizable, supporting images, titles, subtitles, and optional logos with size and position controls. A hybrid CMS system allows for fully customizable pages with block-based content (text, image, CTA, gallery, video). Typography uses Montserrat for headers and Inter for body text.
+The design features a surf-culture aesthetic with a turquoise and ocean-blue color palette. Hero sliders and page headers are customizable, supporting images, titles, subtitles, and optional logos with size and position controls. 
+
+**Advanced Page Builder CMS**: Custom pages now feature a professional page builder system similar to Elementor/WordPress with:
+- **Menu Integration**: Pages can be published to header menu, footer menu, or kept hidden
+- **Text Blocks**: Visual editor with full typography controls (font family, size, weight, line-height, letter-spacing, color, alignment) and spacing/padding controls
+- **Image Blocks**: File upload support with dimension controls, aspect ratios, and alignment options
+- **Banner Blocks**: Boxed and fullwidth variants with background images/colors and CTA support
+- **Layout Containers**: Column and row-based layouts with configurable gap and spacing
+- **Gallery Blocks**: Multiple variants (carousel, masonry, grid) with controls for columns, spacing, and item limits
+- **Spacing System**: Global padding/margin controls between all blocks
+
+Typography uses Montserrat for headers and Inter for body text.
 
 ### Technical Implementations
 
