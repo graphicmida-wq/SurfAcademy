@@ -2,6 +2,7 @@ import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
+import bcrypt from "bcrypt";
 import {
   insertCourseSchema,
   insertModuleSchema,
@@ -48,12 +49,88 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ========== Auth Routes ==========
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      // Support both Replit Auth (req.user.claims.sub) and local auth (req.user.id)
+      const userId = req.user?.claims?.sub || req.user?.id;
       const user = await storage.getUser(userId);
       res.json(user);
     } catch (error) {
       console.error("Error fetching user:", error);
       res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
+
+  // Local registration endpoint
+  app.post('/api/register', async (req, res) => {
+    try {
+      const { email, password, firstName, lastName } = req.body;
+      
+      if (!email || !password) {
+        return res.status(400).json({ message: "Email e password sono obbligatori" });
+      }
+
+      // Check if user already exists
+      const existingUser = await storage.getUserByEmail(email);
+      if (existingUser) {
+        return res.status(400).json({ message: "Email già registrata" });
+      }
+
+      // Hash password
+      const hashedPassword = await bcrypt.hash(password, 10);
+      
+      // Create user
+      const userId = crypto.randomUUID();
+      await storage.upsertUser({
+        id: userId,
+        email,
+        password: hashedPassword,
+        firstName: firstName || null,
+        lastName: lastName || null,
+      });
+
+      // Create session
+      (req as any).login({ id: userId }, (err: any) => {
+        if (err) {
+          return res.status(500).json({ message: "Errore durante il login" });
+        }
+        res.json({ success: true, message: "Registrazione completata" });
+      });
+    } catch (error) {
+      console.error("Registration error:", error);
+      res.status(500).json({ message: "Errore durante la registrazione" });
+    }
+  });
+
+  // Local login endpoint
+  app.post('/api/local-login', async (req, res) => {
+    try {
+      const { email, password } = req.body;
+      
+      if (!email || !password) {
+        return res.status(400).json({ message: "Email e password sono obbligatori" });
+      }
+
+      // Find user
+      const user = await storage.getUserByEmail(email);
+      if (!user || !user.password) {
+        return res.status(401).json({ message: "Credenziali non valide" });
+      }
+
+      // Verify password
+      const validPassword = await bcrypt.compare(password, user.password);
+      if (!validPassword) {
+        return res.status(401).json({ message: "Credenziali non valide" });
+      }
+
+      // Create session
+      (req as any).login({ id: user.id }, (err: any) => {
+        if (err) {
+          return res.status(500).json({ message: "Errore durante il login" });
+        }
+        res.json({ success: true, message: "Login effettuato" });
+      });
+    } catch (error) {
+      console.error("Login error:", error);
+      res.status(500).json({ message: "Errore durante il login" });
     }
   });
 
