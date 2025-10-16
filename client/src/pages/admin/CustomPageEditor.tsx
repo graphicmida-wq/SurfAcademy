@@ -15,6 +15,7 @@ import type { CustomPage, PageBlock } from "@shared/schema";
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { ImageBlockEditor } from "@/components/ImageBlockEditor";
 import BannerBlockEditor from "@/components/BannerBlockEditor";
+import ContainerBlockEditor from "@/components/ContainerBlockEditor";
 
 export default function CustomPageEditor() {
   const { id } = useParams<{ id?: string }>();
@@ -359,6 +360,7 @@ export default function CustomPageEditor() {
                     <SelectItem value="text">Testo</SelectItem>
                     <SelectItem value="image">Immagine</SelectItem>
                     <SelectItem value="banner">Banner</SelectItem>
+                    <SelectItem value="container">Container/Layout</SelectItem>
                     <SelectItem value="cta">Call-to-Action</SelectItem>
                     <SelectItem value="gallery">Galleria</SelectItem>
                     <SelectItem value="video">Video</SelectItem>
@@ -459,6 +461,10 @@ function BlockForm({ type, content, onChange }: { type: string; content: any; on
 
   if (type === 'banner') {
     return <BannerBlockEditor content={content} onChange={onChange} />;
+  }
+
+  if (type === 'container') {
+    return <ContainerBlockEditor content={content} onChange={onChange} />;
   }
 
   if (type === 'cta') {
@@ -574,6 +580,8 @@ function getDefaultContent(type: string): any {
       return { url: '', alt: '', caption: '' };
     case 'banner':
       return { variant: 'boxed', content: {}, cta: {} };
+    case 'container':
+      return { layout: 'columns', columns: 2, gap: '1rem', children: [] };
     case 'cta':
       return { title: '', description: '', buttonText: '', buttonUrl: '' };
     case 'gallery':
