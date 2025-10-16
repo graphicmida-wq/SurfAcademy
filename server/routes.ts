@@ -744,7 +744,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ========== Custom Page Routes ==========
   app.get("/api/custom-pages", async (req, res) => {
     try {
-      const isAdmin = (req.user as any)?.isAdmin === true;
+      // Support both Replit Auth and local auth
+      const userId = (req.user as any)?.claims?.sub || (req.user as any)?.id;
+      let isAdmin = false;
+      
+      if (userId) {
+        const user = await storage.getUser(userId);
+        isAdmin = user?.isAdmin === true;
+      }
+      
       const publishedOnly = !isAdmin;
       const pages = await storage.getAllCustomPages(publishedOnly);
       res.json(pages);
