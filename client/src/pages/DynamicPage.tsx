@@ -3,7 +3,7 @@ import { useParams } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { PageHeader } from "@/components/PageHeader";
 import { usePageHeader } from "@/hooks/usePageHeader";
-import { TextBlock, ImageBlock, CTABlock, GalleryBlock, VideoBlock } from "@/components/PageBlocks";
+import { TextBlock, ImageBlock, CTABlock, GalleryBlock, VideoBlock, BannerBlock, ContainerBlock } from "@/components/PageBlocks";
 import type { CustomPage, PageBlock } from "@shared/schema";
 
 export default function DynamicPage() {
@@ -69,6 +69,10 @@ export default function DynamicPage() {
         return <TextBlock key={block.id} content={content} />;
       case 'image':
         return <ImageBlock key={block.id} content={content} />;
+      case 'banner':
+        return <BannerBlock key={block.id} content={content} />;
+      case 'container':
+        return <ContainerBlock key={block.id} content={content} />;
       case 'cta':
         return <CTABlock key={block.id} content={content} />;
       case 'gallery':

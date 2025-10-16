@@ -31,8 +31,16 @@ export default function CustomPageEditor() {
     headerTitle: '',
     headerSubtitle: '',
     published: false,
+    menuLocation: 'none',
     seoTitle: '',
-    seoDescription: ''
+    seoDescription: '',
+    globalSpacing: {
+      blockMarginTop: '',
+      blockMarginBottom: '',
+      blockPaddingTop: '',
+      blockPaddingBottom: '',
+      containerPadding: ''
+    }
   });
 
   const [blocks, setBlocks] = useState<any[]>([]);
@@ -57,8 +65,16 @@ export default function CustomPageEditor() {
         headerTitle: page.headerTitle || '',
         headerSubtitle: page.headerSubtitle || '',
         published: page.published === true,
+        menuLocation: page.menuLocation || 'none',
         seoTitle: page.seoTitle || '',
-        seoDescription: page.seoDescription || ''
+        seoDescription: page.seoDescription || '',
+        globalSpacing: page.globalSpacing || {
+          blockMarginTop: '',
+          blockMarginBottom: '',
+          blockPaddingTop: '',
+          blockPaddingBottom: '',
+          containerPadding: ''
+        }
       });
     }
   }, [page]);
@@ -274,6 +290,26 @@ export default function CustomPageEditor() {
                   data-testid="switch-published"
                 />
               </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="menu-location">Posizione nel Menu</Label>
+                <Select
+                  value={formData.menuLocation || 'none'}
+                  onValueChange={(value) => setFormData({ ...formData, menuLocation: value })}
+                >
+                  <SelectTrigger id="menu-location" data-testid="select-menu-location">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Nessun menu (solo URL)</SelectItem>
+                    <SelectItem value="header">Menu Header</SelectItem>
+                    <SelectItem value="footer">Menu Footer</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Scegli dove mostrare il link alla pagina nel sito
+                </p>
+              </div>
             </CardContent>
           </Card>
 
@@ -342,6 +378,99 @@ export default function CustomPageEditor() {
                   rows={3}
                   data-testid="input-seo-description"
                 />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Spacing Globale</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-muted-foreground mb-3">
+                Imposta spaziatura predefinita applicata a tutti i blocchi della pagina.
+              </p>
+              
+              <div className="space-y-3">
+                <p className="text-sm font-medium">Margin tra blocchi</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1">
+                    <Label className="text-xs">Top</Label>
+                    <Input
+                      type="text"
+                      placeholder="es. 2rem"
+                      value={formData.globalSpacing?.blockMarginTop || ''}
+                      onChange={(e) => setFormData({
+                        ...formData,
+                        globalSpacing: { ...formData.globalSpacing, blockMarginTop: e.target.value }
+                      })}
+                      data-testid="input-global-block-margin-top"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Bottom</Label>
+                    <Input
+                      type="text"
+                      placeholder="es. 2rem"
+                      value={formData.globalSpacing?.blockMarginBottom || ''}
+                      onChange={(e) => setFormData({
+                        ...formData,
+                        globalSpacing: { ...formData.globalSpacing, blockMarginBottom: e.target.value }
+                      })}
+                      data-testid="input-global-block-margin-bottom"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <p className="text-sm font-medium">Padding dentro blocchi</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1">
+                    <Label className="text-xs">Top</Label>
+                    <Input
+                      type="text"
+                      placeholder="es. 1rem"
+                      value={formData.globalSpacing?.blockPaddingTop || ''}
+                      onChange={(e) => setFormData({
+                        ...formData,
+                        globalSpacing: { ...formData.globalSpacing, blockPaddingTop: e.target.value }
+                      })}
+                      data-testid="input-global-block-padding-top"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Bottom</Label>
+                    <Input
+                      type="text"
+                      placeholder="es. 1rem"
+                      value={formData.globalSpacing?.blockPaddingBottom || ''}
+                      onChange={(e) => setFormData({
+                        ...formData,
+                        globalSpacing: { ...formData.globalSpacing, blockPaddingBottom: e.target.value }
+                      })}
+                      data-testid="input-global-block-padding-bottom"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="container-padding">Container Padding</Label>
+                <Input
+                  id="container-padding"
+                  type="text"
+                  placeholder="es. 1.5rem"
+                  value={formData.globalSpacing?.containerPadding || ''}
+                  onChange={(e) => setFormData({
+                    ...formData,
+                    globalSpacing: { ...formData.globalSpacing, containerPadding: e.target.value }
+                  })}
+                  data-testid="input-global-container-padding"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Padding predefinito per blocchi container/layout
+                </p>
               </div>
             </CardContent>
           </Card>
