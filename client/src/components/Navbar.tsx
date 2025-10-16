@@ -140,9 +140,9 @@ export function Navbar() {
                 asChild 
                 className={transparentNav ? "bg-white text-primary hover:bg-white/90" : ""}
               >
-                <a href="/api/login" data-testid="button-login">
+                <Link href="/login" data-testid="button-login">
                   Accedi
-                </a>
+                </Link>
               </Button>
             )}
           </div>
@@ -210,13 +210,13 @@ export function Navbar() {
                   </a>
                 </>
               ) : (
-                <a
-                  href="/api/login"
+                <Link
+                  href="/login"
                   className="px-3 py-2 text-base font-medium rounded-md bg-primary text-primary-foreground hover-elevate active-elevate-2"
                   data-testid="mobile-button-login"
                 >
                   Accedi
-                </a>
+                </Link>
               )}
             </div>
           </div>

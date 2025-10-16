@@ -16,6 +16,7 @@ import Dashboard from "@/pages/Dashboard";
 import Community from "@/pages/Community";
 import SurfCamp from "@/pages/SurfCamp";
 import DynamicPage from "@/pages/DynamicPage";
+import LocalAuth from "@/pages/LocalAuth";
 import AdminDashboard from "@/pages/admin/Dashboard";
 import AdminHeroSlider from "@/pages/admin/HeroSlider";
 import AdminPageHeaders from "@/pages/admin/PageHeaders";
@@ -130,6 +131,10 @@ function Router() {
           <Route path="/corsi/:id" component={CourseDetail} />
           <Route path="/surf-camp" component={SurfCamp} />
           <Route path="/community" component={Community} />
+          
+          {/* Auth routes */}
+          <Route path="/login" component={LocalAuth} />
+          <Route path="/register" component={LocalAuth} />
           
           {/* Protected routes */}
           <Route path="/dashboard" component={Dashboard} />
