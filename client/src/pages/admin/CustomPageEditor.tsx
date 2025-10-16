@@ -16,6 +16,7 @@ import { RichTextEditor } from "@/components/RichTextEditor";
 import { ImageBlockEditor } from "@/components/ImageBlockEditor";
 import BannerBlockEditor from "@/components/BannerBlockEditor";
 import ContainerBlockEditor from "@/components/ContainerBlockEditor";
+import GalleryBlockEditor from "@/components/GalleryBlockEditor";
 
 export default function CustomPageEditor() {
   const { id } = useParams<{ id?: string }>();
@@ -508,42 +509,7 @@ function BlockForm({ type, content, onChange }: { type: string; content: any; on
   }
 
   if (type === 'gallery') {
-    const images = content.images || [];
-    return (
-      <div className="space-y-4">
-        <Label>Immagini Galleria</Label>
-        {images.map((img: any, i: number) => (
-          <div key={i} className="flex gap-2">
-            <Input
-              value={img.url || ''}
-              onChange={(e) => {
-                const newImages = [...images];
-                newImages[i] = { ...img, url: e.target.value };
-                onChange({ ...content, images: newImages });
-              }}
-              placeholder="URL immagine"
-            />
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => {
-                const newImages = images.filter((_: any, idx: number) => idx !== i);
-                onChange({ ...content, images: newImages });
-              }}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </div>
-        ))}
-        <Button
-          variant="outline"
-          onClick={() => onChange({ ...content, images: [...images, { url: '', alt: '', caption: '' }] })}
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          Aggiungi Immagine
-        </Button>
-      </div>
-    );
+    return <GalleryBlockEditor content={content} onChange={onChange} />;
   }
 
   if (type === 'video') {
@@ -585,7 +551,7 @@ function getDefaultContent(type: string): any {
     case 'cta':
       return { title: '', description: '', buttonText: '', buttonUrl: '' };
     case 'gallery':
-      return { images: [], columns: 3 };
+      return { images: [], variant: 'grid', columns: 3, gap: '1rem' };
     case 'video':
       return { url: '', title: '' };
     default:
