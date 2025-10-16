@@ -1,0 +1,267 @@
+{
+  "heroSlides": [
+    {
+      "id": "4c765e72-41dc-4aa5-93f1-8249b2162000",
+      "type": "image",
+      "mediaUrl": "/objects/uploads/a17df403-e623-4937-8773-8f5bc32b2d79",
+      "title": "La prima vera scuola di SURF in Italia dedicata al LONGBOARD.",
+      "subtitle": "LONGBOARD ACADEMY",
+      "ctaText": "Inizia Gratis",
+      "ctaLink": "/corsi",
+      "logoUrl": null,
+      "logoSize": "medium",
+      "logoPosition": "before",
+      "orderIndex": 0,
+      "isActive": true,
+      "createdAt": "2025-10-15T18:36:21.179Z",
+      "updatedAt": "2025-10-15T18:36:21.179Z"
+    },
+    {
+      "id": "f5b82220-11dc-450d-afeb-5e84ce53116b",
+      "type": "image",
+      "mediaUrl": "/objects/uploads/d7a81ae4-bf51-477e-9d85-e18eacefe039",
+      "title": "La prima vera scuola di SURF in Italia dedicata al LONGBOARD.",
+      "subtitle": "LONGBOARD ACADEMY",
+      "ctaText": "Inizia Gratis",
+      "ctaLink": "/corsi",
+      "logoUrl": "",
+      "logoSize": "medium",
+      "logoPosition": "before",
+      "orderIndex": 0,
+      "isActive": true,
+      "createdAt": "2025-10-15T18:43:54.598Z",
+      "updatedAt": "2025-10-15T19:04:09.227Z"
+    }
+  ],
+  "pageHeaders": [
+    {
+      "page": "community",
+      "imageUrl": "/objects/uploads/a17df403-e623-4937-8773-8f5bc32b2d79",
+      "title": "Community",
+      "subtitle": "Unisciti alla nostra community di surfisti appassionati",
+      "paddingTop": "py-16",
+      "paddingBottom": "py-24",
+      "minHeight": "min-h-96",
+      "updatedAt": "2025-10-15T21:05:02.705Z"
+    },
+    {
+      "page": "dashboard",
+      "imageUrl": "/objects/uploads/d7a81ae4-bf51-477e-9d85-e18eacefe039",
+      "title": "Dashboard",
+      "subtitle": "Benvenuto nella tua area personale",
+      "paddingTop": "py-16",
+      "paddingBottom": "py-24",
+      "minHeight": "min-h-96",
+      "updatedAt": "2025-10-15T21:05:02.705Z"
+    },
+    {
+      "page": "courses",
+      "imageUrl": "/objects/uploads/a17df403-e623-4937-8773-8f5bc32b2d79",
+      "title": "I Nostri Corsi",
+      "subtitle": "Impara a surfare con i nostri corsi professionali per tutti i livelli",
+      "paddingTop": "py-24",
+      "paddingBottom": "py-24",
+      "minHeight": "min-h-[32rem]",
+      "updatedAt": "2025-10-15T22:20:42.899Z"
+    },
+    {
+      "page": "surf-camp",
+      "imageUrl": "/objects/uploads/d7a81ae4-bf51-477e-9d85-e18eacefe039",
+      "title": "Surf Camp",
+      "subtitle": "Vivi un'esperienza indimenticabile nelle migliori spiagge italiane",
+      "paddingTop": "py-16",
+      "paddingBottom": "py-24",
+      "minHeight": "min-h-[32rem]",
+      "updatedAt": "2025-10-15T22:32:04.812Z"
+    }
+  ],
+  "courses": [
+    {
+      "id": "fd8dbe0d-ce0b-4d64-b3b2-9d87ae7e4b35",
+      "title": "Surf per Principianti",
+      "description": "Impara le basi del surf con questo corso completo per principianti. Scopri come scegliere la tavola giusta, come remare efficacemente e come prendere le tue prime onde.",
+      "level": "beginner",
+      "thumbnailUrl": null,
+      "trailerUrl": null,
+      "isFree": true,
+      "price": 0,
+      "instructorName": "Marco Rossi",
+      "instructorAvatar": null,
+      "duration": 120,
+      "createdAt": "2025-10-15T10:32:00.631Z",
+      "updatedAt": "2025-10-15T10:32:00.631Z"
+    },
+    {
+      "id": "6d148076-8b06-4d53-8009-f4e1663ccc91",
+      "title": "Tecniche Intermedie di Surf",
+      "description": "Perfeziona la tua tecnica con manovre avanzate come il cutback, il floater e il bottom turn. Corso per surfisti con esperienza di base.",
+      "level": "intermediate",
+      "thumbnailUrl": null,
+      "trailerUrl": null,
+      "isFree": false,
+      "price": 4900,
+      "instructorName": "Laura Bianchi",
+      "instructorAvatar": null,
+      "duration": 180,
+      "createdAt": "2025-10-15T10:32:00.682Z",
+      "updatedAt": "2025-10-15T10:32:00.682Z"
+    },
+    {
+      "id": "54df7e3c-e1a5-4928-b8a7-fe51560ed972",
+      "title": "Surf Avanzato e Performance",
+      "description": "Porta il tuo surf al livello successivo con tecniche di performance avanzate, aerial tricks e surfing in onde grandi.",
+      "level": "advanced",
+      "thumbnailUrl": null,
+      "trailerUrl": null,
+      "isFree": false,
+      "price": 9900,
+      "instructorName": "Alessio Marino",
+      "instructorAvatar": null,
+      "duration": 240,
+      "createdAt": "2025-10-15T10:32:00.729Z",
+      "updatedAt": "2025-10-15T10:32:00.729Z"
+    },
+    {
+      "id": "621ef4cb-9645-4fec-8aef-a704eb6e5564",
+      "title": "Surf per Principianti",
+      "description": "Impara le basi del surf con questo corso completo per principianti. Scopri come scegliere la tavola giusta, come remare efficacemente e come prendere le tue prime onde.",
+      "level": "beginner",
+      "thumbnailUrl": null,
+      "trailerUrl": null,
+      "isFree": true,
+      "price": 0,
+      "instructorName": "Marco Rossi",
+      "instructorAvatar": null,
+      "duration": 120,
+      "createdAt": "2025-10-15T10:32:28.174Z",
+      "updatedAt": "2025-10-15T10:32:28.174Z"
+    },
+    {
+      "id": "d5ba2131-c810-42c7-a3b9-47b6b2538a13",
+      "title": "Tecniche Intermedie di Surf",
+      "description": "Perfeziona la tua tecnica con manovre avanzate come il cutback, il floater e il bottom turn. Corso per surfisti con esperienza di base.",
+      "level": "intermediate",
+      "thumbnailUrl": null,
+      "trailerUrl": null,
+      "isFree": false,
+      "price": 4900,
+      "instructorName": "Laura Bianchi",
+      "instructorAvatar": null,
+      "duration": 180,
+      "createdAt": "2025-10-15T10:32:28.229Z",
+      "updatedAt": "2025-10-15T10:32:28.229Z"
+    },
+    {
+      "id": "d3ff5ba5-5956-41fc-ab6c-69f6646edcc5",
+      "title": "Surf Avanzato e Performance",
+      "description": "Porta il tuo surf al livello successivo con tecniche di performance avanzate, aerial tricks e surfing in onde grandi.",
+      "level": "advanced",
+      "thumbnailUrl": null,
+      "trailerUrl": null,
+      "isFree": false,
+      "price": 9900,
+      "instructorName": "Alessio Marino",
+      "instructorAvatar": null,
+      "duration": 240,
+      "createdAt": "2025-10-15T10:32:28.284Z",
+      "updatedAt": "2025-10-15T10:32:28.284Z"
+    }
+  ],
+  "surfCamps": [
+    {
+      "id": "7c1f808a-b879-41ca-9de1-7dd9e13620bf",
+      "title": "Surf Camp Liguria",
+      "description": "Una settimana intensiva di surf sulle migliori onde della Liguria. Include 10 lezioni, noleggio attrezzatura e alloggio.",
+      "location": "Varazze, Liguria",
+      "startDate": "2025-07-01T00:00:00.000Z",
+      "endDate": "2025-07-07T00:00:00.000Z",
+      "price": 59900,
+      "totalSpots": 12,
+      "availableSpots": 12,
+      "imageUrl": null,
+      "createdAt": "2025-10-15T10:32:28.732Z"
+    },
+    {
+      "id": "966535d3-3d13-4079-8843-3ec631832eed",
+      "title": "Surf Camp Sardegna",
+      "description": "Vivi il surf nell'isola più bella d'Italia. 7 giorni di onde cristalline, spiagge paradisiache e istruttori esperti.",
+      "location": "Capo Mannu, Sardegna",
+      "startDate": "2025-08-15T00:00:00.000Z",
+      "endDate": "2025-08-22T00:00:00.000Z",
+      "price": 79900,
+      "totalSpots": 8,
+      "availableSpots": 3,
+      "imageUrl": null,
+      "createdAt": "2025-10-15T10:32:28.782Z"
+    },
+    {
+      "id": "6d3e4f60-a3c2-4a77-9cd1-2228384c22e7",
+      "title": "Surf Camp Toscana",
+      "description": "Surf e cultura nella splendida Toscana. Onde perfette per principianti e intermedi.",
+      "location": "Marina di Pisa, Toscana",
+      "startDate": "2025-06-20T00:00:00.000Z",
+      "endDate": "2025-06-26T00:00:00.000Z",
+      "price": 49900,
+      "totalSpots": 10,
+      "availableSpots": 0,
+      "imageUrl": null,
+      "createdAt": "2025-10-15T10:32:28.831Z"
+    }
+  ],
+  "customPages": [
+    {
+      "id": "cbbe8762-5473-4041-9383-6de33a4924dc",
+      "slug": "chi-siamo",
+      "title": "Chi Siamo",
+      "headerImageUrl": "/objects/uploads/a17df403-e623-4937-8773-8f5bc32b2d79",
+      "headerTitle": "Chi Siamo",
+      "headerSubtitle": "La storia della Scuola di Longboard e la nostra passione per il surf",
+      "published": true,
+      "seoTitle": "Chi Siamo - Scuola di Longboard",
+      "seoDescription": "Scopri la storia della Scuola di Longboard, i nostri istruttori professionisti e la nostra missione di diffondere la cultura del surf in Italia.",
+      "createdAt": "2025-10-15T21:06:31.621Z",
+      "updatedAt": "2025-10-15T21:06:31.621Z"
+    }
+  ],
+  "pageBlocks": [
+    {
+      "id": "cec9ac27-79b0-4786-a8b2-74fc99131bd4",
+      "customPageId": "cbbe8762-5473-4041-9383-6de33a4924dc",
+      "type": "image",
+      "orderIndex": 2,
+      "contentJson": {
+        "alt": "Surfisti in azione",
+        "caption": "I nostri istruttori durante una sessione di surf camp",
+        "imageUrl": "/objects/uploads/d7a81ae4-bf51-477e-9d85-e18eacefe039"
+      },
+      "createdAt": "2025-10-15T21:06:46.999Z",
+      "updatedAt": "2025-10-15T21:06:46.999Z"
+    },
+    {
+      "id": "b0163fab-4158-401d-9ea0-633e2d9badfb",
+      "customPageId": "cbbe8762-5473-4041-9383-6de33a4924dc",
+      "type": "text",
+      "orderIndex": 1,
+      "contentJson": {
+        "html": "<h2>La Nostra Storia</h2><p>La Scuola di Longboard nasce dalla passione per il surf e dalla voglia di condividere questa meravigliosa disciplina con tutti. Fondato nel 2010, il nostro progetto ha l'obiettivo di rendere il surf accessibile a chiunque voglia imparare, indipendentemente dall'età o dal livello di esperienza.</p><p>Negli anni abbiamo formato centinaia di surfisti, organizzato surf camp indimenticabili e creato una community unita dalla passione per le onde.</p>"
+      },
+      "createdAt": "2025-10-15T21:06:46.999Z",
+      "updatedAt": "2025-10-15T21:08:56.068Z"
+    },
+    {
+      "id": "8b0096a0-078b-445a-8032-8011136570ef",
+      "customPageId": "cbbe8762-5473-4041-9383-6de33a4924dc",
+      "type": "cta",
+      "orderIndex": 3,
+      "contentJson": {
+        "title": "Inizia il Tuo Percorso",
+        "buttonUrl": "/courses",
+        "buttonText": "Vedi i Corsi",
+        "description": "Scopri i nostri corsi e inizia a surfare oggi stesso!"
+      },
+      "createdAt": "2025-10-15T21:06:46.999Z",
+      "updatedAt": "2025-10-15T21:08:57.847Z"
+    }
+  ],
+  "exportedAt": "2025-10-16T09:22:35.126Z"
+}
