@@ -232,7 +232,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ========== Enrollment Routes ==========
   app.get("/api/enrollments", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user?.claims?.sub || req.user?.id;
       const enrollments = await storage.getEnrollmentsBySortedByUser(userId);
       res.json(enrollments);
     } catch (error) {
@@ -243,7 +243,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/enrollments/course/:courseId", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user?.claims?.sub || req.user?.id;
       const enrollment = await storage.getEnrollmentByUserAndCourse(userId, req.params.courseId);
       if (!enrollment) {
         return res.status(404).json({ message: "Enrollment not found" });
@@ -257,7 +257,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/enrollments", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user?.claims?.sub || req.user?.id;
       const validatedData = insertEnrollmentSchema.parse({ ...req.body, userId });
       
       // Check if already enrolled
@@ -288,7 +288,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ========== Lesson Progress Routes ==========
   app.post("/api/lesson-progress", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user?.claims?.sub || req.user?.id;
       const { lessonId } = req.body;
       await storage.markLessonComplete(userId, lessonId);
       res.status(201).json({ message: "Lesson marked as complete" });
@@ -301,7 +301,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ========== Exercise Progress Routes ==========
   app.get("/api/exercise-progress", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user?.claims?.sub || req.user?.id;
       const progress = await storage.getExerciseProgressByUser(userId);
       res.json(progress);
     } catch (error) {
@@ -312,7 +312,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/exercise-progress", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user?.claims?.sub || req.user?.id;
       const { exerciseId, completedValue, completed } = req.body;
       await storage.createOrUpdateExerciseProgress(userId, exerciseId, completedValue, completed);
       res.status(201).json({ message: "Exercise progress updated" });
@@ -325,7 +325,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ========== Badge Routes ==========
   app.get("/api/badges", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user?.claims?.sub || req.user?.id;
       const badges = await storage.getBadgesByUser(userId);
       res.json(badges);
     } catch (error) {
@@ -336,7 +336,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/badges", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user?.claims?.sub || req.user?.id;
       const { badgeType, badgeName, badgeIcon } = req.body;
       await storage.awardBadge(userId, badgeType, badgeName, badgeIcon);
       res.status(201).json({ message: "Badge awarded" });
@@ -360,7 +360,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/posts", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user?.claims?.sub || req.user?.id;
       const validatedData = insertPostSchema.parse({ ...req.body, userId });
       const post = await storage.createPost(validatedData);
       res.status(201).json(post);
@@ -383,7 +383,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/comments", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user?.claims?.sub || req.user?.id;
       const validatedData = insertCommentSchema.parse({ ...req.body, userId });
       const comment = await storage.createComment(validatedData);
       res.status(201).json(comment);
@@ -418,7 +418,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ========== Camp Registration Routes ==========
   app.get("/api/camp-registrations", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user?.claims?.sub || req.user?.id;
       const registrations = await storage.getCampRegistrationsByUser(userId);
       res.json(registrations);
     } catch (error) {
@@ -429,7 +429,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/camp-registrations", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user?.claims?.sub || req.user?.id;
       const validatedData = insertCampRegistrationSchema.parse({ ...req.body, userId });
       
       // Update available spots
@@ -449,7 +449,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ========== Certificate Routes ==========
   app.get("/api/certificates", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user?.claims?.sub || req.user?.id;
       const certificates = await storage.getCertificatesByUser(userId);
       res.json(certificates);
     } catch (error) {
@@ -460,7 +460,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/certificates/:courseId", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user?.claims?.sub || req.user?.id;
       const { courseId } = req.params;
 
       // Check if enrollment exists and course is completed
@@ -491,7 +491,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/certificates/:courseId/view", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user?.claims?.sub || req.user?.id;
       const { courseId } = req.params;
 
       const certificate = await storage.getCertificateByUserAndCourse(userId, courseId);
