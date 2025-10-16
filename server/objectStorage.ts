@@ -116,16 +116,18 @@ export class ObjectStorageService {
   }
 
   async getObjectEntityUploadURL(): Promise<{ uploadUrl: string; objectPath: string }> {
-    const privateObjectDir = this.getPrivateObjectDir();
-    if (!privateObjectDir) {
+    // Use PUBLIC directory instead of private for images that need to be accessible in production
+    const publicPaths = this.getPublicObjectSearchPaths();
+    if (!publicPaths || publicPaths.length === 0) {
       throw new Error(
-        "PRIVATE_OBJECT_DIR not set. Create a bucket in 'Object Storage' " +
-          "tool and set PRIVATE_OBJECT_DIR env var."
+        "PUBLIC_OBJECT_SEARCH_PATHS not set. Create a bucket in 'Object Storage' " +
+          "tool and set PUBLIC_OBJECT_SEARCH_PATHS env var."
       );
     }
 
+    const publicDir = publicPaths[0]; // Use first public directory
     const objectId = randomUUID();
-    const fullPath = `${privateObjectDir}/uploads/${objectId}`;
+    const fullPath = `${publicDir}/uploads/${objectId}`;
     const { bucketName, objectName } = parseObjectPath(fullPath);
 
     const uploadUrl = await signObjectURL({
@@ -135,9 +137,12 @@ export class ObjectStorageService {
       ttlSec: 900,
     });
 
+    // Return public GCS URL that works without authentication
+    const publicUrl = `https://storage.googleapis.com/${bucketName}/${objectName}`;
+
     return {
       uploadUrl,
-      objectPath: `/objects/uploads/${objectId}`,
+      objectPath: publicUrl, // Return public URL instead of /objects/ path
     };
   }
 
@@ -186,6 +191,25 @@ export class ObjectStorageService {
 
     const entityId = rawObjectPath.slice(objectEntityDir.length);
     return `/objects/${entityId}`;
+  }
+
+  // Convert /objects/ path to public GCS URL for production access
+  convertToPublicUrl(objectPath: string): string {
+    // If already a public URL, return as is
+    if (objectPath.startsWith("https://")) {
+      return objectPath;
+    }
+
+    // Convert /objects/uploads/... to public GCS URL
+    if (objectPath.startsWith("/objects/")) {
+      const privateDir = this.getPrivateObjectDir();
+      const { bucketName } = parseObjectPath(privateDir);
+      const entityId = objectPath.replace("/objects/", "");
+      // Images were uploaded to .private, but we need to access them
+      return `https://storage.googleapis.com/${bucketName}/.private/${entityId}`;
+    }
+
+    return objectPath;
   }
 
   async trySetObjectEntityAclPolicy(

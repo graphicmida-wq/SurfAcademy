@@ -3,7 +3,7 @@
     {
       "id": "4c765e72-41dc-4aa5-93f1-8249b2162000",
       "type": "image",
-      "mediaUrl": "/objects/uploads/a17df403-e623-4937-8773-8f5bc32b2d79",
+      "mediaUrl": "https://storage.googleapis.com/replit-objstore-995559da-3a2a-4d6f-ae83-b50a03f86426/.private/uploads/a17df403-e623-4937-8773-8f5bc32b2d79",
       "title": "La prima vera scuola di SURF in Italia dedicata al LONGBOARD.",
       "subtitle": "LONGBOARD ACADEMY",
       "ctaText": "Inizia Gratis",
@@ -19,12 +19,12 @@
     {
       "id": "f5b82220-11dc-450d-afeb-5e84ce53116b",
       "type": "image",
-      "mediaUrl": "/objects/uploads/d7a81ae4-bf51-477e-9d85-e18eacefe039",
+      "mediaUrl": "https://storage.googleapis.com/replit-objstore-995559da-3a2a-4d6f-ae83-b50a03f86426/.private/uploads/d7a81ae4-bf51-477e-9d85-e18eacefe039",
       "title": "La prima vera scuola di SURF in Italia dedicata al LONGBOARD.",
       "subtitle": "LONGBOARD ACADEMY",
       "ctaText": "Inizia Gratis",
       "ctaLink": "/corsi",
-      "logoUrl": "",
+      "logoUrl": null,
       "logoSize": "medium",
       "logoPosition": "before",
       "orderIndex": 0,
@@ -36,7 +36,7 @@
   "pageHeaders": [
     {
       "page": "community",
-      "imageUrl": "/objects/uploads/a17df403-e623-4937-8773-8f5bc32b2d79",
+      "imageUrl": "https://storage.googleapis.com/replit-objstore-995559da-3a2a-4d6f-ae83-b50a03f86426/.private/uploads/a17df403-e623-4937-8773-8f5bc32b2d79",
       "title": "Community",
       "subtitle": "Unisciti alla nostra community di surfisti appassionati",
       "paddingTop": "py-16",
@@ -46,7 +46,7 @@
     },
     {
       "page": "dashboard",
-      "imageUrl": "/objects/uploads/d7a81ae4-bf51-477e-9d85-e18eacefe039",
+      "imageUrl": "https://storage.googleapis.com/replit-objstore-995559da-3a2a-4d6f-ae83-b50a03f86426/.private/uploads/d7a81ae4-bf51-477e-9d85-e18eacefe039",
       "title": "Dashboard",
       "subtitle": "Benvenuto nella tua area personale",
       "paddingTop": "py-16",
@@ -56,7 +56,7 @@
     },
     {
       "page": "courses",
-      "imageUrl": "/objects/uploads/a17df403-e623-4937-8773-8f5bc32b2d79",
+      "imageUrl": "https://storage.googleapis.com/replit-objstore-995559da-3a2a-4d6f-ae83-b50a03f86426/.private/uploads/a17df403-e623-4937-8773-8f5bc32b2d79",
       "title": "I Nostri Corsi",
       "subtitle": "Impara a surfare con i nostri corsi professionali per tutti i livelli",
       "paddingTop": "py-24",
@@ -66,7 +66,7 @@
     },
     {
       "page": "surf-camp",
-      "imageUrl": "/objects/uploads/d7a81ae4-bf51-477e-9d85-e18eacefe039",
+      "imageUrl": "https://storage.googleapis.com/replit-objstore-995559da-3a2a-4d6f-ae83-b50a03f86426/.private/uploads/d7a81ae4-bf51-477e-9d85-e18eacefe039",
       "title": "Surf Camp",
       "subtitle": "Vivi un'esperienza indimenticabile nelle migliori spiagge italiane",
       "paddingTop": "py-16",
@@ -297,7 +297,7 @@
       "id": "cbbe8762-5473-4041-9383-6de33a4924dc",
       "slug": "chi-siamo",
       "title": "Chi Siamo",
-      "headerImageUrl": "/objects/uploads/a17df403-e623-4937-8773-8f5bc32b2d79",
+      "headerImageUrl": "https://storage.googleapis.com/replit-objstore-995559da-3a2a-4d6f-ae83-b50a03f86426/.private/uploads/a17df403-e623-4937-8773-8f5bc32b2d79",
       "headerTitle": "Chi Siamo",
       "headerSubtitle": "La storia della Scuola di Longboard e la nostra passione per il surf",
       "published": true,
@@ -308,19 +308,6 @@
     }
   ],
   "pageBlocks": [
-    {
-      "id": "cec9ac27-79b0-4786-a8b2-74fc99131bd4",
-      "customPageId": "cbbe8762-5473-4041-9383-6de33a4924dc",
-      "type": "image",
-      "orderIndex": 2,
-      "contentJson": {
-        "alt": "Surfisti in azione",
-        "caption": "I nostri istruttori durante una sessione di surf camp",
-        "imageUrl": "/objects/uploads/d7a81ae4-bf51-477e-9d85-e18eacefe039"
-      },
-      "createdAt": "2025-10-15T21:06:46.999Z",
-      "updatedAt": "2025-10-15T21:06:46.999Z"
-    },
     {
       "id": "b0163fab-4158-401d-9ea0-633e2d9badfb",
       "customPageId": "cbbe8762-5473-4041-9383-6de33a4924dc",
@@ -345,7 +332,20 @@
       },
       "createdAt": "2025-10-15T21:06:46.999Z",
       "updatedAt": "2025-10-15T21:08:57.847Z"
+    },
+    {
+      "id": "cec9ac27-79b0-4786-a8b2-74fc99131bd4",
+      "customPageId": "cbbe8762-5473-4041-9383-6de33a4924dc",
+      "type": "image",
+      "orderIndex": 2,
+      "contentJson": {
+        "alt": "Surfisti in azione",
+        "caption": "I nostri istruttori durante una sessione di surf camp",
+        "imageUrl": "https://storage.googleapis.com/replit-objstore-995559da-3a2a-4d6f-ae83-b50a03f86426/.private/uploads/d7a81ae4-bf51-477e-9d85-e18eacefe039"
+      },
+      "createdAt": "2025-10-15T21:06:46.999Z",
+      "updatedAt": "2025-10-15T21:06:46.999Z"
     }
   ],
-  "exportedAt": "2025-10-16T10:11:45.964Z"
+  "exportedAt": "2025-10-16T10:19:50.173Z"
 }
