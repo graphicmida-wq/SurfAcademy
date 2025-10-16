@@ -116,7 +116,7 @@ export class ObjectStorageService {
   }
 
   async getObjectEntityUploadURL(): Promise<{ uploadUrl: string; objectPath: string }> {
-    // Use PUBLIC directory instead of private for images that need to be accessible in production
+    // Use PUBLIC directory for production-compatible images
     const publicPaths = this.getPublicObjectSearchPaths();
     if (!publicPaths || publicPaths.length === 0) {
       throw new Error(
@@ -137,12 +137,16 @@ export class ObjectStorageService {
       ttlSec: 900,
     });
 
-    // Return public GCS URL that works without authentication
-    const publicUrl = `https://storage.googleapis.com/${bucketName}/${objectName}`;
+    // In development: use /objects/ path for proxy (works with sidecar)
+    // In production: use public GCS URL (works without sidecar)
+    const isDevelopment = process.env.NODE_ENV === 'development';
+    const objectPath = isDevelopment 
+      ? `/objects/uploads/${objectId}`
+      : `https://storage.googleapis.com/${bucketName}/${objectName}`;
 
     return {
       uploadUrl,
-      objectPath: publicUrl, // Return public URL instead of /objects/ path
+      objectPath,
     };
   }
 
@@ -157,19 +161,38 @@ export class ObjectStorageService {
     }
 
     const entityId = parts.slice(1).join("/");
-    let entityDir = this.getPrivateObjectDir();
-    if (!entityDir.endsWith("/")) {
-      entityDir = `${entityDir}/`;
+    
+    // Try public directory first (new uploads)
+    const publicPaths = this.getPublicObjectSearchPaths();
+    if (publicPaths && publicPaths.length > 0) {
+      let publicDir = publicPaths[0];
+      if (!publicDir.endsWith("/")) {
+        publicDir = `${publicDir}/`;
+      }
+      const publicObjectPath = `${publicDir}${entityId}`;
+      const { bucketName: publicBucket, objectName: publicObject } = parseObjectPath(publicObjectPath);
+      const bucket = objectStorageClient.bucket(publicBucket);
+      const publicFile = bucket.file(publicObject);
+      const [publicExists] = await publicFile.exists();
+      if (publicExists) {
+        return publicFile;
+      }
     }
-    const objectEntityPath = `${entityDir}${entityId}`;
-    const { bucketName, objectName } = parseObjectPath(objectEntityPath);
+    
+    // Fall back to private directory (old uploads)
+    let privateDir = this.getPrivateObjectDir();
+    if (!privateDir.endsWith("/")) {
+      privateDir = `${privateDir}/`;
+    }
+    const privateObjectPath = `${privateDir}${entityId}`;
+    const { bucketName, objectName } = parseObjectPath(privateObjectPath);
     const bucket = objectStorageClient.bucket(bucketName);
-    const objectFile = bucket.file(objectName);
-    const [exists] = await objectFile.exists();
-    if (!exists) {
+    const privateFile = bucket.file(objectName);
+    const [privateExists] = await privateFile.exists();
+    if (!privateExists) {
       throw new ObjectNotFoundError();
     }
-    return objectFile;
+    return privateFile;
   }
 
   normalizeObjectEntityPath(rawPath: string): string {
