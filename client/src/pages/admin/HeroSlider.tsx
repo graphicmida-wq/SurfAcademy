@@ -10,7 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MediaUploadZone } from "@/components/MediaUploadZone";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Plus, Trash2, Edit, GripVertical } from "lucide-react";
+import { Loader2, Plus, Trash2, Edit, GripVertical, Copy } from "lucide-react";
 import type { HeroSlide, InsertHeroSlide } from "@shared/schema";
 import { insertHeroSlideSchema } from "@shared/schema";
 import {
@@ -119,6 +119,37 @@ export default function AdminHeroSlider() {
     },
     onError: () => {
       toast({ title: "Errore durante il riordino", variant: "destructive" });
+    },
+  });
+
+  const duplicateMutation = useMutation({
+    mutationFn: async (slideId: string) => {
+      const slideToDuplicate = slides.find(s => s.id === slideId);
+      if (!slideToDuplicate) throw new Error("Slide not found");
+      
+      const newSlide: InsertHeroSlide = {
+        type: slideToDuplicate.type as "image" | "video",
+        mediaUrl: slideToDuplicate.mediaUrl,
+        title: `${slideToDuplicate.title || "Copia"} (Copia)`,
+        subtitle: slideToDuplicate.subtitle || "",
+        ctaText: slideToDuplicate.ctaText || "",
+        ctaLink: slideToDuplicate.ctaLink || "",
+        logoUrl: slideToDuplicate.logoUrl || "",
+        logoSize: slideToDuplicate.logoSize || "medium",
+        logoPosition: slideToDuplicate.logoPosition || "before",
+        orderIndex: slides.length,
+        isActive: true,
+      };
+      
+      const res = await apiRequest("POST", "/api/admin/hero-slides", newSlide);
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/hero-slides"] });
+      toast({ title: "Slide duplicata con successo" });
+    },
+    onError: () => {
+      toast({ title: "Errore durante la duplicazione", variant: "destructive" });
     },
   });
 
@@ -462,6 +493,15 @@ export default function AdminHeroSlider() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => duplicateMutation.mutate(slide.id)}
+                      disabled={duplicateMutation.isPending}
+                      data-testid={`button-duplicate-${slide.id}`}
+                    >
+                      <Copy className="w-4 h-4" />
+                    </Button>
                     <Button
                       variant="outline"
                       size="sm"
