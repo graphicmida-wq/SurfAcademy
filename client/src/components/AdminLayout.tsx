@@ -81,7 +81,7 @@ export function AppAdminSidebar() {
       <SidebarContent>
         <SidebarHeader className="p-4 border-b">
           <Link href="/" className="flex items-center justify-center" data-testid="link-admin-logo">
-            <img src={currentLogo} alt="Scuola di Longboard" className="h-16 w-auto" />
+            <img src={currentLogo} alt="Scuola di Longboard" className="h-28 w-auto" />
           </Link>
         </SidebarHeader>
         <SidebarGroup>
