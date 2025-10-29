@@ -2,7 +2,27 @@
 
 ## Overview
 
-Scuola di Longboard is a comprehensive web-based learning management system (LMS) for a surf and longboard school. It allows students to enroll in courses, track progress, participate in community discussions, and register for surf camps. The platform supports students, instructors, and administrators. It's a full-stack TypeScript monorepo using React, Express, and PostgreSQL (via Neon), integrated with Replit's authentication. The design is inspired by surf culture with a turquoise and ocean-blue palette.
+Scuola di Longboard is a comprehensive web-based learning management system (LMS) for a surf and longboard school. It allows students to enroll in courses, track progress, participate in community discussions, and register for surf camps. The platform supports students, instructors, and administrators with role-specific dashboards and features. It's a full-stack TypeScript monorepo using React, Express, and PostgreSQL (via Neon), integrated with Replit's authentication. The design is inspired by surf culture with a turquoise and ocean-blue palette.
+
+### Recent Changes (Oct 2025)
+
+**User Dashboard Enhancements**:
+- Added profile editing section: users can update firstName, lastName, email, and profile image using MediaUploadZone
+- Integrated WavePoints display card showing referral earnings balance with encouraging messages
+- Removed legacy level system filters (beginner/intermediate/advanced) for cleaner interface
+
+**Admin Features**:
+- Created comprehensive enrollments management page at `/admin/iscrizioni` with:
+  - User table showing all enrollments with course details and progress percentages
+  - Search functionality by name/email
+  - Course filter to view enrollments for specific courses
+  - Statistics dashboard showing total users, active enrollments, and average progress
+- Added admin menu links: "Dashboard Utente" (to view user experience) and "Iscrizioni" (enrollments management)
+
+**Backend API Enhancements**:
+- `PUT /api/profile`: Profile update endpoint with Zod validation and email uniqueness checking
+- `GET /api/wavepoints`: Retrieves user's WavePoints balance from referral earnings
+- `GET /api/admin/enrollments`: Admin-only endpoint returning all users with their enrollments and progress data
 
 ## User Preferences
 
