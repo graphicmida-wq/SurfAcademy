@@ -281,6 +281,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin auto-enrollment endpoint
+  app.post("/api/admin/enroll/:courseId", isAdmin, async (req: any, res) => {
+    try {
+      const userId = req.user?.claims?.sub || req.user?.id;
+      const { courseId } = req.params;
+
+      // Check if course exists
+      const course = await storage.getCourse(courseId);
+      if (!course) {
+        return res.status(404).json({ message: "Corso non trovato" });
+      }
+
+      // Check if already enrolled
+      const existingEnrollment = await storage.getEnrollmentByUserAndCourse(userId, courseId);
+      if (existingEnrollment) {
+        return res.status(400).json({ message: "Già iscritto a questo corso" });
+      }
+
+      // Create enrollment
+      const enrollment = await storage.createEnrollment({
+        userId,
+        courseId,
+        progress: 0,
+      });
+
+      res.status(201).json(enrollment);
+    } catch (error) {
+      console.error("Error enrolling admin:", error);
+      res.status(500).json({ message: "Errore durante l'iscrizione" });
+    }
+  });
+
   // ========== Module Routes ==========
   app.get("/api/courses/:id/modules", async (req, res) => {
     try {
@@ -303,7 +335,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin module CRUD
+  app.post("/api/admin/courses/:courseId/modules", isAdmin, async (req, res) => {
+    try {
+      const validatedData = insertModuleSchema.parse({
+        ...req.body,
+        courseId: req.params.courseId,
+      });
+      const module = await storage.createModule(validatedData);
+      res.status(201).json(module);
+    } catch (error) {
+      console.error("Error creating module:", error);
+      res.status(400).json({ message: "Failed to create module" });
+    }
+  });
+
+  app.patch("/api/admin/modules/:id", isAdmin, async (req, res) => {
+    try {
+      const validatedData = insertModuleSchema.partial().parse(req.body);
+      const updatedModule = await storage.updateModule(req.params.id, validatedData);
+      res.json(updatedModule);
+    } catch (error) {
+      console.error("Error updating module:", error);
+      res.status(400).json({ message: "Failed to update module" });
+    }
+  });
+
+  app.delete("/api/admin/modules/:id", isAdmin, async (req, res) => {
+    try {
+      await storage.deleteModule(req.params.id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting module:", error);
+      res.status(500).json({ message: "Failed to delete module" });
+    }
+  });
+
   // ========== Lesson Routes ==========
+  app.get("/api/modules/:moduleId/lessons", async (req, res) => {
+    try {
+      const lessons = await storage.getLessonsByModule(req.params.moduleId);
+      res.json(lessons);
+    } catch (error) {
+      console.error("Error fetching lessons:", error);
+      res.status(500).json({ message: "Failed to fetch lessons" });
+    }
+  });
   app.post("/api/lessons", isAuthenticated, async (req, res) => {
     try {
       const validatedData = insertLessonSchema.parse(req.body);
@@ -367,6 +444,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error creating exercise:", error);
       res.status(400).json({ message: "Failed to create exercise" });
+    }
+  });
+
+  // Admin exercise CRUD
+  app.post("/api/admin/exercises", isAdmin, async (req, res) => {
+    try {
+      const validatedData = insertExerciseSchema.parse(req.body);
+      const exercise = await storage.createExercise(validatedData);
+      res.status(201).json(exercise);
+    } catch (error) {
+      console.error("Error creating exercise:", error);
+      res.status(400).json({ message: "Failed to create exercise" });
+    }
+  });
+
+  app.patch("/api/admin/exercises/:id", isAdmin, async (req, res) => {
+    try {
+      const validatedData = insertExerciseSchema.partial().parse(req.body);
+      const updatedExercise = await storage.updateExercise(req.params.id, validatedData);
+      res.json(updatedExercise);
+    } catch (error) {
+      console.error("Error updating exercise:", error);
+      res.status(400).json({ message: "Failed to update exercise" });
+    }
+  });
+
+  app.delete("/api/admin/exercises/:id", isAdmin, async (req, res) => {
+    try {
+      await storage.deleteExercise(req.params.id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting exercise:", error);
+      res.status(500).json({ message: "Failed to delete exercise" });
     }
   });
 

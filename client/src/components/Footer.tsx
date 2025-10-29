@@ -14,35 +14,35 @@ export function Footer() {
             </p>
           </div>
 
-          {/* Corsi */}
+          {/* Risorse */}
           <div>
-            <h3 className="font-display font-semibold text-lg mb-4">Corsi</h3>
+            <h3 className="font-display font-semibold text-lg mb-4">Risorse</h3>
             <ul className="space-y-2 text-sm">
               <li>
                 <Link 
-                  href="/corsi?level=beginner"
+                  href="/corsi"
                   className="text-muted-foreground hover:text-primary transition-colors" 
-                  data-testid="footer-link-beginner"
+                  data-testid="footer-link-courses"
                 >
-                  Principianti
+                  Tutti i Corsi
                 </Link>
               </li>
               <li>
                 <Link 
-                  href="/corsi?level=intermediate"
+                  href="/community"
                   className="text-muted-foreground hover:text-primary transition-colors" 
-                  data-testid="footer-link-intermediate"
+                  data-testid="footer-link-community"
                 >
-                  Intermedio
+                  Community
                 </Link>
               </li>
               <li>
                 <Link 
-                  href="/corsi?level=advanced"
+                  href="/surf-camp"
                   className="text-muted-foreground hover:text-primary transition-colors" 
-                  data-testid="footer-link-advanced"
+                  data-testid="footer-link-surf-camp"
                 >
-                  Avanzato
+                  Surf Camp
                 </Link>
               </li>
             </ul>

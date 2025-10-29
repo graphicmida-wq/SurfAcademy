@@ -10,8 +10,8 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MediaUploadZone } from "@/components/MediaUploadZone";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Plus, Trash2, Edit, Book, Users } from "lucide-react";
-import type { Course, InsertCourse } from "@shared/schema";
+import { Loader2, Plus, Trash2, Edit, Book, Users, CheckCircle } from "lucide-react";
+import type { Course, InsertCourse, Enrollment } from "@shared/schema";
 import { insertCourseSchema } from "@shared/schema";
 import {
   Dialog,
@@ -41,12 +41,6 @@ const CATEGORY_LABELS: Record<string, string> = {
   'special': 'SPECIAL',
 };
 
-const LEVEL_LABELS: Record<string, string> = {
-  'beginner': 'Principiante',
-  'intermediate': 'Intermedio',
-  'advanced': 'Avanzato',
-};
-
 export default function AdminCourses() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -55,6 +49,12 @@ export default function AdminCourses() {
 
   const { data: courses = [], isLoading: coursesLoading } = useQuery<Course[]>({
     queryKey: ["/api/admin/courses"],
+  });
+
+  // Fetch admin's enrollments to check which courses they're enrolled in
+  const { data: myEnrollments = [] } = useQuery<(Enrollment & { course: Course })[]>({
+    queryKey: ["/api/enrollments"],
+    enabled: !!user,
   });
 
   const form = useForm<InsertCourse>({
@@ -69,7 +69,7 @@ export default function AdminCourses() {
       title: "",
       description: "",
       courseCategory: "remata",
-      level: "beginner",
+      level: "all",
       duration: 0,
       price: 0,
       isFree: false,
@@ -126,13 +126,30 @@ export default function AdminCourses() {
     },
   });
 
+  const enrollMutation = useMutation({
+    mutationFn: async (courseId: string) => {
+      const res = await apiRequest("POST", `/api/admin/enroll/${courseId}`, {});
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/enrollments"] });
+      toast({ title: "Iscritto con successo!" });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: error.message || "Errore durante l'iscrizione", 
+        variant: "destructive" 
+      });
+    },
+  });
+
   const handleEdit = (course: Course) => {
     setEditingCourse(course);
     form.reset({
       title: course.title,
       description: course.description || "",
       courseCategory: course.courseCategory || "remata",
-      level: course.level,
+      level: course.level || "all",
       duration: course.duration || 0,
       price: course.price || 0,
       isFree: course.isFree,
@@ -150,7 +167,7 @@ export default function AdminCourses() {
       title: "",
       description: "",
       courseCategory: "remata",
-      level: "beginner",
+      level: "all",
       duration: 0,
       price: 0,
       isFree: false,
@@ -238,55 +255,30 @@ export default function AdminCourses() {
                   )}
                 />
 
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="courseCategory"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Categoria *</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value ?? "remata"}>
-                          <FormControl>
-                            <SelectTrigger data-testid="select-course-category">
-                              <SelectValue placeholder="Seleziona categoria" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="remata">REMATA</SelectItem>
-                            <SelectItem value="takeoff">TAKEOFF</SelectItem>
-                            <SelectItem value="noseride">NOSERIDE</SelectItem>
-                            <SelectItem value="gratuiti">CONTENUTI GRATUITI</SelectItem>
-                            <SelectItem value="special">SPECIAL</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="level"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Livello *</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger data-testid="select-course-level">
-                              <SelectValue placeholder="Seleziona livello" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="beginner">Principiante</SelectItem>
-                            <SelectItem value="intermediate">Intermedio</SelectItem>
-                            <SelectItem value="advanced">Avanzato</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+                <FormField
+                  control={form.control}
+                  name="courseCategory"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Categoria *</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value ?? "remata"}>
+                        <FormControl>
+                          <SelectTrigger data-testid="select-course-category">
+                            <SelectValue placeholder="Seleziona categoria" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="remata">REMATA</SelectItem>
+                          <SelectItem value="takeoff">TAKEOFF</SelectItem>
+                          <SelectItem value="noseride">NOSERIDE</SelectItem>
+                          <SelectItem value="gratuiti">CONTENUTI GRATUITI</SelectItem>
+                          <SelectItem value="special">SPECIAL</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
@@ -469,9 +461,6 @@ export default function AdminCourses() {
                 <Badge variant="outline" data-testid={`badge-category-${course.id}`}>
                   {CATEGORY_LABELS[course.courseCategory || 'remata']}
                 </Badge>
-                <Badge variant="secondary" data-testid={`badge-level-${course.id}`}>
-                  {LEVEL_LABELS[course.level]}
-                </Badge>
                 {course.isFree && (
                   <Badge className="bg-chart-4 text-white">Gratis</Badge>
                 )}
@@ -483,41 +472,73 @@ export default function AdminCourses() {
                   {course.description}
                 </p>
               )}
-              <div className="flex items-center justify-between text-sm">
-                <div className="flex items-center gap-2">
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-muted-foreground">
-                    {LEVEL_LABELS[course.level]}
-                  </span>
-                </div>
+              <div className="flex items-center justify-end text-sm">
                 <div className="font-semibold" data-testid={`text-price-${course.id}`}>
                   {course.isFree ? "Gratis" : `€${((course.price || 0) / 100).toFixed(2)}`}
                 </div>
               </div>
-              <div className="flex gap-2 pt-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex-1"
-                  onClick={() => handleEdit(course)}
-                  data-testid={`button-edit-${course.id}`}
-                >
-                  <Edit className="h-4 w-4 mr-2" />
-                  Modifica
-                </Button>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => {
-                    if (confirm(`Sei sicuro di voler eliminare il corso "${course.title}"?`)) {
-                      deleteMutation.mutate(course.id);
-                    }
-                  }}
-                  disabled={deleteMutation.isPending}
-                  data-testid={`button-delete-${course.id}`}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+              <div className="flex flex-col gap-2 pt-2">
+                {/* Enrollment button */}
+                {myEnrollments.some(e => e.courseId === course.id) ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled
+                    className="w-full"
+                    data-testid={`button-enrolled-${course.id}`}
+                  >
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    Già Iscritto
+                  </Button>
+                ) : (
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={() => enrollMutation.mutate(course.id)}
+                    disabled={enrollMutation.isPending}
+                    className="w-full"
+                    data-testid={`button-enroll-${course.id}`}
+                  >
+                    {enrollMutation.isPending ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Iscrizione...
+                      </>
+                    ) : (
+                      <>
+                        <Users className="h-4 w-4 mr-2" />
+                        Iscriviti al Corso
+                      </>
+                    )}
+                  </Button>
+                )}
+                
+                {/* Edit/Delete buttons */}
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => handleEdit(course)}
+                    data-testid={`button-edit-${course.id}`}
+                  >
+                    <Edit className="h-4 w-4 mr-2" />
+                    Modifica
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => {
+                      if (confirm(`Sei sicuro di voler eliminare il corso "${course.title}"?`)) {
+                        deleteMutation.mutate(course.id);
+                      }
+                    }}
+                    disabled={deleteMutation.isPending}
+                    data-testid={`button-delete-${course.id}`}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>

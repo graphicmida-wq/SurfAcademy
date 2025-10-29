@@ -80,8 +80,11 @@ export interface IStorage {
   // Module operations
   getModulesByCourse(courseId: string): Promise<(Module & { lessons: Lesson[] })[]>;
   createModule(module: InsertModule): Promise<Module>;
+  updateModule(id: string, module: Partial<InsertModule>): Promise<Module>;
+  deleteModule(id: string): Promise<void>;
   
   // Lesson operations
+  getLessonsByModule(moduleId: string): Promise<Lesson[]>;
   createLesson(lesson: InsertLesson): Promise<Lesson>;
   updateLesson(id: string, lesson: Partial<InsertLesson>): Promise<Lesson>;
   deleteLesson(id: string): Promise<void>;
@@ -90,6 +93,8 @@ export interface IStorage {
   getAllExercises(): Promise<Exercise[]>;
   getExercise(id: string): Promise<Exercise | undefined>;
   createExercise(exercise: InsertExercise): Promise<Exercise>;
+  updateExercise(id: string, exercise: Partial<InsertExercise>): Promise<Exercise>;
+  deleteExercise(id: string): Promise<void>;
   
   // Enrollment operations
   getEnrollmentsBySortedByUser(userId: string): Promise<(Enrollment & { course: Course })[]>;
@@ -293,7 +298,27 @@ export class DatabaseStorage implements IStorage {
     return newModule;
   }
 
+  async updateModule(id: string, module: Partial<InsertModule>): Promise<Module> {
+    const [updatedModule] = await db
+      .update(modules)
+      .set(module)
+      .where(eq(modules.id, id))
+      .returning();
+    return updatedModule;
+  }
+
+  async deleteModule(id: string): Promise<void> {
+    await db.delete(modules).where(eq(modules.id, id));
+  }
+
   // ========== Lesson Operations ==========
+  async getLessonsByModule(moduleId: string): Promise<Lesson[]> {
+    return await db
+      .select()
+      .from(lessons)
+      .where(eq(lessons.moduleId, moduleId))
+      .orderBy(lessons.orderIndex);
+  }
   async createLesson(lesson: InsertLesson): Promise<Lesson> {
     const [newLesson] = await db.insert(lessons).values(lesson).returning();
     return newLesson;
@@ -325,6 +350,19 @@ export class DatabaseStorage implements IStorage {
   async createExercise(exercise: InsertExercise): Promise<Exercise> {
     const [newExercise] = await db.insert(exercises).values(exercise).returning();
     return newExercise;
+  }
+
+  async updateExercise(id: string, exercise: Partial<InsertExercise>): Promise<Exercise> {
+    const [updatedExercise] = await db
+      .update(exercises)
+      .set(exercise)
+      .where(eq(exercises.id, id))
+      .returning();
+    return updatedExercise;
+  }
+
+  async deleteExercise(id: string): Promise<void> {
+    await db.delete(exercises).where(eq(exercises.id, id));
   }
 
   // ========== Enrollment Operations ==========

@@ -6,7 +6,6 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { LevelBadge } from "@/components/LevelBadge";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { isUnauthorizedError } from "@/lib/authUtils";
@@ -20,13 +19,12 @@ import type { Post, Comment, User as UserType } from "@shared/schema";
 export default function Community() {
   const { isAuthenticated, user } = useAuth();
   const { toast } = useToast();
-  const [selectedLevel, setSelectedLevel] = useState<string>("all");
   const [newPostTitle, setNewPostTitle] = useState("");
   const [newPostContent, setNewPostContent] = useState("");
   const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
 
   const { data: posts, isLoading } = useQuery<(Post & { user: UserType; _count: { comments: number } })[]>({
-    queryKey: ["/api/posts", selectedLevel],
+    queryKey: ["/api/posts"],
   });
 
   const { data: pageHeader } = usePageHeader('community');
@@ -77,13 +75,9 @@ export default function Community() {
     createPostMutation.mutate({
       title: newPostTitle,
       content: newPostContent,
-      level: user?.userLevel || "beginner",
+      level: "all",
     });
   };
-
-  const filteredPosts = posts?.filter(
-    (post) => selectedLevel === "all" || post.level === selectedLevel || post.level === "all"
-  );
 
   return (
     <div className="min-h-screen">
@@ -145,9 +139,9 @@ export default function Community() {
                   </Card>
                 ))}
               </div>
-            ) : filteredPosts && filteredPosts.length > 0 ? (
+            ) : posts && posts.length > 0 ? (
               <div className="space-y-4" data-testid="list-posts">
-                {filteredPosts.map((post) => (
+                {posts.map((post) => (
                   <Card key={post.id} className="hover-elevate active-elevate-2 transition-all" data-testid={`card-post-${post.id}`}>
                     <CardHeader>
                       <div className="flex items-start justify-between gap-4">
@@ -169,14 +163,13 @@ export default function Community() {
                             </p>
                             <p className="text-sm text-muted-foreground flex items-center gap-2">
                               <Clock className="h-3 w-3" />
-                              {formatDistanceToNow(new Date(post.createdAt), {
+                              {post.createdAt && formatDistanceToNow(new Date(post.createdAt), {
                                 addSuffix: true,
                                 locale: it,
                               })}
                             </p>
                           </div>
                         </div>
-                        {post.level && <LevelBadge level={post.level} />}
                       </div>
                     </CardHeader>
                     <CardContent>
@@ -214,47 +207,6 @@ export default function Community() {
 
           {/* Sidebar */}
           <div className="space-y-6">
-            {/* Level Filter */}
-            <Card>
-              <CardHeader>
-                <h3 className="font-display font-semibold text-lg">Filtra per Livello</h3>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <Button
-                  variant={selectedLevel === "all" ? "default" : "outline"}
-                  className="w-full justify-start"
-                  onClick={() => setSelectedLevel("all")}
-                  data-testid="button-filter-all"
-                >
-                  Tutti i livelli
-                </Button>
-                <Button
-                  variant={selectedLevel === "beginner" ? "default" : "outline"}
-                  className="w-full justify-start"
-                  onClick={() => setSelectedLevel("beginner")}
-                  data-testid="button-filter-beginner"
-                >
-                  Principiante
-                </Button>
-                <Button
-                  variant={selectedLevel === "intermediate" ? "default" : "outline"}
-                  className="w-full justify-start"
-                  onClick={() => setSelectedLevel("intermediate")}
-                  data-testid="button-filter-intermediate"
-                >
-                  Intermedio
-                </Button>
-                <Button
-                  variant={selectedLevel === "advanced" ? "default" : "outline"}
-                  className="w-full justify-start"
-                  onClick={() => setSelectedLevel("advanced")}
-                  data-testid="button-filter-advanced"
-                >
-                  Avanzato
-                </Button>
-              </CardContent>
-            </Card>
-
             {/* Community Guidelines */}
             <Card>
               <CardHeader>
