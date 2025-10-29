@@ -173,6 +173,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ========== Admin Course Routes ==========
+  app.get("/api/admin/courses", isAdmin, async (req, res) => {
+    try {
+      const courses = await storage.getAllCourses();
+      res.json(courses);
+    } catch (error) {
+      console.error("Error fetching courses:", error);
+      res.status(500).json({ message: "Failed to fetch courses" });
+    }
+  });
+
+  app.post("/api/admin/courses", isAdmin, async (req, res) => {
+    try {
+      const validatedData = insertCourseSchema.parse(req.body);
+      const course = await storage.createCourse(validatedData);
+      res.status(201).json(course);
+    } catch (error) {
+      console.error("Error creating course:", error);
+      res.status(400).json({ message: "Failed to create course" });
+    }
+  });
+
+  app.patch("/api/admin/courses/:id", isAdmin, async (req, res) => {
+    try {
+      const course = await storage.getCourse(req.params.id);
+      if (!course) {
+        return res.status(404).json({ message: "Course not found" });
+      }
+      const validatedData = insertCourseSchema.partial().parse(req.body);
+      const updatedCourse = await storage.updateCourse(req.params.id, validatedData);
+      res.json(updatedCourse);
+    } catch (error) {
+      console.error("Error updating course:", error);
+      res.status(400).json({ message: "Failed to update course" });
+    }
+  });
+
+  app.delete("/api/admin/courses/:id", isAdmin, async (req, res) => {
+    try {
+      const course = await storage.getCourse(req.params.id);
+      if (!course) {
+        return res.status(404).json({ message: "Course not found" });
+      }
+      await storage.deleteCourse(req.params.id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting course:", error);
+      res.status(500).json({ message: "Failed to delete course" });
+    }
+  });
+
   // ========== Module Routes ==========
   app.get("/api/courses/:id/modules", async (req, res) => {
     try {

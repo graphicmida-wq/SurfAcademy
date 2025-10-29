@@ -22,6 +22,7 @@ import AdminHeroSlider from "@/pages/admin/HeroSlider";
 import AdminPageHeaders from "@/pages/admin/PageHeaders";
 import AdminCustomPages from "@/pages/admin/CustomPages";
 import CustomPageEditor from "@/pages/admin/CustomPageEditor";
+import AdminCourses from "@/pages/admin/Courses";
 import NotFound from "@/pages/not-found";
 import { AdminLayout } from "@/components/AdminLayout";
 
@@ -90,9 +91,7 @@ function Router() {
           <Route path="/admin/corsi">
             {user?.isAdmin ? (
               <AdminLayout>
-                <div className="py-20 text-center text-muted-foreground">
-                  Gestione Corsi - In sviluppo
-                </div>
+                <AdminCourses />
               </AdminLayout>
             ) : <NotFound />}
           </Route>
