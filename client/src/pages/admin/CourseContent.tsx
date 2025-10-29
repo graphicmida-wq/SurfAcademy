@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MediaUploadZone } from "@/components/MediaUploadZone";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Plus, BookOpen, FileVideo, FileText, Edit, Trash2, PlayCircle } from "lucide-react";
+import { Loader2, Plus, BookOpen, FileVideo, FileText, Edit, Trash2, PlayCircle, Book, Calendar, Dumbbell, Flame } from "lucide-react";
 import type { Course, Module, Lesson, InsertLesson, InsertModule } from "@shared/schema";
 import { insertLessonSchema, insertModuleSchema } from "@shared/schema";
 import {
@@ -37,6 +37,18 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 
+const CONTENT_TYPES = [
+  { value: 'presentazione', label: 'Presentazione Corso', icon: BookOpen },
+  { value: 'ebook', label: 'E-Book Corso', icon: Book },
+  { value: 'planning', label: 'Planning Allenamento', icon: Calendar },
+  { value: 'esercizio', label: 'Esercizio', icon: Dumbbell },
+  { value: 'riscaldamento', label: 'Riscaldamento', icon: Flame },
+  { value: 'settimana-1', label: 'Settimana 1', icon: Calendar },
+  { value: 'settimana-2', label: 'Settimana 2', icon: Calendar },
+  { value: 'settimana-3', label: 'Settimana 3', icon: Calendar },
+  { value: 'settimana-4', label: 'Settimana 4', icon: Calendar },
+];
+
 const CONTENT_TYPE_LABELS: Record<string, string> = {
   'presentazione': 'Presentazione',
   'ebook': 'E-Book',
@@ -52,12 +64,12 @@ const CONTENT_TYPE_LABELS: Record<string, string> = {
 export default function AdminCourseContent() {
   const { toast } = useToast();
   const [selectedCourseId, setSelectedCourseId] = useState<string>("");
-  const [selectedModuleId, setSelectedModuleId] = useState<string>("");
   const [isLessonDialogOpen, setIsLessonDialogOpen] = useState(false);
   const [isModuleDialogOpen, setIsModuleDialogOpen] = useState(false);
   const [editingLesson, setEditingLesson] = useState<Lesson | null>(null);
   const [editingModule, setEditingModule] = useState<Module | null>(null);
   const [videoUrls, setVideoUrls] = useState<string[]>([]);
+  const [preselectedContentType, setPreselectedContentType] = useState<string>("");
 
   const { data: courses = [], isLoading: coursesLoading } = useQuery<Course[]>({
     queryKey: ["/api/admin/courses"],
@@ -102,7 +114,7 @@ export default function AdminCourseContent() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/courses/${selectedCourseId}/modules`] });
-      toast({ title: "Lezione creata con successo" });
+      toast({ title: "Contenuto creato con successo" });
       lessonForm.reset();
       setVideoUrls([]);
       setEditingLesson(null);
@@ -123,7 +135,7 @@ export default function AdminCourseContent() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/courses/${selectedCourseId}/modules`] });
-      toast({ title: "Lezione aggiornata con successo" });
+      toast({ title: "Contenuto aggiornato con successo" });
       lessonForm.reset();
       setVideoUrls([]);
       setEditingLesson(null);
@@ -140,7 +152,7 @@ export default function AdminCourseContent() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/courses/${selectedCourseId}/modules`] });
-      toast({ title: "Lezione eliminata con successo" });
+      toast({ title: "Contenuto eliminato con successo" });
     },
     onError: () => {
       toast({ title: "Errore durante l'eliminazione", variant: "destructive" });
@@ -188,7 +200,6 @@ export default function AdminCourseContent() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/courses/${selectedCourseId}/modules`] });
       toast({ title: "Modulo eliminato con successo" });
-      setSelectedModuleId("");
     },
     onError: () => {
       toast({ title: "Errore durante l'eliminazione del modulo", variant: "destructive" });
@@ -196,26 +207,22 @@ export default function AdminCourseContent() {
   });
 
   const handleSubmitLesson = (data: InsertLesson) => {
-    if (!selectedModuleId) {
+    if (!data.moduleId) {
       toast({ title: "Seleziona un modulo", variant: "destructive" });
       return;
     }
     if (editingLesson) {
       updateLessonMutation.mutate({
         id: editingLesson.id,
-        data: { ...data, moduleId: selectedModuleId },
+        data,
       });
     } else {
-      createLessonMutation.mutate({
-        ...data,
-        moduleId: selectedModuleId,
-      });
+      createLessonMutation.mutate(data);
     }
   };
 
   const handleEditLesson = (lesson: Lesson) => {
     setEditingLesson(lesson);
-    setSelectedModuleId(lesson.moduleId);
     lessonForm.reset({
       moduleId: lesson.moduleId,
       title: lesson.title,
@@ -225,6 +232,11 @@ export default function AdminCourseContent() {
       htmlContent: lesson.htmlContent || "",
       orderIndex: lesson.orderIndex || 0,
     });
+    // Explicitly set the moduleId value to ensure Select component updates
+    setTimeout(() => {
+      lessonForm.setValue("moduleId", lesson.moduleId);
+      lessonForm.setValue("contentType", lesson.contentType || "presentazione");
+    }, 0);
     setVideoUrls(lesson.videoUrls || []);
     setIsLessonDialogOpen(true);
   };
@@ -235,24 +247,32 @@ export default function AdminCourseContent() {
     }
   };
 
-  const handleNewLesson = (moduleId?: string) => {
-    const targetModuleId = moduleId || selectedModuleId;
-    if (!targetModuleId) {
-      toast({ title: "Seleziona prima un modulo", variant: "destructive" });
+  const handleNewLesson = (contentType: string) => {
+    if (modules.length === 0) {
+      toast({ 
+        title: "Crea prima un modulo", 
+        description: "Devi creare almeno un modulo prima di aggiungere contenuti",
+        variant: "destructive" 
+      });
       return;
     }
-    setSelectedModuleId(targetModuleId);
+    const defaultModuleId = modules[0]?.id || "";
+    setPreselectedContentType(contentType);
     setEditingLesson(null);
     lessonForm.reset({
-      moduleId: targetModuleId,
+      moduleId: defaultModuleId,
       title: "",
-      contentType: "presentazione",
+      contentType: contentType,
       videoUrl: "",
       videoUrls: [],
       pdfUrl: "",
       htmlContent: "",
       orderIndex: 0,
     });
+    // Explicitly set the moduleId value to ensure Select component updates
+    setTimeout(() => {
+      lessonForm.setValue("moduleId", defaultModuleId);
+    }, 0);
     setVideoUrls([]);
     setIsLessonDialogOpen(true);
   };
@@ -299,7 +319,7 @@ export default function AdminCourseContent() {
       courseId: selectedCourseId,
       title: "",
       description: "",
-      orderIndex: 0,
+      orderIndex: modules.length,
     });
     setIsModuleDialogOpen(true);
   };
@@ -321,6 +341,25 @@ export default function AdminCourseContent() {
     }
   };
 
+  // Group lessons by content type
+  const allLessons = modules.flatMap(m => m.lessons || []);
+  
+  // Find any custom content types not in the predefined list
+  const customContentTypes = Array.from(
+    new Set(allLessons.map(l => l.contentType).filter(ct => ct && !CONTENT_TYPE_LABELS[ct]))
+  ).map(value => ({
+    value,
+    label: `Altro: ${value}`,
+    icon: FileText,
+  }));
+  
+  const allContentTypes = [...CONTENT_TYPES, ...customContentTypes];
+  
+  const lessonsByType = allContentTypes.map(type => ({
+    ...type,
+    lessons: allLessons.filter(l => l.contentType === type.value),
+  }));
+
   if (coursesLoading) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -329,61 +368,41 @@ export default function AdminCourseContent() {
     );
   }
 
-  const selectedModule = modules.find(m => m.id === selectedModuleId);
-
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-display font-bold mb-2" data-testid="text-course-content-title">
           Gestione Contenuti Corso
         </h1>
-        <p className="text-muted-foreground">Aggiungi e gestisci i contenuti dei tuoi corsi</p>
+        <p className="text-muted-foreground">Visualizza e gestisci i contenuti come li vedono gli studenti</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label className="text-sm font-medium mb-2 block">Seleziona Corso</label>
-          <Select value={selectedCourseId} onValueChange={(value) => {
-            setSelectedCourseId(value);
-            setSelectedModuleId("");
-          }}>
-            <SelectTrigger data-testid="select-course">
-              <SelectValue placeholder="Scegli un corso" />
-            </SelectTrigger>
-            <SelectContent>
-              {courses.map((course) => (
-                <SelectItem key={course.id} value={course.id}>
-                  {course.title}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {selectedCourseId && (
-          <div>
-            <label className="text-sm font-medium mb-2 block">Seleziona Modulo</label>
-            <Select value={selectedModuleId} onValueChange={setSelectedModuleId} disabled={modulesLoading}>
-              <SelectTrigger data-testid="select-module">
-                <SelectValue placeholder="Scegli un modulo" />
-              </SelectTrigger>
-              <SelectContent>
-                {modules.map((module) => (
-                  <SelectItem key={module.id} value={module.id}>
-                    {module.title}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
+      <div>
+        <label className="text-sm font-medium mb-2 block">Seleziona Corso</label>
+        <Select value={selectedCourseId} onValueChange={setSelectedCourseId}>
+          <SelectTrigger data-testid="select-course">
+            <SelectValue placeholder="Scegli un corso" />
+          </SelectTrigger>
+          <SelectContent>
+            {courses.map((course) => (
+              <SelectItem key={course.id} value={course.id}>
+                {course.title}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
-      {/* Modules Section */}
-      {selectedCourseId && (
+      {/* Modules Management Section */}
+      {selectedCourseId && !modulesLoading && (
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Moduli del Corso</CardTitle>
+            <div>
+              <CardTitle>Gestione Moduli</CardTitle>
+              <p className="text-sm text-muted-foreground mt-1">
+                I moduli organizzano i contenuti del corso
+              </p>
+            </div>
             <Dialog open={isModuleDialogOpen} onOpenChange={setIsModuleDialogOpen}>
               <DialogTrigger asChild>
                 <Button onClick={handleNewModule} data-testid="button-create-module">
@@ -485,353 +504,357 @@ export default function AdminCourseContent() {
           </CardHeader>
           <CardContent>
             {modules.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">
-                <BookOpen className="h-16 w-16 mx-auto mb-4 opacity-50" />
-                <p>Nessun modulo disponibile</p>
-                <p className="text-sm mt-2">Clicca "Nuovo Modulo" per iniziare</p>
+              <div className="text-center py-8 text-muted-foreground">
+                <BookOpen className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                <p className="text-sm">Nessun modulo disponibile. Clicca "Nuovo Modulo" per iniziare.</p>
               </div>
             ) : (
-              <Accordion type="multiple" className="w-full">
+              <div className="space-y-2">
                 {modules.map((module) => (
-                  <AccordionItem key={module.id} value={module.id} data-testid={`module-item-${module.id}`}>
-                    <AccordionTrigger className="hover:no-underline">
-                      <div className="flex items-center justify-between w-full pr-4">
-                        <div className="flex items-center gap-3">
-                          <BookOpen className="h-5 w-5 text-primary" />
-                          <div className="text-left">
-                            <h3 className="font-semibold">{module.title}</h3>
-                            {module.description && (
-                              <p className="text-sm text-muted-foreground font-normal">{module.description}</p>
-                            )}
-                          </div>
-                        </div>
-                        <Badge variant="secondary">
-                          {module.lessons?.length || 0} lezioni
-                        </Badge>
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent>
-                      <div className="space-y-3 pt-2">
-                        {/* Module Actions */}
-                        <div className="flex gap-2 pb-3 border-b">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleNewLesson(module.id)}
-                            data-testid={`button-add-lesson-${module.id}`}
-                          >
-                            <Plus className="h-4 w-4 mr-2" />
-                            Nuova Lezione
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEditModule(module)}
-                            data-testid={`button-edit-module-${module.id}`}
-                          >
-                            <Edit className="h-4 w-4 mr-2" />
-                            Modifica Modulo
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => handleDeleteModule(module.id, module.title)}
-                            disabled={deleteModuleMutation.isPending}
-                            data-testid={`button-delete-module-${module.id}`}
-                          >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Elimina Modulo
-                          </Button>
-                        </div>
-
-                        {/* Lessons List */}
-                        {module.lessons && module.lessons.length > 0 ? (
-                          <div className="space-y-2">
-                            {module.lessons.map((lesson) => (
-                              <div
-                                key={lesson.id}
-                                className="flex items-center justify-between p-3 rounded-md border hover-elevate"
-                                data-testid={`lesson-item-${lesson.id}`}
-                              >
-                                <div className="flex items-center gap-3 flex-1">
-                                  <PlayCircle className="h-4 w-4 text-muted-foreground" />
-                                  <div className="flex-1">
-                                    <p className="font-medium text-sm">{lesson.title}</p>
-                                    <div className="flex gap-2 mt-1">
-                                      <Badge variant="outline" className="text-xs">
-                                        {CONTENT_TYPE_LABELS[lesson.contentType || 'presentazione']}
-                                      </Badge>
-                                      {lesson.videoUrls && lesson.videoUrls.length > 0 && (
-                                        <Badge variant="secondary" className="text-xs">
-                                          <FileVideo className="h-3 w-3 mr-1" />
-                                          {lesson.videoUrls.length} video
-                                        </Badge>
-                                      )}
-                                      {lesson.pdfUrl && (
-                                        <Badge variant="secondary" className="text-xs">
-                                          <FileText className="h-3 w-3 mr-1" />
-                                          PDF
-                                        </Badge>
-                                      )}
-                                    </div>
-                                  </div>
-                                </div>
-                                <div className="flex gap-2">
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => handleEditLesson(lesson)}
-                                    data-testid={`button-edit-lesson-${lesson.id}`}
-                                  >
-                                    <Edit className="h-4 w-4" />
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => handleDeleteLesson(lesson.id, lesson.title)}
-                                    disabled={deleteLessonMutation.isPending}
-                                    data-testid={`button-delete-lesson-${lesson.id}`}
-                                  >
-                                    <Trash2 className="h-4 w-4 text-destructive" />
-                                  </Button>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <div className="text-center py-8 text-muted-foreground">
-                            <PlayCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                            <p className="text-sm">Nessuna lezione in questo modulo</p>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleNewLesson(module.id)}
-                              className="mt-2"
-                            >
-                              <Plus className="h-4 w-4 mr-2" />
-                              Aggiungi la prima lezione
-                            </Button>
-                          </div>
+                  <div
+                    key={module.id}
+                    className="flex items-center justify-between p-3 rounded-md border hover-elevate"
+                    data-testid={`module-item-${module.id}`}
+                  >
+                    <div className="flex items-center gap-3 flex-1">
+                      <BookOpen className="h-4 w-4 text-primary" />
+                      <div className="flex-1">
+                        <p className="font-medium text-sm">{module.title}</p>
+                        {module.description && (
+                          <p className="text-xs text-muted-foreground">{module.description}</p>
                         )}
                       </div>
-                    </AccordionContent>
-                  </AccordionItem>
+                      <Badge variant="secondary">
+                        {module.lessons?.length || 0} contenuti
+                      </Badge>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEditModule(module)}
+                        data-testid={`button-edit-module-${module.id}`}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteModule(module.id, module.title)}
+                        disabled={deleteModuleMutation.isPending}
+                        data-testid={`button-delete-module-${module.id}`}
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
+                  </div>
                 ))}
-              </Accordion>
+              </div>
             )}
           </CardContent>
         </Card>
       )}
 
-      {selectedModuleId && selectedModule && (
+      {/* Content by Type Section */}
+      {selectedCourseId && !modulesLoading && modules.length > 0 && (
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Lezioni - {selectedModule.title}</CardTitle>
-            <Dialog open={isLessonDialogOpen} onOpenChange={setIsLessonDialogOpen}>
-              <DialogTrigger asChild>
-                <Button onClick={() => handleNewLesson()} data-testid="button-create-lesson">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Nuova Lezione
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>{editingLesson ? "Modifica Lezione" : "Crea Nuova Lezione"}</DialogTitle>
-                </DialogHeader>
-                <Form {...lessonForm}>
-                  <form onSubmit={lessonForm.handleSubmit(handleSubmitLesson)} className="space-y-4">
-                    <FormField
-                      control={lessonForm.control}
-                      name="title"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Titolo *</FormLabel>
-                          <FormControl>
-                            <Input {...field} placeholder="Nome della lezione" data-testid="input-lesson-title" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={lessonForm.control}
-                      name="contentType"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Tipo Contenuto *</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value ?? "presentazione"}>
-                            <FormControl>
-                              <SelectTrigger data-testid="select-content-type">
-                                <SelectValue placeholder="Seleziona tipo" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {Object.entries(CONTENT_TYPE_LABELS).map(([value, label]) => (
-                                <SelectItem key={value} value={value}>
-                                  {label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <div className="border rounded-lg p-4 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <h3 className="font-semibold">Video Multipli</h3>
-                        <Button type="button" variant="outline" size="sm" onClick={addVideoUrl}>
-                          <Plus className="h-4 w-4 mr-2" />
-                          Aggiungi Video
-                        </Button>
-                      </div>
-                      {videoUrls.map((url, idx) => (
-                        <div key={idx} className="flex gap-2">
-                          <MediaUploadZone
-                            currentUrl={url}
-                            onUploadComplete={(newUrl) => updateVideoUrl(idx, newUrl)}
-                          />
-                          <Button
-                            type="button"
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => removeVideoUrl(idx)}
-                          >
-                            Rimuovi
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-
-                    <FormField
-                      control={lessonForm.control}
-                      name="pdfUrl"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>PDF (per E-Book/Planning)</FormLabel>
-                          <FormControl>
-                            <MediaUploadZone
-                              currentUrl={field.value || ""}
-                              onUploadComplete={(url) => field.onChange(url)}
-                            />
-                          </FormControl>
-                          <FormDescription>Carica un file PDF per questa lezione</FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={lessonForm.control}
-                      name="htmlContent"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Contenuto HTML</FormLabel>
-                          <FormControl>
-                            <Textarea
-                              {...field}
-                              value={field.value ?? ""}
-                              placeholder="Inserisci contenuto HTML..."
-                              rows={8}
-                              data-testid="textarea-html-content"
-                            />
-                          </FormControl>
-                          <FormDescription>Puoi inserire HTML per testi formattati</FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <div className="flex justify-end gap-2 pt-4">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => setIsLessonDialogOpen(false)}
-                        disabled={createLessonMutation.isPending}
-                      >
-                        Annulla
-                      </Button>
-                      <Button type="submit" disabled={createLessonMutation.isPending || updateLessonMutation.isPending} data-testid="button-save-lesson">
-                        {(createLessonMutation.isPending || updateLessonMutation.isPending) ? (
-                          <>
-                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            Salvataggio...
-                          </>
-                        ) : editingLesson ? (
-                          "Aggiorna Lezione"
-                        ) : (
-                          "Crea Lezione"
-                        )}
-                      </Button>
-                    </div>
-                  </form>
-                </Form>
-              </DialogContent>
-            </Dialog>
+          <CardHeader>
+            <CardTitle>Contenuti per Tipo</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              I contenuti sono organizzati come li vedono gli studenti
+            </p>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {selectedModule.lessons.length === 0 ? (
-                <div className="text-center py-12 text-muted-foreground">
-                  <BookOpen className="h-16 w-16 mx-auto mb-4 opacity-50" />
-                  <p>Nessuna lezione disponibile</p>
-                  <p className="text-sm mt-2">Clicca "Nuova Lezione" per iniziare</p>
-                </div>
-              ) : (
-                selectedModule.lessons.map((lesson) => (
-                  <Card key={lesson.id} data-testid={`lesson-item-${lesson.id}`}>
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1">
-                          <h3 className="font-semibold">{lesson.title}</h3>
-                          <div className="flex gap-2 mt-2">
-                            <Badge variant="outline">
-                              {CONTENT_TYPE_LABELS[lesson.contentType || 'presentazione']}
-                            </Badge>
-                            {lesson.videoUrls && lesson.videoUrls.length > 0 && (
-                              <Badge variant="secondary">
-                                <FileVideo className="h-3 w-3 mr-1" />
-                                {lesson.videoUrls.length} video
-                              </Badge>
-                            )}
-                            {lesson.pdfUrl && (
-                              <Badge variant="secondary">
-                                <FileText className="h-3 w-3 mr-1" />
-                                PDF
-                              </Badge>
-                            )}
+            <Accordion type="multiple" className="w-full">
+                {lessonsByType.map((section) => {
+                  const Icon = section.icon;
+                  return (
+                    <AccordionItem key={section.value || ''} value={section.value || ''} data-testid={`content-section-${section.value}`}>
+                      <AccordionTrigger className="hover:no-underline">
+                        <div className="flex items-center justify-between w-full pr-4">
+                          <div className="flex items-center gap-3">
+                            <Icon className="h-5 w-5 text-primary" />
+                            <span className="font-semibold">{section.label}</span>
                           </div>
+                          <Badge variant="secondary">
+                            {section.lessons.length} contenuti
+                          </Badge>
                         </div>
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEditLesson(lesson)}
-                            data-testid={`button-edit-lesson-${lesson.id}`}
-                          >
-                            Modifica
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => handleDeleteLesson(lesson.id, lesson.title)}
-                            disabled={deleteLessonMutation.isPending}
-                            data-testid={`button-delete-lesson-${lesson.id}`}
-                          >
-                            Elimina
-                          </Button>
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <div className="space-y-3 pt-2">
+                          {/* Add Content Button */}
+                          <div className="flex gap-2 pb-3 border-b">
+                            <Button
+                              variant="default"
+                              size="sm"
+                              onClick={() => handleNewLesson(section.value || "presentazione")}
+                              data-testid={`button-add-content-${section.value}`}
+                            >
+                              <Plus className="h-4 w-4 mr-2" />
+                              Aggiungi Contenuto
+                            </Button>
+                          </div>
+
+                          {/* Lessons List */}
+                          {section.lessons.length > 0 ? (
+                            <div className="space-y-2">
+                              {section.lessons.map((lesson) => {
+                                const lessonModule = modules.find(m => m.id === lesson.moduleId);
+                                return (
+                                  <div
+                                    key={lesson.id}
+                                    className="flex items-center justify-between p-3 rounded-md border hover-elevate"
+                                    data-testid={`lesson-item-${lesson.id}`}
+                                  >
+                                    <div className="flex items-center gap-3 flex-1">
+                                      <PlayCircle className="h-4 w-4 text-muted-foreground" />
+                                      <div className="flex-1">
+                                        <p className="font-medium text-sm">{lesson.title}</p>
+                                        <div className="flex gap-2 mt-1 flex-wrap">
+                                          {lessonModule && (
+                                            <Badge variant="outline" className="text-xs">
+                                              📚 {lessonModule.title}
+                                            </Badge>
+                                          )}
+                                          {lesson.videoUrls && lesson.videoUrls.length > 0 && (
+                                            <Badge variant="secondary" className="text-xs">
+                                              <FileVideo className="h-3 w-3 mr-1" />
+                                              {lesson.videoUrls.length} video
+                                            </Badge>
+                                          )}
+                                          {lesson.pdfUrl && (
+                                            <Badge variant="secondary" className="text-xs">
+                                              <FileText className="h-3 w-3 mr-1" />
+                                              PDF
+                                            </Badge>
+                                          )}
+                                          {lesson.htmlContent && (
+                                            <Badge variant="secondary" className="text-xs">
+                                              <FileText className="h-3 w-3 mr-1" />
+                                              HTML
+                                            </Badge>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <div className="flex gap-2">
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => handleEditLesson(lesson)}
+                                        data-testid={`button-edit-lesson-${lesson.id}`}
+                                      >
+                                        <Edit className="h-4 w-4" />
+                                      </Button>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => handleDeleteLesson(lesson.id, lesson.title)}
+                                        disabled={deleteLessonMutation.isPending}
+                                        data-testid={`button-delete-lesson-${lesson.id}`}
+                                      >
+                                        <Trash2 className="h-4 w-4 text-destructive" />
+                                      </Button>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          ) : (
+                            <div className="text-center py-8 text-muted-foreground">
+                              <PlayCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                              <p className="text-sm">Nessun contenuto in questa sezione</p>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleNewLesson(section.value || "presentazione")}
+                                className="mt-2"
+                              >
+                                <Plus className="h-4 w-4 mr-2" />
+                                Aggiungi il primo contenuto
+                              </Button>
+                            </div>
+                          )}
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))
-              )}
-            </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  );
+                })}
+              </Accordion>
           </CardContent>
         </Card>
       )}
+
+      {/* Lesson Dialog */}
+      <Dialog open={isLessonDialogOpen} onOpenChange={setIsLessonDialogOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{editingLesson ? "Modifica Contenuto" : "Crea Nuovo Contenuto"}</DialogTitle>
+          </DialogHeader>
+          <Form {...lessonForm}>
+            <form onSubmit={lessonForm.handleSubmit(handleSubmitLesson)} className="space-y-4">
+              <FormField
+                control={lessonForm.control}
+                name="title"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Titolo *</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="Nome del contenuto" data-testid="input-lesson-title" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={lessonForm.control}
+                name="moduleId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Modulo *</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger data-testid="select-module">
+                          <SelectValue placeholder="Seleziona modulo" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {modules.map((module) => (
+                          <SelectItem key={module.id} value={module.id}>
+                            {module.title}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>Scegli il modulo di appartenenza</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={lessonForm.control}
+                name="contentType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tipo Contenuto *</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value ?? "presentazione"}>
+                      <FormControl>
+                        <SelectTrigger data-testid="select-content-type">
+                          <SelectValue placeholder="Seleziona tipo" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {Object.entries(CONTENT_TYPE_LABELS).map(([value, label]) => (
+                          <SelectItem key={value} value={value}>
+                            {label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="border rounded-lg p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold">Video Multipli</h3>
+                  <Button type="button" variant="outline" size="sm" onClick={addVideoUrl}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Aggiungi Video
+                  </Button>
+                </div>
+                {videoUrls.length === 0 && (
+                  <p className="text-sm text-muted-foreground">Nessun video aggiunto. Clicca "Aggiungi Video" per iniziare.</p>
+                )}
+                {videoUrls.map((url, idx) => (
+                  <div key={idx} className="flex gap-2">
+                    <div className="flex-1">
+                      <MediaUploadZone
+                        currentUrl={url}
+                        onUploadComplete={(newUrl) => updateVideoUrl(idx, newUrl)}
+                      />
+                    </div>
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => removeVideoUrl(idx)}
+                    >
+                      Rimuovi
+                    </Button>
+                  </div>
+                ))}
+              </div>
+
+              <FormField
+                control={lessonForm.control}
+                name="pdfUrl"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>PDF (per E-Book/Planning)</FormLabel>
+                    <FormControl>
+                      <MediaUploadZone
+                        currentUrl={field.value || ""}
+                        onUploadComplete={(url) => field.onChange(url)}
+                      />
+                    </FormControl>
+                    <FormDescription>Carica un file PDF per questa lezione</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={lessonForm.control}
+                name="htmlContent"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Contenuto HTML</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        {...field}
+                        value={field.value ?? ""}
+                        placeholder="Inserisci contenuto HTML..."
+                        rows={8}
+                        data-testid="textarea-html-content"
+                      />
+                    </FormControl>
+                    <FormDescription>Puoi inserire HTML per testi formattati</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="flex justify-end gap-2 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsLessonDialogOpen(false)}
+                  disabled={createLessonMutation.isPending}
+                >
+                  Annulla
+                </Button>
+                <Button type="submit" disabled={createLessonMutation.isPending || updateLessonMutation.isPending} data-testid="button-save-lesson">
+                  {(createLessonMutation.isPending || updateLessonMutation.isPending) ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Salvataggio...
+                    </>
+                  ) : editingLesson ? (
+                    "Aggiorna Contenuto"
+                  ) : (
+                    "Crea Contenuto"
+                  )}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
 
       {!selectedCourseId && (
         <Card className="p-12 text-center">
