@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MediaUploadZone } from "@/components/MediaUploadZone";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Plus, BookOpen, FileVideo, FileText, Edit, Trash2 } from "lucide-react";
+import { Loader2, Plus, BookOpen, FileVideo, FileText, Edit, Trash2, PlayCircle } from "lucide-react";
 import type { Course, Module, Lesson, InsertLesson, InsertModule } from "@shared/schema";
 import { insertLessonSchema, insertModuleSchema } from "@shared/schema";
 import {
@@ -30,6 +30,12 @@ import {
   FormDescription,
 } from "@/components/ui/form";
 import { Badge } from "@/components/ui/badge";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 const CONTENT_TYPE_LABELS: Record<string, string> = {
   'presentazione': 'Presentazione',
@@ -209,6 +215,7 @@ export default function AdminCourseContent() {
 
   const handleEditLesson = (lesson: Lesson) => {
     setEditingLesson(lesson);
+    setSelectedModuleId(lesson.moduleId);
     lessonForm.reset({
       moduleId: lesson.moduleId,
       title: lesson.title,
@@ -228,14 +235,16 @@ export default function AdminCourseContent() {
     }
   };
 
-  const handleNewLesson = () => {
-    if (!selectedModuleId) {
+  const handleNewLesson = (moduleId?: string) => {
+    const targetModuleId = moduleId || selectedModuleId;
+    if (!targetModuleId) {
       toast({ title: "Seleziona prima un modulo", variant: "destructive" });
       return;
     }
+    setSelectedModuleId(targetModuleId);
     setEditingLesson(null);
     lessonForm.reset({
-      moduleId: selectedModuleId,
+      moduleId: targetModuleId,
       title: "",
       contentType: "presentazione",
       videoUrl: "",
@@ -475,28 +484,45 @@ export default function AdminCourseContent() {
             </Dialog>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {modules.length === 0 ? (
-                <div className="text-center py-12 text-muted-foreground">
-                  <BookOpen className="h-16 w-16 mx-auto mb-4 opacity-50" />
-                  <p>Nessun modulo disponibile</p>
-                  <p className="text-sm mt-2">Clicca "Nuovo Modulo" per iniziare</p>
-                </div>
-              ) : (
-                modules.map((module) => (
-                  <Card key={module.id} data-testid={`module-item-${module.id}`}>
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1">
-                          <h3 className="font-semibold">{module.title}</h3>
-                          {module.description && (
-                            <p className="text-sm text-muted-foreground mt-1">{module.description}</p>
-                          )}
-                          <Badge variant="secondary" className="mt-2">
-                            {module.lessons?.length || 0} lezioni
-                          </Badge>
+            {modules.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">
+                <BookOpen className="h-16 w-16 mx-auto mb-4 opacity-50" />
+                <p>Nessun modulo disponibile</p>
+                <p className="text-sm mt-2">Clicca "Nuovo Modulo" per iniziare</p>
+              </div>
+            ) : (
+              <Accordion type="multiple" className="w-full">
+                {modules.map((module) => (
+                  <AccordionItem key={module.id} value={module.id} data-testid={`module-item-${module.id}`}>
+                    <AccordionTrigger className="hover:no-underline">
+                      <div className="flex items-center justify-between w-full pr-4">
+                        <div className="flex items-center gap-3">
+                          <BookOpen className="h-5 w-5 text-primary" />
+                          <div className="text-left">
+                            <h3 className="font-semibold">{module.title}</h3>
+                            {module.description && (
+                              <p className="text-sm text-muted-foreground font-normal">{module.description}</p>
+                            )}
+                          </div>
                         </div>
-                        <div className="flex gap-2">
+                        <Badge variant="secondary">
+                          {module.lessons?.length || 0} lezioni
+                        </Badge>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <div className="space-y-3 pt-2">
+                        {/* Module Actions */}
+                        <div className="flex gap-2 pb-3 border-b">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleNewLesson(module.id)}
+                            data-testid={`button-add-lesson-${module.id}`}
+                          >
+                            <Plus className="h-4 w-4 mr-2" />
+                            Nuova Lezione
+                          </Button>
                           <Button
                             variant="outline"
                             size="sm"
@@ -504,7 +530,7 @@ export default function AdminCourseContent() {
                             data-testid={`button-edit-module-${module.id}`}
                           >
                             <Edit className="h-4 w-4 mr-2" />
-                            Modifica
+                            Modifica Modulo
                           </Button>
                           <Button
                             variant="destructive"
@@ -513,15 +539,86 @@ export default function AdminCourseContent() {
                             disabled={deleteModuleMutation.isPending}
                             data-testid={`button-delete-module-${module.id}`}
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Elimina Modulo
                           </Button>
                         </div>
+
+                        {/* Lessons List */}
+                        {module.lessons && module.lessons.length > 0 ? (
+                          <div className="space-y-2">
+                            {module.lessons.map((lesson) => (
+                              <div
+                                key={lesson.id}
+                                className="flex items-center justify-between p-3 rounded-md border hover-elevate"
+                                data-testid={`lesson-item-${lesson.id}`}
+                              >
+                                <div className="flex items-center gap-3 flex-1">
+                                  <PlayCircle className="h-4 w-4 text-muted-foreground" />
+                                  <div className="flex-1">
+                                    <p className="font-medium text-sm">{lesson.title}</p>
+                                    <div className="flex gap-2 mt-1">
+                                      <Badge variant="outline" className="text-xs">
+                                        {CONTENT_TYPE_LABELS[lesson.contentType || 'presentazione']}
+                                      </Badge>
+                                      {lesson.videoUrls && lesson.videoUrls.length > 0 && (
+                                        <Badge variant="secondary" className="text-xs">
+                                          <FileVideo className="h-3 w-3 mr-1" />
+                                          {lesson.videoUrls.length} video
+                                        </Badge>
+                                      )}
+                                      {lesson.pdfUrl && (
+                                        <Badge variant="secondary" className="text-xs">
+                                          <FileText className="h-3 w-3 mr-1" />
+                                          PDF
+                                        </Badge>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="flex gap-2">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleEditLesson(lesson)}
+                                    data-testid={`button-edit-lesson-${lesson.id}`}
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleDeleteLesson(lesson.id, lesson.title)}
+                                    disabled={deleteLessonMutation.isPending}
+                                    data-testid={`button-delete-lesson-${lesson.id}`}
+                                  >
+                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                  </Button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="text-center py-8 text-muted-foreground">
+                            <PlayCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                            <p className="text-sm">Nessuna lezione in questo modulo</p>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleNewLesson(module.id)}
+                              className="mt-2"
+                            >
+                              <Plus className="h-4 w-4 mr-2" />
+                              Aggiungi la prima lezione
+                            </Button>
+                          </div>
+                        )}
                       </div>
-                    </CardContent>
-                  </Card>
-                ))
-              )}
-            </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
+            )}
           </CardContent>
         </Card>
       )}
@@ -532,7 +629,7 @@ export default function AdminCourseContent() {
             <CardTitle>Lezioni - {selectedModule.title}</CardTitle>
             <Dialog open={isLessonDialogOpen} onOpenChange={setIsLessonDialogOpen}>
               <DialogTrigger asChild>
-                <Button onClick={handleNewLesson} data-testid="button-create-lesson">
+                <Button onClick={() => handleNewLesson()} data-testid="button-create-lesson">
                   <Plus className="h-4 w-4 mr-2" />
                   Nuova Lezione
                 </Button>
