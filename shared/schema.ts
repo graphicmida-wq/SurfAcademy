@@ -139,6 +139,7 @@ export const badges = pgTable("badges", {
   badgeType: varchar("badge_type").notNull(), // first_lesson, course_complete, streak_7, etc
   badgeName: varchar("badge_name").notNull(),
   badgeIcon: varchar("badge_icon"),
+  autoAssigned: boolean("auto_assigned").default(false), // Auto-assigned on course completion
   earnedAt: timestamp("earned_at").defaultNow(),
 });
 
@@ -148,6 +149,50 @@ export const certificates = pgTable("certificates", {
   courseId: varchar("course_id").notNull().references(() => courses.id, { onDelete: 'cascade' }),
   certificateUrl: varchar("certificate_url"), // URL to PDF
   issuedAt: timestamp("issued_at").defaultNow(),
+});
+
+// ============================================================================
+// E-COMMERCE & MEMBERSHIP TABLES
+// ============================================================================
+
+export const purchases = pgTable("purchases", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  courseId: varchar("course_id").notNull().references(() => courses.id, { onDelete: 'cascade' }),
+  stripePaymentId: varchar("stripe_payment_id").notNull().unique(),
+  amount: integer("amount").notNull(), // Amount in cents
+  purchasedAt: timestamp("purchased_at").defaultNow(),
+});
+
+export const memberships = pgTable("memberships", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  stripeSubscriptionId: varchar("stripe_subscription_id").notNull().unique(),
+  stripeCustomerId: varchar("stripe_customer_id"),
+  status: varchar("status").notNull(), // active, past_due, canceled, incomplete
+  type: varchar("type").notNull(), // monthly, yearly
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date"),
+  cancelAtPeriodEnd: boolean("cancel_at_period_end").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const referralCodes = pgTable("referral_codes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }).unique(),
+  code: varchar("code").notNull().unique(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const referralEarnings = pgTable("referral_earnings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }), // The referrer
+  referredUserId: varchar("referred_user_id").notNull().references(() => users.id), // The person who used the referral
+  purchaseId: varchar("purchase_id").references(() => purchases.id),
+  membershipId: varchar("membership_id").references(() => memberships.id),
+  wavePoints: integer("wave_points").notNull(), // WavePoints earned
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 // ============================================================================
@@ -627,6 +672,27 @@ export const insertCertificateSchema = createInsertSchema(certificates).omit({
   issuedAt: true,
 });
 
+export const insertPurchaseSchema = createInsertSchema(purchases).omit({
+  id: true,
+  purchasedAt: true,
+});
+
+export const insertMembershipSchema = createInsertSchema(memberships).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertReferralCodeSchema = createInsertSchema(referralCodes).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertReferralEarningSchema = createInsertSchema(referralEarnings).omit({
+  id: true,
+  createdAt: true,
+});
+
 export const insertHeroSlideSchema = createInsertSchema(heroSlides).omit({
   id: true,
   createdAt: true,
@@ -687,6 +753,18 @@ export type InsertCampRegistration = z.infer<typeof insertCampRegistrationSchema
 
 export type Certificate = typeof certificates.$inferSelect;
 export type InsertCertificate = z.infer<typeof insertCertificateSchema>;
+
+export type Purchase = typeof purchases.$inferSelect;
+export type InsertPurchase = z.infer<typeof insertPurchaseSchema>;
+
+export type Membership = typeof memberships.$inferSelect;
+export type InsertMembership = z.infer<typeof insertMembershipSchema>;
+
+export type ReferralCode = typeof referralCodes.$inferSelect;
+export type InsertReferralCode = z.infer<typeof insertReferralCodeSchema>;
+
+export type ReferralEarning = typeof referralEarnings.$inferSelect;
+export type InsertReferralEarning = z.infer<typeof insertReferralEarningSchema>;
 
 export type HeroSlide = typeof heroSlides.$inferSelect;
 export type InsertHeroSlide = z.infer<typeof insertHeroSlideSchema>;

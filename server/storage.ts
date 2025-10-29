@@ -13,6 +13,10 @@ import {
   surfCamps,
   campRegistrations,
   certificates,
+  purchases,
+  memberships,
+  referralCodes,
+  referralEarnings,
   heroSlides,
   pageHeaders,
   customPages,
@@ -39,6 +43,14 @@ import {
   type InsertCampRegistration,
   type Certificate,
   type InsertCertificate,
+  type Purchase,
+  type InsertPurchase,
+  type Membership,
+  type InsertMembership,
+  type ReferralCode,
+  type InsertReferralCode,
+  type ReferralEarning,
+  type InsertReferralEarning,
   type HeroSlide,
   type InsertHeroSlide,
   type PageHeader,
@@ -118,6 +130,28 @@ export interface IStorage {
   getCertificateByUserAndCourse(userId: string, courseId: string): Promise<Certificate | undefined>;
   createCertificate(certificate: InsertCertificate): Promise<Certificate>;
   getCertificatesByUser(userId: string): Promise<(Certificate & { course: Course })[]>;
+  
+  // Purchase operations
+  getPurchasesByUser(userId: string): Promise<Purchase[]>;
+  createPurchase(purchase: InsertPurchase): Promise<Purchase>;
+  hasPurchasedCourse(userId: string, courseId: string): Promise<boolean>;
+  
+  // Membership operations
+  getMembershipByUser(userId: string): Promise<Membership | undefined>;
+  getActiveMembershipByUser(userId: string): Promise<Membership | undefined>;
+  createMembership(membership: InsertMembership): Promise<Membership>;
+  updateMembershipStatus(id: string, status: string, endDate?: Date, cancelAtPeriodEnd?: boolean): Promise<Membership>;
+  
+  // Referral operations
+  getReferralCodeByUser(userId: string): Promise<ReferralCode | undefined>;
+  getReferralCodeByCode(code: string): Promise<ReferralCode | undefined>;
+  createReferralCode(code: InsertReferralCode): Promise<ReferralCode>;
+  getReferralEarningsByUser(userId: string): Promise<ReferralEarning[]>;
+  createReferralEarning(earning: InsertReferralEarning): Promise<ReferralEarning>;
+  getWavePointsBalance(userId: string): Promise<number>;
+  
+  // Access control
+  canAccessCourse(userId: string, courseId: string): Promise<boolean>;
   
   // Hero slide operations
   getAllHeroSlides(): Promise<HeroSlide[]>;
@@ -511,6 +545,143 @@ export class DatabaseStorage implements IStorage {
       ...certificate,
       course,
     }));
+  }
+
+  // ========== Purchase Operations ==========
+  async getPurchasesByUser(userId: string): Promise<Purchase[]> {
+    return await db
+      .select()
+      .from(purchases)
+      .where(eq(purchases.userId, userId))
+      .orderBy(desc(purchases.purchasedAt));
+  }
+
+  async createPurchase(purchase: InsertPurchase): Promise<Purchase> {
+    const [newPurchase] = await db.insert(purchases).values(purchase).returning();
+    return newPurchase;
+  }
+
+  async hasPurchasedCourse(userId: string, courseId: string): Promise<boolean> {
+    const [purchase] = await db
+      .select()
+      .from(purchases)
+      .where(and(eq(purchases.userId, userId), eq(purchases.courseId, courseId)))
+      .limit(1);
+    return !!purchase;
+  }
+
+  // ========== Membership Operations ==========
+  async getMembershipByUser(userId: string): Promise<Membership | undefined> {
+    const [membership] = await db
+      .select()
+      .from(memberships)
+      .where(eq(memberships.userId, userId))
+      .orderBy(desc(memberships.createdAt))
+      .limit(1);
+    return membership;
+  }
+
+  async getActiveMembershipByUser(userId: string): Promise<Membership | undefined> {
+    const now = new Date();
+    const [membership] = await db
+      .select()
+      .from(memberships)
+      .where(
+        and(
+          eq(memberships.userId, userId),
+          eq(memberships.status, 'active'),
+          sql`${memberships.endDate} IS NULL OR ${memberships.endDate} > ${now}`
+        )
+      )
+      .limit(1);
+    return membership;
+  }
+
+  async createMembership(membership: InsertMembership): Promise<Membership> {
+    const [newMembership] = await db.insert(memberships).values(membership).returning();
+    return newMembership;
+  }
+
+  async updateMembershipStatus(
+    id: string,
+    status: string,
+    endDate?: Date,
+    cancelAtPeriodEnd?: boolean
+  ): Promise<Membership> {
+    const updateData: any = {
+      status,
+      updatedAt: new Date(),
+    };
+    if (endDate !== undefined) updateData.endDate = endDate;
+    if (cancelAtPeriodEnd !== undefined) updateData.cancelAtPeriodEnd = cancelAtPeriodEnd;
+
+    const [updatedMembership] = await db
+      .update(memberships)
+      .set(updateData)
+      .where(eq(memberships.id, id))
+      .returning();
+    return updatedMembership;
+  }
+
+  // ========== Referral Operations ==========
+  async getReferralCodeByUser(userId: string): Promise<ReferralCode | undefined> {
+    const [code] = await db
+      .select()
+      .from(referralCodes)
+      .where(eq(referralCodes.userId, userId))
+      .limit(1);
+    return code;
+  }
+
+  async getReferralCodeByCode(code: string): Promise<ReferralCode | undefined> {
+    const [referralCode] = await db
+      .select()
+      .from(referralCodes)
+      .where(eq(referralCodes.code, code))
+      .limit(1);
+    return referralCode;
+  }
+
+  async createReferralCode(codeData: InsertReferralCode): Promise<ReferralCode> {
+    const [newCode] = await db.insert(referralCodes).values(codeData).returning();
+    return newCode;
+  }
+
+  async getReferralEarningsByUser(userId: string): Promise<ReferralEarning[]> {
+    return await db
+      .select()
+      .from(referralEarnings)
+      .where(eq(referralEarnings.userId, userId))
+      .orderBy(desc(referralEarnings.createdAt));
+  }
+
+  async createReferralEarning(earning: InsertReferralEarning): Promise<ReferralEarning> {
+    const [newEarning] = await db.insert(referralEarnings).values(earning).returning();
+    return newEarning;
+  }
+
+  async getWavePointsBalance(userId: string): Promise<number> {
+    const earnings = await this.getReferralEarningsByUser(userId);
+    return earnings.reduce((total, earning) => total + earning.wavePoints, 0);
+  }
+
+  // ========== Access Control ==========
+  async canAccessCourse(userId: string, courseId: string): Promise<boolean> {
+    // Check if course is free
+    const course = await this.getCourse(courseId);
+    if (course?.isFree) return true;
+
+    // Check if user purchased this course
+    const hasPurchased = await this.hasPurchasedCourse(userId, courseId);
+    if (hasPurchased) return true;
+
+    // Check if user has active membership
+    const membership = await this.getActiveMembershipByUser(userId);
+    if (!membership) return false;
+
+    // Membership includes REMATA, TAKEOFF, NOSERIDE
+    const membershipCourses = ['remata', 'takeoff', 'noseride'];
+    return membershipCourses.includes(course?.courseCategory || '');
   }
 
   // ========== Hero Slide Operations ==========
