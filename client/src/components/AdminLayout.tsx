@@ -1,11 +1,13 @@
 import { useLocation, Link } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
+import { useTheme } from "@/components/ThemeProvider";
 import {
   Sidebar,
   SidebarContent,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
+  SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -13,6 +15,8 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { Sliders, Waves, BookOpen, Mail, Calendar, LayoutDashboard, FileText, FilePlus2, User, Users } from "lucide-react";
+import logoUrl from "@assets/web_logo_1760523001836.webp";
+import logoLightUrl from "@assets/chiaro1_1760538494784.webp";
 
 const adminMenuItems = [
   {
@@ -69,10 +73,17 @@ const adminMenuItems = [
 
 export function AppAdminSidebar() {
   const [location] = useLocation();
+  const { theme } = useTheme();
+  const currentLogo = theme === "light" ? logoUrl : logoLightUrl;
 
   return (
     <Sidebar>
       <SidebarContent>
+        <SidebarHeader className="p-4 border-b">
+          <Link href="/" className="flex items-center justify-center" data-testid="link-admin-logo">
+            <img src={currentLogo} alt="Scuola di Longboard" className="h-16 w-auto" />
+          </Link>
+        </SidebarHeader>
         <SidebarGroup>
           <SidebarGroupLabel>Gestione Portale</SidebarGroupLabel>
           <SidebarGroupContent>
