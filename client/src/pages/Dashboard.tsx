@@ -402,9 +402,11 @@ export default function Dashboard() {
               <CardContent>
                 <div className="text-center py-4">
                   <div className="mb-4">
-                    <div className="w-20 h-20 mx-auto rounded-full bg-gradient-to-br from-chart-2/20 to-chart-2/5 flex items-center justify-center">
-                      <Wallet className="h-10 w-10 text-chart-2" />
-                    </div>
+                    <img 
+                      src={new URL("@assets/WAVEPOINT_1761759915658.png", import.meta.url).href}
+                      alt="WavePoint"
+                      className="w-20 h-20 mx-auto"
+                    />
                   </div>
                   <div className="text-4xl font-display font-bold text-chart-2 mb-2" data-testid="text-wavepoints-balance">
                     {wavePointsBalance}
