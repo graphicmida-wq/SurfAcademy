@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { CourseCard } from "@/components/CourseCard";
-import { LevelBadge } from "@/components/LevelBadge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,10 +15,9 @@ import type { Course } from "@shared/schema";
 export default function Courses() {
   const [location] = useLocation();
   const params = new URLSearchParams(location.split("?")[1] || "");
-  const initialLevel = params.get("level") || "all";
+  const initialCategory = params.get("category") || "all";
 
-  const [selectedLevel, setSelectedLevel] = useState(initialLevel);
-  const [showFreeOnly, setShowFreeOnly] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState(initialCategory);
   const [searchQuery, setSearchQuery] = useState("");
 
   const { data: courses, isLoading } = useQuery<Course[]>({
@@ -29,13 +27,12 @@ export default function Courses() {
   const { data: pageHeader } = usePageHeader('courses');
 
   const filteredCourses = courses?.filter((course) => {
-    const matchesLevel = selectedLevel === "all" || course.level === selectedLevel;
-    const matchesFree = !showFreeOnly || course.isFree;
+    const matchesCategory = selectedCategory === "all" || course.courseCategory === selectedCategory;
     const matchesSearch =
       !searchQuery ||
       course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       course.description?.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesLevel && matchesFree && matchesSearch;
+    return matchesCategory && matchesSearch;
   });
 
   return (
@@ -78,52 +75,49 @@ export default function Courses() {
                 </div>
               </div>
 
-              {/* Level Filter */}
+              {/* Category Filter */}
               <div className="mb-6">
-                <Label className="mb-3 block">Livello</Label>
-                <RadioGroup value={selectedLevel} onValueChange={setSelectedLevel}>
+                <Label className="mb-3 block">Categoria Corso</Label>
+                <RadioGroup value={selectedCategory} onValueChange={setSelectedCategory}>
                   <div className="space-y-2">
                     <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="all" id="level-all" data-testid="radio-level-all" />
-                      <Label htmlFor="level-all" className="cursor-pointer font-normal">
-                        Tutti i livelli
+                      <RadioGroupItem value="all" id="category-all" data-testid="radio-category-all" />
+                      <Label htmlFor="category-all" className="cursor-pointer font-normal">
+                        Tutti i corsi
                       </Label>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="beginner" id="level-beginner" data-testid="radio-level-beginner" />
-                      <Label htmlFor="level-beginner" className="cursor-pointer font-normal">
-                        Principiante
+                      <RadioGroupItem value="remata" id="category-remata" data-testid="radio-category-remata" />
+                      <Label htmlFor="category-remata" className="cursor-pointer font-normal">
+                        REMATA
                       </Label>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="intermediate" id="level-intermediate" data-testid="radio-level-intermediate" />
-                      <Label htmlFor="level-intermediate" className="cursor-pointer font-normal">
-                        Intermedio
+                      <RadioGroupItem value="takeoff" id="category-takeoff" data-testid="radio-category-takeoff" />
+                      <Label htmlFor="category-takeoff" className="cursor-pointer font-normal">
+                        TAKEOFF
                       </Label>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="advanced" id="level-advanced" data-testid="radio-level-advanced" />
-                      <Label htmlFor="level-advanced" className="cursor-pointer font-normal">
-                        Avanzato
+                      <RadioGroupItem value="noseride" id="category-noseride" data-testid="radio-category-noseride" />
+                      <Label htmlFor="category-noseride" className="cursor-pointer font-normal">
+                        NOSERIDE
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="gratuiti" id="category-gratuiti" data-testid="radio-category-gratuiti" />
+                      <Label htmlFor="category-gratuiti" className="cursor-pointer font-normal">
+                        Contenuti Gratuiti
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="special" id="category-special" data-testid="radio-category-special" />
+                      <Label htmlFor="category-special" className="cursor-pointer font-normal">
+                        Special
                       </Label>
                     </div>
                   </div>
                 </RadioGroup>
-              </div>
-
-              {/* Free Only */}
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="free-only"
-                  checked={showFreeOnly}
-                  onChange={(e) => setShowFreeOnly(e.target.checked)}
-                  className="h-4 w-4 rounded border-input"
-                  data-testid="checkbox-free-only"
-                />
-                <Label htmlFor="free-only" className="cursor-pointer font-normal">
-                  Solo corsi gratuiti
-                </Label>
               </div>
             </Card>
           </aside>
@@ -138,13 +132,10 @@ export default function Courses() {
               </div>
             ) : filteredCourses && filteredCourses.length > 0 ? (
               <>
-                <div className="mb-6 flex items-center justify-between">
+                <div className="mb-6">
                   <p className="text-sm text-muted-foreground" data-testid="text-courses-count">
-                    {filteredCourses.length} {filteredCourses.length === 1 ? "corso" : "corsi"} trovati
+                    {filteredCourses.length} {filteredCourses.length === 1 ? "corso" : "corsi"} {selectedCategory !== "all" ? `in ${selectedCategory.toUpperCase()}` : "disponibili"}
                   </p>
-                  {selectedLevel !== "all" && (
-                    <LevelBadge level={selectedLevel} />
-                  )}
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6" data-testid="grid-courses">
                   {filteredCourses.map((course) => (
@@ -163,8 +154,7 @@ export default function Courses() {
                   <Button
                     variant="outline"
                     onClick={() => {
-                      setSelectedLevel("all");
-                      setShowFreeOnly(false);
+                      setSelectedCategory("all");
                       setSearchQuery("");
                     }}
                     data-testid="button-reset-filters"

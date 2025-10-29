@@ -54,6 +54,7 @@ export const courses = pgTable("courses", {
   title: varchar("title", { length: 255 }).notNull(),
   description: text("description"),
   level: varchar("level").notNull(), // beginner, intermediate, advanced
+  courseCategory: varchar("course_category"), // remata, takeoff, noseride, gratuiti, special
   thumbnailUrl: varchar("thumbnail_url"),
   trailerUrl: varchar("trailer_url"),
   isFree: boolean("is_free").default(false),
@@ -78,7 +79,11 @@ export const lessons = pgTable("lessons", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   moduleId: varchar("module_id").notNull().references(() => modules.id, { onDelete: 'cascade' }),
   title: varchar("title", { length: 255 }).notNull(),
-  videoUrl: varchar("video_url"),
+  contentType: varchar("content_type"), // presentazione, ebook, planning, esercizio, riscaldamento, settimana-1, settimana-2, settimana-3, settimana-4
+  videoUrl: varchar("video_url"), // Kept for backward compatibility
+  videoUrls: text("video_urls").array(), // Multiple videos for settimane content
+  pdfUrl: varchar("pdf_url"), // For E-Book and Planning PDFs
+  htmlContent: text("html_content"), // Rich text content for E-Book and Planning
   duration: integer("duration"), // in minutes
   orderIndex: integer("order_index").notNull(),
   isFree: boolean("is_free").default(false),
