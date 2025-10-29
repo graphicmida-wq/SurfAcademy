@@ -10,7 +10,8 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MediaUploadZone } from "@/components/MediaUploadZone";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Plus, Trash2, Edit, Book, Users, CheckCircle } from "lucide-react";
+import { Loader2, Plus, Trash2, Edit, Book, Users, CheckCircle, FolderOpen } from "lucide-react";
+import { Link } from "wouter";
 import type { Course, InsertCourse, Enrollment } from "@shared/schema";
 import { insertCourseSchema } from "@shared/schema";
 import {
@@ -512,6 +513,19 @@ export default function AdminCourses() {
                     )}
                   </Button>
                 )}
+                
+                {/* Content Management button */}
+                <Link href="/admin/corsi/contenuti">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    data-testid={`button-manage-content-${course.id}`}
+                  >
+                    <FolderOpen className="h-4 w-4 mr-2" />
+                    Gestisci Contenuti
+                  </Button>
+                </Link>
                 
                 {/* Edit/Delete buttons */}
                 <div className="flex gap-2">

@@ -8,9 +8,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MediaUploadZone } from "@/components/MediaUploadZone";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Plus, BookOpen, FileVideo, FileText } from "lucide-react";
-import type { Course, Module, Lesson, InsertLesson } from "@shared/schema";
-import { insertLessonSchema } from "@shared/schema";
+import { Loader2, Plus, BookOpen, FileVideo, FileText, Edit, Trash2 } from "lucide-react";
+import type { Course, Module, Lesson, InsertLesson, InsertModule } from "@shared/schema";
+import { insertLessonSchema, insertModuleSchema } from "@shared/schema";
 import {
   Dialog,
   DialogContent,
@@ -48,7 +48,9 @@ export default function AdminCourseContent() {
   const [selectedCourseId, setSelectedCourseId] = useState<string>("");
   const [selectedModuleId, setSelectedModuleId] = useState<string>("");
   const [isLessonDialogOpen, setIsLessonDialogOpen] = useState(false);
+  const [isModuleDialogOpen, setIsModuleDialogOpen] = useState(false);
   const [editingLesson, setEditingLesson] = useState<Lesson | null>(null);
+  const [editingModule, setEditingModule] = useState<Module | null>(null);
   const [videoUrls, setVideoUrls] = useState<string[]>([]);
 
   const { data: courses = [], isLoading: coursesLoading } = useQuery<Course[]>({
@@ -60,7 +62,7 @@ export default function AdminCourseContent() {
     enabled: !!selectedCourseId,
   });
 
-  const form = useForm<InsertLesson>({
+  const lessonForm = useForm<InsertLesson>({
     resolver: zodResolver(insertLessonSchema),
     defaultValues: {
       moduleId: "",
@@ -70,6 +72,16 @@ export default function AdminCourseContent() {
       videoUrls: [],
       pdfUrl: "",
       htmlContent: "",
+      orderIndex: 0,
+    },
+  });
+
+  const moduleForm = useForm<InsertModule>({
+    resolver: zodResolver(insertModuleSchema),
+    defaultValues: {
+      courseId: "",
+      title: "",
+      description: "",
       orderIndex: 0,
     },
   });
@@ -85,7 +97,7 @@ export default function AdminCourseContent() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/courses/${selectedCourseId}/modules`] });
       toast({ title: "Lezione creata con successo" });
-      form.reset();
+      lessonForm.reset();
       setVideoUrls([]);
       setEditingLesson(null);
       setIsLessonDialogOpen(false);
@@ -106,7 +118,7 @@ export default function AdminCourseContent() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/courses/${selectedCourseId}/modules`] });
       toast({ title: "Lezione aggiornata con successo" });
-      form.reset();
+      lessonForm.reset();
       setVideoUrls([]);
       setEditingLesson(null);
       setIsLessonDialogOpen(false);
@@ -126,6 +138,54 @@ export default function AdminCourseContent() {
     },
     onError: () => {
       toast({ title: "Errore durante l'eliminazione", variant: "destructive" });
+    },
+  });
+
+  const createModuleMutation = useMutation({
+    mutationFn: async (data: InsertModule) => {
+      const res = await apiRequest("POST", "/api/admin/modules", data);
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/courses/${selectedCourseId}/modules`] });
+      toast({ title: "Modulo creato con successo" });
+      moduleForm.reset();
+      setEditingModule(null);
+      setIsModuleDialogOpen(false);
+    },
+    onError: () => {
+      toast({ title: "Errore durante la creazione del modulo", variant: "destructive" });
+    },
+  });
+
+  const updateModuleMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Partial<InsertModule> }) => {
+      const res = await apiRequest("PATCH", `/api/admin/modules/${id}`, data);
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/courses/${selectedCourseId}/modules`] });
+      toast({ title: "Modulo aggiornato con successo" });
+      moduleForm.reset();
+      setEditingModule(null);
+      setIsModuleDialogOpen(false);
+    },
+    onError: () => {
+      toast({ title: "Errore durante l'aggiornamento del modulo", variant: "destructive" });
+    },
+  });
+
+  const deleteModuleMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await apiRequest("DELETE", `/api/admin/modules/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/courses/${selectedCourseId}/modules`] });
+      toast({ title: "Modulo eliminato con successo" });
+      setSelectedModuleId("");
+    },
+    onError: () => {
+      toast({ title: "Errore durante l'eliminazione del modulo", variant: "destructive" });
     },
   });
 
@@ -149,7 +209,7 @@ export default function AdminCourseContent() {
 
   const handleEditLesson = (lesson: Lesson) => {
     setEditingLesson(lesson);
-    form.reset({
+    lessonForm.reset({
       moduleId: lesson.moduleId,
       title: lesson.title,
       contentType: lesson.contentType || "presentazione",
@@ -174,7 +234,7 @@ export default function AdminCourseContent() {
       return;
     }
     setEditingLesson(null);
-    form.reset({
+    lessonForm.reset({
       moduleId: selectedModuleId,
       title: "",
       contentType: "presentazione",
@@ -200,6 +260,56 @@ export default function AdminCourseContent() {
 
   const removeVideoUrl = (index: number) => {
     setVideoUrls(videoUrls.filter((_, i) => i !== index));
+  };
+
+  const handleSubmitModule = (data: InsertModule) => {
+    if (!selectedCourseId) {
+      toast({ title: "Seleziona un corso", variant: "destructive" });
+      return;
+    }
+    if (editingModule) {
+      updateModuleMutation.mutate({
+        id: editingModule.id,
+        data: { ...data, courseId: selectedCourseId },
+      });
+    } else {
+      createModuleMutation.mutate({
+        ...data,
+        courseId: selectedCourseId,
+      });
+    }
+  };
+
+  const handleNewModule = () => {
+    if (!selectedCourseId) {
+      toast({ title: "Seleziona prima un corso", variant: "destructive" });
+      return;
+    }
+    setEditingModule(null);
+    moduleForm.reset({
+      courseId: selectedCourseId,
+      title: "",
+      description: "",
+      orderIndex: 0,
+    });
+    setIsModuleDialogOpen(true);
+  };
+
+  const handleEditModule = (module: Module) => {
+    setEditingModule(module);
+    moduleForm.reset({
+      courseId: module.courseId,
+      title: module.title,
+      description: module.description || "",
+      orderIndex: module.orderIndex || 0,
+    });
+    setIsModuleDialogOpen(true);
+  };
+
+  const handleDeleteModule = (moduleId: string, moduleTitle: string) => {
+    if (confirm(`Sei sicuro di voler eliminare "${moduleTitle}"? Verranno eliminate anche tutte le lezioni.`)) {
+      deleteModuleMutation.mutate(moduleId);
+    }
   };
 
   if (coursesLoading) {
@@ -260,6 +370,162 @@ export default function AdminCourseContent() {
         )}
       </div>
 
+      {/* Modules Section */}
+      {selectedCourseId && (
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>Moduli del Corso</CardTitle>
+            <Dialog open={isModuleDialogOpen} onOpenChange={setIsModuleDialogOpen}>
+              <DialogTrigger asChild>
+                <Button onClick={handleNewModule} data-testid="button-create-module">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Nuovo Modulo
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>{editingModule ? "Modifica Modulo" : "Crea Nuovo Modulo"}</DialogTitle>
+                </DialogHeader>
+                <Form {...moduleForm}>
+                  <form onSubmit={moduleForm.handleSubmit(handleSubmitModule)} className="space-y-4">
+                    <FormField
+                      control={moduleForm.control}
+                      name="title"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Titolo *</FormLabel>
+                          <FormControl>
+                            <Input {...field} placeholder="Nome del modulo" data-testid="input-module-title" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={moduleForm.control}
+                      name="description"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Descrizione</FormLabel>
+                          <FormControl>
+                            <Textarea
+                              {...field}
+                              value={field.value ?? ""}
+                              placeholder="Descrizione del modulo"
+                              rows={3}
+                              data-testid="textarea-module-description"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={moduleForm.control}
+                      name="orderIndex"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Ordine</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              {...field}
+                              value={field.value ?? 0}
+                              onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                              data-testid="input-module-order"
+                            />
+                          </FormControl>
+                          <FormDescription>Numero per ordinare i moduli</FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <div className="flex justify-end gap-2 pt-4">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setIsModuleDialogOpen(false)}
+                        disabled={createModuleMutation.isPending}
+                      >
+                        Annulla
+                      </Button>
+                      <Button
+                        type="submit"
+                        disabled={createModuleMutation.isPending || updateModuleMutation.isPending}
+                        data-testid="button-save-module"
+                      >
+                        {(createModuleMutation.isPending || updateModuleMutation.isPending) ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Salvataggio...
+                          </>
+                        ) : editingModule ? (
+                          "Aggiorna Modulo"
+                        ) : (
+                          "Crea Modulo"
+                        )}
+                      </Button>
+                    </div>
+                  </form>
+                </Form>
+              </DialogContent>
+            </Dialog>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {modules.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <BookOpen className="h-16 w-16 mx-auto mb-4 opacity-50" />
+                  <p>Nessun modulo disponibile</p>
+                  <p className="text-sm mt-2">Clicca "Nuovo Modulo" per iniziare</p>
+                </div>
+              ) : (
+                modules.map((module) => (
+                  <Card key={module.id} data-testid={`module-item-${module.id}`}>
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1">
+                          <h3 className="font-semibold">{module.title}</h3>
+                          {module.description && (
+                            <p className="text-sm text-muted-foreground mt-1">{module.description}</p>
+                          )}
+                          <Badge variant="secondary" className="mt-2">
+                            {module.lessons?.length || 0} lezioni
+                          </Badge>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEditModule(module)}
+                            data-testid={`button-edit-module-${module.id}`}
+                          >
+                            <Edit className="h-4 w-4 mr-2" />
+                            Modifica
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => handleDeleteModule(module.id, module.title)}
+                            disabled={deleteModuleMutation.isPending}
+                            data-testid={`button-delete-module-${module.id}`}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {selectedModuleId && selectedModule && (
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
@@ -275,10 +541,10 @@ export default function AdminCourseContent() {
                 <DialogHeader>
                   <DialogTitle>{editingLesson ? "Modifica Lezione" : "Crea Nuova Lezione"}</DialogTitle>
                 </DialogHeader>
-                <Form {...form}>
-                  <form onSubmit={form.handleSubmit(handleSubmitLesson)} className="space-y-4">
+                <Form {...lessonForm}>
+                  <form onSubmit={lessonForm.handleSubmit(handleSubmitLesson)} className="space-y-4">
                     <FormField
-                      control={form.control}
+                      control={lessonForm.control}
                       name="title"
                       render={({ field }) => (
                         <FormItem>
@@ -292,7 +558,7 @@ export default function AdminCourseContent() {
                     />
 
                     <FormField
-                      control={form.control}
+                      control={lessonForm.control}
                       name="contentType"
                       render={({ field }) => (
                         <FormItem>
@@ -343,7 +609,7 @@ export default function AdminCourseContent() {
                     </div>
 
                     <FormField
-                      control={form.control}
+                      control={lessonForm.control}
                       name="pdfUrl"
                       render={({ field }) => (
                         <FormItem>
@@ -361,7 +627,7 @@ export default function AdminCourseContent() {
                     />
 
                     <FormField
-                      control={form.control}
+                      control={lessonForm.control}
                       name="htmlContent"
                       render={({ field }) => (
                         <FormItem>
