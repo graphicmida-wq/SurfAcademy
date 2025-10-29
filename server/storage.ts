@@ -179,7 +179,19 @@ export class DatabaseStorage implements IStorage {
 
   // ========== Course Operations ==========
   async getAllCourses(): Promise<Course[]> {
-    return await db.select().from(courses).orderBy(desc(courses.createdAt));
+    return await db
+      .select()
+      .from(courses)
+      .orderBy(
+        sql`CASE 
+          WHEN ${courses.courseCategory} = 'remata' THEN 1
+          WHEN ${courses.courseCategory} = 'takeoff' THEN 2
+          WHEN ${courses.courseCategory} = 'noseride' THEN 3
+          WHEN ${courses.courseCategory} = 'gratuiti' THEN 4
+          WHEN ${courses.courseCategory} = 'special' THEN 5
+          ELSE 6
+        END`
+      );
   }
 
   async getCourse(id: string): Promise<Course | undefined> {
