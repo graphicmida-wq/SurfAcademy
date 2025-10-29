@@ -161,6 +161,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get user WavePoints balance
+  app.get('/api/wavepoints', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.claims?.sub || req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      const balance = await storage.getWavePointsBalance(userId);
+      res.json({ balance });
+    } catch (error) {
+      console.error("Error fetching WavePoints:", error);
+      res.status(500).json({ message: "Failed to fetch WavePoints" });
+    }
+  });
+
   // ========== Course Routes ==========
   app.get("/api/courses", async (req, res) => {
     try {

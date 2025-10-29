@@ -84,6 +84,13 @@ export default function Dashboard() {
 
   const { data: pageHeader } = usePageHeader('dashboard');
 
+  const { data: wavePointsData } = useQuery<{ balance: number }>({
+    queryKey: ["/api/wavepoints"],
+    enabled: isAuthenticated,
+  });
+
+  const wavePointsBalance = wavePointsData?.balance || 0;
+
   const updateProfileMutation = useMutation({
     mutationFn: async (data: z.infer<typeof profileSchema>) => {
       const res = await apiRequest("PUT", "/api/profile", data);
@@ -381,6 +388,38 @@ export default function Dashboard() {
                     </form>
                   </Form>
                 )}
+              </CardContent>
+            </Card>
+
+            {/* WavePoints Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Wallet className="h-5 w-5 text-chart-2" />
+                  WavePoints
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-4">
+                  <div className="mb-4">
+                    <div className="w-20 h-20 mx-auto rounded-full bg-gradient-to-br from-chart-2/20 to-chart-2/5 flex items-center justify-center">
+                      <Wallet className="h-10 w-10 text-chart-2" />
+                    </div>
+                  </div>
+                  <div className="text-4xl font-display font-bold text-chart-2 mb-2" data-testid="text-wavepoints-balance">
+                    {wavePointsBalance}
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    {wavePointsBalance === 0 
+                      ? "Invita amici per guadagnare WavePoints!" 
+                      : "50 punti = 10% sconto!"}
+                  </p>
+                  {wavePointsBalance >= 50 && (
+                    <Badge className="bg-chart-2/10 text-chart-2 border-chart-2/20">
+                      Hai uno sconto disponibile!
+                    </Badge>
+                  )}
+                </div>
               </CardContent>
             </Card>
 
