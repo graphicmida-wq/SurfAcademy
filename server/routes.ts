@@ -146,16 +146,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Not authenticated" });
       }
 
-      const { firstName, lastName, email, profileImageUrl } = req.body;
-      const updatedUser = await storage.updateUserProfile(userId, {
-        firstName,
-        lastName,
-        email,
-        profileImageUrl,
+      // Validate profile update data
+      const profileSchema = z.object({
+        firstName: z.string().min(1, "Nome richiesto").optional(),
+        lastName: z.string().min(1, "Cognome richiesto").optional(),
+        email: z.string().email("Email non valida").optional(),
+        profileImageUrl: z.string().optional(),
       });
+
+      const validatedData = profileSchema.parse(req.body);
+
+      // Check email uniqueness if email is being changed
+      if (validatedData.email) {
+        const currentUser = await storage.getUser(userId);
+        if (currentUser && validatedData.email !== currentUser.email) {
+          const existingUser = await storage.getUserByEmail(validatedData.email);
+          if (existingUser) {
+            return res.status(400).json({ message: "Email già in uso" });
+          }
+        }
+      }
+
+      const updatedUser = await storage.updateUserProfile(userId, validatedData);
 
       res.json(updatedUser);
     } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Dati non validi", errors: error.errors });
+      }
       console.error("Error updating profile:", error);
       res.status(500).json({ message: "Failed to update profile" });
     }
@@ -405,6 +423,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error updating progress:", error);
       res.status(500).json({ message: "Failed to update progress" });
+    }
+  });
+
+  // Admin endpoint to get all enrollments with user and course details
+  app.get("/api/admin/enrollments", isAdmin, async (req, res) => {
+    try {
+      const enrollments = await storage.getAllEnrollmentsWithDetails();
+      res.json(enrollments);
+    } catch (error) {
+      console.error("Error fetching admin enrollments:", error);
+      res.status(500).json({ message: "Failed to fetch enrollments" });
     }
   });
 

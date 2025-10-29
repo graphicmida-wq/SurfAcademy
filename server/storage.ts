@@ -96,6 +96,7 @@ export interface IStorage {
   getEnrollmentByUserAndCourse(userId: string, courseId: string): Promise<Enrollment | undefined>;
   createEnrollment(enrollment: InsertEnrollment): Promise<Enrollment>;
   updateEnrollmentProgress(id: string, progress: number): Promise<void>;
+  getAllEnrollmentsWithDetails(): Promise<(Enrollment & { user: User; course: Course })[]>;
   
   // Lesson progress operations
   getLessonProgressByUser(userId: string, lessonId: string): Promise<any>;
@@ -362,6 +363,25 @@ export class DatabaseStorage implements IStorage {
       .update(enrollments)
       .set({ progress, completedAt: progress === 100 ? new Date() : null })
       .where(eq(enrollments.id, id));
+  }
+
+  async getAllEnrollmentsWithDetails(): Promise<(Enrollment & { user: User; course: Course })[]> {
+    const allEnrollments = await db
+      .select({
+        enrollment: enrollments,
+        user: users,
+        course: courses,
+      })
+      .from(enrollments)
+      .innerJoin(users, eq(enrollments.userId, users.id))
+      .innerJoin(courses, eq(enrollments.courseId, courses.id))
+      .orderBy(desc(enrollments.enrolledAt));
+
+    return allEnrollments.map(({ enrollment, user, course }) => ({
+      ...enrollment,
+      user,
+      course,
+    }));
   }
 
   // ========== Lesson Progress Operations ==========

@@ -24,6 +24,7 @@ import AdminCustomPages from "@/pages/admin/CustomPages";
 import CustomPageEditor from "@/pages/admin/CustomPageEditor";
 import AdminCourses from "@/pages/admin/Courses";
 import AdminCourseContent from "@/pages/admin/CourseContent";
+import AdminIscrizioni from "@/pages/admin/Iscrizioni";
 import NotFound from "@/pages/not-found";
 import { AdminLayout } from "@/components/AdminLayout";
 
@@ -100,6 +101,13 @@ function Router() {
             {user?.isAdmin ? (
               <AdminLayout>
                 <AdminCourseContent />
+              </AdminLayout>
+            ) : <NotFound />}
+          </Route>
+          <Route path="/admin/iscrizioni">
+            {user?.isAdmin ? (
+              <AdminLayout>
+                <AdminIscrizioni />
               </AdminLayout>
             ) : <NotFound />}
           </Route>
