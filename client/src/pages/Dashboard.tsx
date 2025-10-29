@@ -123,7 +123,7 @@ export default function Dashboard() {
   }
 
   const completedCourses = enrollments?.filter(e => e.progress === 100) || [];
-  const inProgressCourses = enrollments?.filter(e => e.progress > 0 && e.progress < 100) || [];
+  const inProgressCourses = enrollments?.filter(e => (e.progress || 0) >= 0 && (e.progress || 0) < 100) || [];
 
   return (
     <div className="min-h-screen">
@@ -205,9 +205,9 @@ export default function Dashboard() {
                                 {enrollment.course.title}
                               </h3>
                               <div className="space-y-2">
-                                <Progress value={enrollment.progress} className="h-2" />
+                                <Progress value={enrollment.progress || 0} className="h-2" />
                                 <p className="text-sm text-muted-foreground">
-                                  Progresso: {enrollment.progress}%
+                                  Progresso: {enrollment.progress || 0}%
                                 </p>
                               </div>
                             </div>
