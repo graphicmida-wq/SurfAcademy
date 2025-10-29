@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Link } from "wouter";
-import { Play, Trophy, Target, Clock, Award, ArrowRight, User, Wallet } from "lucide-react";
+import { Play, Trophy, Target, Clock, Award, ArrowRight, User } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { usePageHeader } from "@/hooks/usePageHeader";
 import { MediaUploadZone } from "@/components/MediaUploadZone";
@@ -395,7 +395,11 @@ export default function Dashboard() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Wallet className="h-5 w-5 text-chart-2" />
+                  <img 
+                    src={new URL("@assets/WAVEPOINT_1761759915658.png", import.meta.url).href}
+                    alt="WavePoint"
+                    className="h-5 w-5"
+                  />
                   WavePoints
                 </CardTitle>
               </CardHeader>
