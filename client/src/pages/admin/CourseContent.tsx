@@ -79,6 +79,22 @@ export default function AdminCourseContent() {
     queryKey: [`/api/courses/${selectedCourseId}/modules`],
     enabled: !!selectedCourseId,
   });
+  
+  // Auto-create default module when course is selected
+  const autoCreateModuleMutation = useMutation({
+    mutationFn: async (courseId: string) => {
+      const res = await apiRequest("POST", "/api/admin/modules", {
+        courseId,
+        title: "Contenuti Corso",
+        description: "Modulo principale per i contenuti del corso",
+        orderIndex: 0,
+      });
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/courses/${selectedCourseId}/modules`] });
+    },
+  });
 
   const lessonForm = useForm<InsertLesson>({
     resolver: zodResolver(insertLessonSchema),
@@ -247,20 +263,37 @@ export default function AdminCourseContent() {
     }
   };
 
-  const handleNewLesson = (contentType: string) => {
-    if (modules.length === 0) {
-      toast({ 
-        title: "Crea prima un modulo", 
-        description: "Devi creare almeno un modulo prima di aggiungere contenuti",
-        variant: "destructive" 
-      });
-      return;
+  const handleNewLesson = async (contentType: string) => {
+    let moduleId = modules[0]?.id || "";
+    
+    // Auto-create module if none exist
+    if (modules.length === 0 && selectedCourseId) {
+      if (autoCreateModuleMutation.isPending) {
+        toast({ 
+          title: "Attendere", 
+          description: "Creazione modulo in corso...",
+        });
+        return;
+      }
+      
+      try {
+        const newModule = await autoCreateModuleMutation.mutateAsync(selectedCourseId);
+        moduleId = newModule.id;
+        // Refetch to update the UI
+        await queryClient.refetchQueries({ queryKey: [`/api/courses/${selectedCourseId}/modules`] });
+      } catch (error) {
+        toast({ 
+          title: "Errore creazione modulo automatico", 
+          variant: "destructive" 
+        });
+        return;
+      }
     }
-    const defaultModuleId = modules[0]?.id || "";
+    
     setPreselectedContentType(contentType);
     setEditingLesson(null);
     lessonForm.reset({
-      moduleId: defaultModuleId,
+      moduleId: moduleId,
       title: "",
       contentType: contentType,
       videoUrl: "",
@@ -271,7 +304,7 @@ export default function AdminCourseContent() {
     });
     // Explicitly set the moduleId value to ensure Select component updates
     setTimeout(() => {
-      lessonForm.setValue("moduleId", defaultModuleId);
+      lessonForm.setValue("moduleId", moduleId);
     }, 0);
     setVideoUrls([]);
     setIsLessonDialogOpen(true);
@@ -556,7 +589,7 @@ export default function AdminCourseContent() {
       )}
 
       {/* Content by Type Section */}
-      {selectedCourseId && !modulesLoading && modules.length > 0 && (
+      {selectedCourseId && !modulesLoading && (
         <Card>
           <CardHeader>
             <CardTitle>Contenuti per Tipo</CardTitle>
