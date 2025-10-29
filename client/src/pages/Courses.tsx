@@ -40,7 +40,7 @@ export default function Courses() {
       <PageHeader 
         imageUrl={pageHeader?.imageUrl || undefined}
         title={pageHeader?.title || "Catalogo Corsi"}
-        subtitle={pageHeader?.subtitle || "Scopri i nostri corsi di surf e longboard. Trova il percorso perfetto per il tuo livello."}
+        subtitle={pageHeader?.subtitle || "Scopri i nostri corsi di surf e longboard. Trova il percorso perfetto per te."}
         paddingTop={pageHeader?.paddingTop || undefined}
         paddingBottom={pageHeader?.paddingBottom || undefined}
         minHeight={pageHeader?.minHeight || undefined}

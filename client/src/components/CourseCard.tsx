@@ -2,7 +2,6 @@ import { Link } from "wouter";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { LevelBadge } from "@/components/LevelBadge";
 import { Clock, Play } from "lucide-react";
 import type { Course } from "@shared/schema";
 
@@ -35,12 +34,9 @@ export function CourseCard({ course }: CourseCardProps) {
         </div>
         
         <CardContent className="p-4">
-          <div className="flex items-start justify-between gap-2 mb-2">
-            <h3 className="font-display font-semibold text-lg line-clamp-2 group-hover:text-primary transition-colors" data-testid={`text-course-title-${course.id}`}>
-              {course.title}
-            </h3>
-            <LevelBadge level={course.level} />
-          </div>
+          <h3 className="font-display font-semibold text-lg line-clamp-2 group-hover:text-primary transition-colors mb-2" data-testid={`text-course-title-${course.id}`}>
+            {course.title}
+          </h3>
           
           <p className="text-sm text-muted-foreground line-clamp-2 mb-3" data-testid={`text-course-description-${course.id}`}>
             {course.description}
