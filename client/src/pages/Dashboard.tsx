@@ -1,20 +1,58 @@
-import { useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Link } from "wouter";
-import { Play, Trophy, Target, Clock, Award, ArrowRight } from "lucide-react";
+import { Play, Trophy, Target, Clock, Award, ArrowRight, User, Wallet } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { usePageHeader } from "@/hooks/usePageHeader";
+import { MediaUploadZone } from "@/components/MediaUploadZone";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
 import type { Enrollment, Course, Badge as BadgeType } from "@shared/schema";
+
+const profileSchema = z.object({
+  firstName: z.string().min(1, "Nome richiesto"),
+  lastName: z.string().min(1, "Cognome richiesto"),
+  email: z.string().email("Email non valida"),
+  profileImageUrl: z.string().optional(),
+});
 
 export default function Dashboard() {
   const { user, isAuthenticated, isLoading } = useAuth();
   const { toast } = useToast();
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+
+  const form = useForm<z.infer<typeof profileSchema>>({
+    resolver: zodResolver(profileSchema),
+    defaultValues: {
+      firstName: user?.firstName || "",
+      lastName: user?.lastName || "",
+      email: user?.email || "",
+      profileImageUrl: user?.profileImageUrl || "",
+    },
+  });
+
+  // Update form when user data loads
+  useEffect(() => {
+    if (user) {
+      form.reset({
+        firstName: user.firstName || "",
+        lastName: user.lastName || "",
+        email: user.email || "",
+        profileImageUrl: user.profileImageUrl || "",
+      });
+    }
+  }, [user, form]);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -45,6 +83,29 @@ export default function Dashboard() {
   });
 
   const { data: pageHeader } = usePageHeader('dashboard');
+
+  const updateProfileMutation = useMutation({
+    mutationFn: async (data: z.infer<typeof profileSchema>) => {
+      const res = await apiRequest("PUT", "/api/profile", data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      toast({ title: "Profilo aggiornato con successo!" });
+      setIsEditingProfile(false);
+    },
+    onError: () => {
+      toast({
+        title: "Errore",
+        description: "Impossibile aggiornare il profilo",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const onSubmitProfile = (data: z.infer<typeof profileSchema>) => {
+    updateProfileMutation.mutate(data);
+  };
 
   if (isLoading || !isAuthenticated) {
     return (
@@ -189,6 +250,140 @@ export default function Dashboard() {
 
           {/* Sidebar */}
           <div className="space-y-6">
+            {/* Profile Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <User className="h-5 w-5 text-primary" />
+                  Il Tuo Profilo
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {!isEditingProfile ? (
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-4">
+                      <Avatar className="h-16 w-16">
+                        <AvatarImage src={user?.profileImageUrl || ""} />
+                        <AvatarFallback className="bg-primary/10 text-primary font-semibold text-lg">
+                          {user?.firstName?.[0]}{user?.lastName?.[0]}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1">
+                        <h3 className="font-semibold" data-testid="text-user-fullname">
+                          {user?.firstName} {user?.lastName}
+                        </h3>
+                        <p className="text-sm text-muted-foreground" data-testid="text-user-email">
+                          {user?.email}
+                        </p>
+                      </div>
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      className="w-full" 
+                      onClick={() => setIsEditingProfile(true)}
+                      data-testid="button-edit-profile"
+                    >
+                      Modifica Profilo
+                    </Button>
+                  </div>
+                ) : (
+                  <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmitProfile)} className="space-y-4">
+                      <FormField
+                        control={form.control}
+                        name="profileImageUrl"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Immagine Profilo</FormLabel>
+                            <FormControl>
+                              <div className="flex flex-col items-center gap-3">
+                                <Avatar className="h-20 w-20">
+                                  <AvatarImage src={field.value || ""} />
+                                  <AvatarFallback className="bg-primary/10 text-primary font-semibold text-xl">
+                                    {form.watch("firstName")?.[0]}{form.watch("lastName")?.[0]}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <MediaUploadZone
+                                  currentUrl={field.value || ""}
+                                  onUploadComplete={field.onChange}
+                                  userId={user?.id}
+                                />
+                              </div>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="firstName"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Nome</FormLabel>
+                            <FormControl>
+                              <Input {...field} placeholder="Mario" data-testid="input-firstname" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="lastName"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Cognome</FormLabel>
+                            <FormControl>
+                              <Input {...field} placeholder="Rossi" data-testid="input-lastname" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="email"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Email</FormLabel>
+                            <FormControl>
+                              <Input {...field} type="email" placeholder="mario@example.com" data-testid="input-email" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <div className="flex gap-2">
+                        <Button 
+                          type="submit" 
+                          className="flex-1" 
+                          disabled={updateProfileMutation.isPending}
+                          data-testid="button-save-profile"
+                        >
+                          {updateProfileMutation.isPending ? "Salvataggio..." : "Salva"}
+                        </Button>
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          onClick={() => {
+                            setIsEditingProfile(false);
+                            form.reset();
+                          }}
+                          data-testid="button-cancel-edit"
+                        >
+                          Annulla
+                        </Button>
+                      </div>
+                    </form>
+                  </Form>
+                )}
+              </CardContent>
+            </Card>
+
             {/* Badges */}
             <Card>
               <CardHeader>
