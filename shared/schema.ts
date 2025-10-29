@@ -53,7 +53,7 @@ export const courses = pgTable("courses", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   title: varchar("title", { length: 255 }).notNull(),
   description: text("description"),
-  level: varchar("level").notNull(), // beginner, intermediate, advanced
+  level: varchar("level").default("all"), // legacy field, no longer used in UI
   courseCategory: varchar("course_category"), // remata, takeoff, noseride, gratuiti, special
   thumbnailUrl: varchar("thumbnail_url"),
   trailerUrl: varchar("trailer_url"),
@@ -94,7 +94,7 @@ export const exercises = pgTable("exercises", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   title: varchar("title", { length: 255 }).notNull(),
   description: text("description"),
-  level: varchar("level").notNull(),
+  level: varchar("level").default("all"), // legacy field, no longer used in UI
   exerciseType: varchar("exercise_type").notNull(), // timer, reps, sets
   targetValue: integer("target_value"), // target minutes, reps, or sets
   thumbnailUrl: varchar("thumbnail_url"),

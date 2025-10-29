@@ -30,7 +30,7 @@ export default function Community() {
   const { data: pageHeader } = usePageHeader('community');
 
   const createPostMutation = useMutation({
-    mutationFn: async (data: { title: string; content: string; level: string }) => {
+    mutationFn: async (data: { title: string; content: string }) => {
       await apiRequest("POST", "/api/posts", data);
     },
     onSuccess: () => {
@@ -75,7 +75,6 @@ export default function Community() {
     createPostMutation.mutate({
       title: newPostTitle,
       content: newPostContent,
-      level: "all",
     });
   };
 

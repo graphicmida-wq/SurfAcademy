@@ -9,20 +9,36 @@ Scuola di Longboard is a comprehensive web-based learning management system (LMS
 **User Dashboard Enhancements**:
 - Added profile editing section: users can update firstName, lastName, email, and profile image using MediaUploadZone
 - Integrated WavePoints display card showing referral earnings balance with encouraging messages
-- Removed legacy level system filters (beginner/intermediate/advanced) for cleaner interface
+- **Removed legacy level system completely**: All references to beginner/intermediate/advanced filters removed from Footer, Community page, AdminCourses UI, and throughout the platform for a cleaner, simplified experience
 
-**Admin Features**:
+**Admin Features - Enrollments & Testing**:
 - Created comprehensive enrollments management page at `/admin/iscrizioni` with:
   - User table showing all enrollments with course details and progress percentages
   - Search functionality by name/email
   - Course filter to view enrollments for specific courses
   - Statistics dashboard showing total users, active enrollments, and average progress
 - Added admin menu links: "Dashboard Utente" (to view user experience) and "Iscrizioni" (enrollments management)
+- **Admin auto-enrollment**: Admins can now instantly enroll in any course via "Iscriviti al Corso" button in AdminCourses without payment, enabling easy testing and content access
+
+**Admin Features - Course Content Management**:
+- **Complete CRUD for Modules**: Full create/update/delete operations for course modules with `title`, `description`, and `orderIndex` fields
+- **Complete CRUD for Lessons**: Full create/update/delete operations for lessons with support for multiple video URLs, PDF uploads, HTML content, and `contentType` categorization
+- **Content Management UI** at `/admin/corsi/contenuti`:
+  - Three-level hierarchy: Course → Modules → Lessons
+  - Visual cards displaying modules with lesson counts
+  - Dialog-based forms for creating/editing modules and lessons
+  - MediaUploadZone integration for video and PDF uploads
+  - Real-time updates via TanStack Query cache invalidation
+- **Quick Access Link**: "Gestisci Contenuti" button added to each course card in AdminCourses page
 
 **Backend API Enhancements**:
 - `PUT /api/profile`: Profile update endpoint with Zod validation and email uniqueness checking
 - `GET /api/wavepoints`: Retrieves user's WavePoints balance from referral earnings
 - `GET /api/admin/enrollments`: Admin-only endpoint returning all users with their enrollments and progress data
+- `POST /api/admin/enroll/:courseId`: Admin-only instant enrollment without payment
+- **Module CRUD APIs**: `POST/PATCH/DELETE /api/admin/modules`, `GET /api/courses/:courseId/modules`
+- **Lesson CRUD APIs**: `POST/PATCH/DELETE /api/admin/lessons`, `GET /api/modules/:moduleId/lessons`
+- **Exercise CRUD APIs**: `POST/PATCH/DELETE /api/admin/exercises` (backend ready, frontend pending)
 
 ## User Preferences
 
