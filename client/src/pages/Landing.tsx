@@ -3,75 +3,54 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ArrowRight } from "lucide-react";
-import { GiSurfBoard, GiWaveSurfer, GiWaves, GiPalmTree, GiTrophy } from "react-icons/gi";
+import { GiPalmTree, GiTrophy, GiWaveSurfer } from "react-icons/gi";
 import { HeroSlider } from "@/components/HeroSlider";
+import { CourseCard } from "@/components/CourseCard";
+import { useQuery } from "@tanstack/react-query";
+import type { Course } from "@shared/schema";
 
 export default function Landing() {
-  const levels = [
-    {
-      id: "beginner",
-      title: "Principiante",
-      description: "Inizia il tuo viaggio nel surf. Impara le basi, la sicurezza in acqua e le prime tecniche di remata.",
-      icon: GiSurfBoard,
-      color: "from-chart-4/20 to-chart-4/5",
-    },
-    {
-      id: "intermediate",
-      title: "Intermedio",
-      description: "Perfeziona la tua tecnica. Manovre avanzate, lettura delle onde e stile personale.",
-      icon: GiWaveSurfer,
-      color: "from-primary/20 to-primary/5",
-    },
-    {
-      id: "advanced",
-      title: "Avanzato",
-      description: "Diventa un maestro del longboard. Nose riding, hang ten e competizioni.",
-      icon: GiWaves,
-      color: "from-chart-3/20 to-chart-3/5",
-    },
-  ];
+  const { data: courses = [], isLoading: coursesLoading } = useQuery<Course[]>({
+    queryKey: ["/api/courses"],
+  });
+
+  // Get only the first 3 main courses (REMATA, TAKEOFF, NOSERIDE)
+  const mainCourses = courses.filter(c => 
+    c.courseCategory === 'remata' || 
+    c.courseCategory === 'takeoff' || 
+    c.courseCategory === 'noseride'
+  ).slice(0, 3);
 
   return (
     <div className="flex flex-col">
       {/* Dynamic Hero Slider */}
       <HeroSlider />
 
-      {/* Levels Overview Section */}
-      <section className="py-16 sm:py-24 bg-background" data-testid="section-levels">
+      {/* Main Courses Section */}
+      <section className="py-16 sm:py-24 bg-background" data-testid="section-main-courses">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="font-display font-bold text-3xl sm:text-4xl md:text-5xl mb-4" data-testid="text-levels-title">
-              Trova il Tuo Livello
+            <h2 className="font-display font-bold text-3xl sm:text-4xl md:text-5xl mb-4" data-testid="text-main-courses-title">
+              I Nostri Corsi Principali
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Percorsi di apprendimento strutturati per ogni fase del tuo viaggio nel surf
+              Scegli il percorso perfetto per migliorare le tue abilità nel longboard surf
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
-            {levels.map((level) => {
-              const Icon = level.icon;
-              return (
-                <Card key={level.id} className="group hover-elevate active-elevate-2 transition-all duration-300 border-2" data-testid={`card-level-${level.id}`}>
-                  <CardContent className="p-6">
-                    <div className={`w-20 h-20 rounded-2xl bg-gradient-to-br ${level.color} flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300`}>
-                      <Icon className="h-10 w-10 text-primary" />
-                    </div>
-                    <h3 className="font-display font-semibold text-2xl mb-3">{level.title}</h3>
-                    <p className="text-muted-foreground mb-4">{level.description}</p>
-                    <Link 
-                      href={`/corsi?level=${level.id}`}
-                      className="inline-flex items-center gap-2 text-primary font-medium hover:gap-3 transition-all" 
-                      data-testid={`link-explore-${level.id}`}
-                    >
-                      Esplora
-                      <ArrowRight className="h-4 w-4" />
-                    </Link>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
+          {coursesLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
+              {[...Array(3)].map((_, i) => (
+                <Card key={i} className="h-96 animate-pulse bg-muted" />
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
+              {mainCourses.map((course) => (
+                <CourseCard key={course.id} course={course} />
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
