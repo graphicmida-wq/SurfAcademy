@@ -70,6 +70,8 @@ export interface IStorage {
   
   // Lesson operations
   createLesson(lesson: InsertLesson): Promise<Lesson>;
+  updateLesson(id: string, lesson: Partial<InsertLesson>): Promise<Lesson>;
+  deleteLesson(id: string): Promise<void>;
   
   // Exercise operations
   getAllExercises(): Promise<Exercise[]>;
@@ -238,6 +240,19 @@ export class DatabaseStorage implements IStorage {
   async createLesson(lesson: InsertLesson): Promise<Lesson> {
     const [newLesson] = await db.insert(lessons).values(lesson).returning();
     return newLesson;
+  }
+
+  async updateLesson(id: string, lessonData: Partial<InsertLesson>): Promise<Lesson> {
+    const [updatedLesson] = await db
+      .update(lessons)
+      .set({ ...lessonData, updatedAt: new Date() })
+      .where(eq(lessons.id, id))
+      .returning();
+    return updatedLesson;
+  }
+
+  async deleteLesson(id: string): Promise<void> {
+    await db.delete(lessons).where(eq(lessons.id, id));
   }
 
   // ========== Exercise Operations ==========

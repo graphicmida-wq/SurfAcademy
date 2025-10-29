@@ -258,6 +258,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ========== Admin Lesson Routes ==========
+  app.post("/api/admin/lessons", isAdmin, async (req, res) => {
+    try {
+      const validatedData = insertLessonSchema.parse(req.body);
+      const lesson = await storage.createLesson(validatedData);
+      res.status(201).json(lesson);
+    } catch (error) {
+      console.error("Error creating lesson:", error);
+      res.status(400).json({ message: "Failed to create lesson" });
+    }
+  });
+
+  app.patch("/api/admin/lessons/:id", isAdmin, async (req, res) => {
+    try {
+      const validatedData = insertLessonSchema.partial().parse(req.body);
+      const updatedLesson = await storage.updateLesson(req.params.id, validatedData);
+      res.json(updatedLesson);
+    } catch (error) {
+      console.error("Error updating lesson:", error);
+      res.status(400).json({ message: "Failed to update lesson" });
+    }
+  });
+
+  app.delete("/api/admin/lessons/:id", isAdmin, async (req, res) => {
+    try {
+      await storage.deleteLesson(req.params.id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting lesson:", error);
+      res.status(500).json({ message: "Failed to delete lesson" });
+    }
+  });
+
   // ========== Exercise Routes ==========
   app.get("/api/exercises", async (req, res) => {
     try {

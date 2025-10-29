@@ -23,6 +23,7 @@ import AdminPageHeaders from "@/pages/admin/PageHeaders";
 import AdminCustomPages from "@/pages/admin/CustomPages";
 import CustomPageEditor from "@/pages/admin/CustomPageEditor";
 import AdminCourses from "@/pages/admin/Courses";
+import AdminCourseContent from "@/pages/admin/CourseContent";
 import NotFound from "@/pages/not-found";
 import { AdminLayout } from "@/components/AdminLayout";
 
@@ -92,6 +93,13 @@ function Router() {
             {user?.isAdmin ? (
               <AdminLayout>
                 <AdminCourses />
+              </AdminLayout>
+            ) : <NotFound />}
+          </Route>
+          <Route path="/admin/corsi/contenuti">
+            {user?.isAdmin ? (
+              <AdminLayout>
+                <AdminCourseContent />
               </AdminLayout>
             ) : <NotFound />}
           </Route>
