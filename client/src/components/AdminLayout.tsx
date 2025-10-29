@@ -12,13 +12,23 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { Sliders, Waves, BookOpen, Mail, Calendar, LayoutDashboard, FileText, FilePlus2 } from "lucide-react";
+import { Sliders, Waves, BookOpen, Mail, Calendar, LayoutDashboard, FileText, FilePlus2, User, Users } from "lucide-react";
 
 const adminMenuItems = [
   {
-    title: "Dashboard",
+    title: "Dashboard Admin",
     url: "/admin",
     icon: LayoutDashboard,
+  },
+  {
+    title: "Dashboard Utente",
+    url: "/dashboard",
+    icon: User,
+  },
+  {
+    title: "Iscrizioni",
+    url: "/admin/iscrizioni",
+    icon: Users,
   },
   {
     title: "Hero Slider",

@@ -6,7 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { LevelBadge } from "@/components/LevelBadge";
 import { Link } from "wouter";
 import { Play, Trophy, Target, Clock, Award, ArrowRight } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
@@ -72,7 +71,7 @@ export default function Dashboard() {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Corsi Attivi</CardTitle>
@@ -108,16 +107,6 @@ export default function Dashboard() {
               </div>
             </CardContent>
           </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Livello</CardTitle>
-              <Target className="h-4 w-4 text-primary" />
-            </CardHeader>
-            <CardContent>
-              <LevelBadge level={user?.userLevel || "beginner"} />
-            </CardContent>
-          </Card>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -144,12 +133,9 @@ export default function Dashboard() {
                       <Link href={`/corsi/${enrollment.course.id}`} className="block p-6">
                           <div className="flex items-start gap-4">
                             <div className="flex-1">
-                              <div className="flex items-start justify-between gap-4 mb-2">
-                                <h3 className="font-display font-semibold text-lg" data-testid={`text-course-title-${enrollment.course.id}`}>
-                                  {enrollment.course.title}
-                                </h3>
-                                <LevelBadge level={enrollment.course.level} />
-                              </div>
+                              <h3 className="font-display font-semibold text-lg mb-3" data-testid={`text-course-title-${enrollment.course.id}`}>
+                                {enrollment.course.title}
+                              </h3>
                               <div className="space-y-2">
                                 <Progress value={enrollment.progress} className="h-2" />
                                 <p className="text-sm text-muted-foreground">
