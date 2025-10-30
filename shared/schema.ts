@@ -219,16 +219,16 @@ export const comments = pgTable("comments", {
 });
 
 // ============================================================================
-// SURF CAMP TABLES
+// SURF DAY TABLES
 // ============================================================================
 
-export const surfCamps = pgTable("surf_camps", {
+export const surfDays = pgTable("surf_days", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   title: varchar("title", { length: 255 }).notNull(),
   description: text("description"),
   location: varchar("location").notNull(),
-  startDate: timestamp("start_date").notNull(),
-  endDate: timestamp("end_date").notNull(),
+  startDate: timestamp("start_date").notNull(), // Waiting period start
+  endDate: timestamp("end_date").notNull(), // Waiting period end
   price: integer("price").notNull(), // in cents
   totalSpots: integer("total_spots").notNull(),
   availableSpots: integer("available_spots").notNull(),
@@ -236,10 +236,10 @@ export const surfCamps = pgTable("surf_camps", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-export const campRegistrations = pgTable("camp_registrations", {
+export const surfDayRegistrations = pgTable("surf_day_registrations", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
-  campId: varchar("camp_id").notNull().references(() => surfCamps.id, { onDelete: 'cascade' }),
+  surfDayId: varchar("surf_day_id").notNull().references(() => surfDays.id, { onDelete: 'cascade' }),
   status: varchar("status").default("waitlist"), // waitlist, confirmed, cancelled
   registeredAt: timestamp("registered_at").defaultNow(),
 });
@@ -658,12 +658,12 @@ export const insertCommentSchema = createInsertSchema(comments).omit({
   createdAt: true,
 });
 
-export const insertSurfCampSchema = createInsertSchema(surfCamps).omit({
+export const insertSurfDaySchema = createInsertSchema(surfDays).omit({
   id: true,
   createdAt: true,
 });
 
-export const insertCampRegistrationSchema = createInsertSchema(campRegistrations).omit({
+export const insertSurfDayRegistrationSchema = createInsertSchema(surfDayRegistrations).omit({
   id: true,
   registeredAt: true,
 });
@@ -746,11 +746,11 @@ export type InsertPost = z.infer<typeof insertPostSchema>;
 export type Comment = typeof comments.$inferSelect;
 export type InsertComment = z.infer<typeof insertCommentSchema>;
 
-export type SurfCamp = typeof surfCamps.$inferSelect;
-export type InsertSurfCamp = z.infer<typeof insertSurfCampSchema>;
+export type SurfDay = typeof surfDays.$inferSelect;
+export type InsertSurfDay = z.infer<typeof insertSurfDaySchema>;
 
-export type CampRegistration = typeof campRegistrations.$inferSelect;
-export type InsertCampRegistration = z.infer<typeof insertCampRegistrationSchema>;
+export type SurfDayRegistration = typeof surfDayRegistrations.$inferSelect;
+export type InsertSurfDayRegistration = z.infer<typeof insertSurfDayRegistrationSchema>;
 
 export type Certificate = typeof certificates.$inferSelect;
 export type InsertCertificate = z.infer<typeof insertCertificateSchema>;
