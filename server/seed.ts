@@ -2,7 +2,7 @@ import { storage } from "./storage";
 import { neonConfig, Pool } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-serverless";
 import ws from "ws";
-import { heroSlides, pageHeaders, courses, surfCamps, customPages, pageBlocks } from "../shared/schema";
+import { heroSlides, pageHeaders, courses, surfDays, customPages, pageBlocks } from "../shared/schema";
 import { readFileSync, existsSync } from "fs";
 import { join } from "path";
 import { fileURLToPath } from "url";
@@ -69,10 +69,10 @@ export async function seedProductionDatabase() {
       console.log(`✅ Seeded ${seedData.courses.length} courses`);
     }
 
-    // Seed surf camps
-    if (seedData.surfCamps?.length > 0) {
-      await db.insert(surfCamps).values(seedData.surfCamps);
-      console.log(`✅ Seeded ${seedData.surfCamps.length} surf camps`);
+    // Seed surf days
+    if (seedData.surfDays?.length > 0) {
+      await db.insert(surfDays).values(seedData.surfDays);
+      console.log(`✅ Seeded ${seedData.surfDays.length} surf days`);
     }
 
     // Seed custom pages
@@ -210,41 +210,41 @@ async function seed() {
 
     console.log("✅ Created exercises");
 
-    // Create surf camps
-    await storage.createSurfCamp({
-      title: "Surf Camp Liguria",
-      description: "Una settimana intensiva di surf sulle migliori onde della Liguria. Include 10 lezioni, noleggio attrezzatura e alloggio.",
+    // Create surf days (waiting period events)
+    await storage.createSurfDay({
+      title: "SurfDay Liguria",
+      description: "Giornata di surf in base alle condizioni delle onde. Il waiting period indica quando potremmo chiamarti per la sessione perfetta!",
       location: "Varazze, Liguria",
-      startDate: new Date("2025-07-01"),
-      endDate: new Date("2025-07-07"),
-      price: 59900, // €599
+      startDate: new Date("2025-07-01"), // Waiting period start
+      endDate: new Date("2025-07-07"), // Waiting period end
+      price: 5900, // €59
       totalSpots: 12,
       availableSpots: 12,
     });
 
-    await storage.createSurfCamp({
-      title: "Surf Camp Sardegna",
-      description: "Vivi il surf nell'isola più bella d'Italia. 7 giorni di onde cristalline, spiagge paradisiache e istruttori esperti.",
+    await storage.createSurfDay({
+      title: "SurfDay Sardegna",
+      description: "Aspetta la mareggiata perfetta in Sardegna! Ti contatteremo quando le onde saranno al massimo.",
       location: "Capo Mannu, Sardegna",
-      startDate: new Date("2025-08-15"),
-      endDate: new Date("2025-08-22"),
-      price: 79900, // €799
+      startDate: new Date("2025-08-15"), // Waiting period start
+      endDate: new Date("2025-08-22"), // Waiting period end
+      price: 7900, // €79
       totalSpots: 8,
       availableSpots: 3,
     });
 
-    await storage.createSurfCamp({
-      title: "Surf Camp Toscana",
-      description: "Surf e cultura nella splendida Toscana. Onde perfette per principianti e intermedi.",
+    await storage.createSurfDay({
+      title: "SurfDay Toscana",
+      description: "Prenota il tuo posto per la prossima mareggiata in Toscana. Aspettiamo le onde giuste per te!",
       location: "Marina di Pisa, Toscana",
-      startDate: new Date("2025-06-20"),
-      endDate: new Date("2025-06-26"),
-      price: 49900, // €499
+      startDate: new Date("2025-06-20"), // Waiting period start
+      endDate: new Date("2025-06-26"), // Waiting period end
+      price: 4900, // €49
       totalSpots: 10,
       availableSpots: 0, // Full
     });
 
-    console.log("✅ Created surf camps");
+    console.log("✅ Created surf days");
 
     console.log("🎉 Seeding completed successfully!");
   } catch (error) {

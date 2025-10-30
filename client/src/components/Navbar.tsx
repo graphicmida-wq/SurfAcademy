@@ -33,7 +33,7 @@ export function Navbar() {
   const navLinks = [
     { href: "/", label: "Home" },
     { href: "/corsi", label: "Corsi" },
-    { href: "/surf-camp", label: "Surf Camp" },
+    { href: "/surf-day", label: "SurfDay" },
     { href: "/community", label: "Community" },
     ...(isAuthenticated ? [{ href: "/dashboard", label: "Dashboard" }] : []),
   ];

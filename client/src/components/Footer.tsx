@@ -38,11 +38,11 @@ export function Footer() {
               </li>
               <li>
                 <Link 
-                  href="/surf-camp"
+                  href="/surf-day"
                   className="text-muted-foreground hover:text-primary transition-colors" 
-                  data-testid="footer-link-surf-camp"
+                  data-testid="footer-link-surf-day"
                 >
-                  Surf Camp
+                  SurfDay
                 </Link>
               </li>
             </ul>
@@ -63,11 +63,11 @@ export function Footer() {
               </li>
               <li>
                 <Link 
-                  href="/surf-camp"
+                  href="/surf-day"
                   className="text-muted-foreground hover:text-primary transition-colors" 
-                  data-testid="footer-link-camps"
+                  data-testid="footer-link-surfdays"
                 >
-                  Surf Camp
+                  SurfDay
                 </Link>
               </li>
             </ul>
