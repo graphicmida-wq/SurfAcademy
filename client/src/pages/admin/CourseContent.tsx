@@ -30,6 +30,7 @@ import {
   FormDescription,
 } from "@/components/ui/form";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Accordion,
   AccordionContent,
@@ -116,6 +117,7 @@ export default function AdminCourseContent() {
       courseId: "",
       title: "",
       description: "",
+      defaultExpanded: true,
       orderIndex: 0,
     },
   });
@@ -361,6 +363,7 @@ export default function AdminCourseContent() {
       courseId: selectedCourseId,
       title: "",
       description: "",
+      defaultExpanded: true,
       orderIndex: modules.length,
     });
     setIsModuleDialogOpen(true);
@@ -372,6 +375,7 @@ export default function AdminCourseContent() {
       courseId: module.courseId,
       title: module.title,
       description: module.description || "",
+      defaultExpanded: module.defaultExpanded ?? true,
       orderIndex: module.orderIndex || 0,
     });
     setIsModuleDialogOpen(true);
@@ -509,6 +513,30 @@ export default function AdminCourseContent() {
                           </FormControl>
                           <FormDescription>Numero per ordinare i moduli</FormDescription>
                           <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={moduleForm.control}
+                      name="defaultExpanded"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                              data-testid="checkbox-module-expanded"
+                            />
+                          </FormControl>
+                          <div className="space-y-1 leading-none">
+                            <FormLabel>
+                              Espandi di default
+                            </FormLabel>
+                            <FormDescription>
+                              Il modulo sarà aperto automaticamente nella vista studente
+                            </FormDescription>
+                          </div>
                         </FormItem>
                       )}
                     />
