@@ -18,10 +18,14 @@ import {
   insertPageHeaderSchema,
   insertCustomPageSchema,
   insertPageBlockSchema,
+  insertNewsletterContactSchema,
+  insertNewsletterCampaignSchema,
+  insertNewsletterEventSchema,
 } from "@shared/schema";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import { ObjectAclPolicy, ObjectPermission } from "./objectAcl";
 import { z } from "zod";
+import { registerNewsletterRoutes } from "./newsletterRoutes";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // ========== Auth Setup ==========
@@ -1215,6 +1219,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to download object" });
     }
   });
+
+  // ========== Newsletter Routes ==========
+  registerNewsletterRoutes(app, isAuthenticated, isAdmin);
 
   const httpServer = createServer(app);
   return httpServer;

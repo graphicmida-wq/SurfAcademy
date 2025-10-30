@@ -205,7 +205,7 @@ export interface IStorage {
   getNewsletterContactById(id: string): Promise<NewsletterContact | undefined>;
   getNewsletterContactByToken(token: string, tokenType: 'confirm' | 'unsubscribe'): Promise<NewsletterContact | undefined>;
   createNewsletterContact(contact: InsertNewsletterContact): Promise<NewsletterContact>;
-  updateNewsletterContact(id: string, contact: Partial<InsertNewsletterContact>): Promise<NewsletterContact>;
+  updateNewsletterContact(id: string, contact: Partial<NewsletterContact>): Promise<NewsletterContact>;
   confirmNewsletterContact(token: string): Promise<NewsletterContact | undefined>;
   unsubscribeNewsletterContact(token: string): Promise<NewsletterContact | undefined>;
   deleteNewsletterContact(id: string): Promise<void>;
@@ -215,7 +215,7 @@ export interface IStorage {
   getAllNewsletterCampaigns(): Promise<NewsletterCampaign[]>;
   getNewsletterCampaign(id: string): Promise<NewsletterCampaign | undefined>;
   createNewsletterCampaign(campaign: InsertNewsletterCampaign): Promise<NewsletterCampaign>;
-  updateNewsletterCampaign(id: string, campaign: Partial<InsertNewsletterCampaign>): Promise<NewsletterCampaign>;
+  updateNewsletterCampaign(id: string, campaign: Partial<NewsletterCampaign>): Promise<NewsletterCampaign>;
   deleteNewsletterCampaign(id: string): Promise<void>;
   getScheduledCampaigns(): Promise<NewsletterCampaign[]>;
   
@@ -960,7 +960,7 @@ export class DatabaseStorage implements IStorage {
     return newContact;
   }
 
-  async updateNewsletterContact(id: string, contact: Partial<InsertNewsletterContact>): Promise<NewsletterContact> {
+  async updateNewsletterContact(id: string, contact: Partial<NewsletterContact>): Promise<NewsletterContact> {
     const [updatedContact] = await db
       .update(newsletterContacts)
       .set({ ...contact, updatedAt: new Date() })
@@ -1022,7 +1022,7 @@ export class DatabaseStorage implements IStorage {
     return newCampaign;
   }
 
-  async updateNewsletterCampaign(id: string, campaign: Partial<InsertNewsletterCampaign>): Promise<NewsletterCampaign> {
+  async updateNewsletterCampaign(id: string, campaign: Partial<NewsletterCampaign>): Promise<NewsletterCampaign> {
     const [updatedCampaign] = await db
       .update(newsletterCampaigns)
       .set({ ...campaign, updatedAt: new Date() })
