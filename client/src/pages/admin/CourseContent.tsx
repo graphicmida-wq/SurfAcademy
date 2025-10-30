@@ -264,6 +264,15 @@ export default function AdminCourseContent() {
   };
 
   const handleNewLesson = async (contentType: string) => {
+    // Wait for modules to load before proceeding
+    if (modulesLoading) {
+      toast({ 
+        title: "Caricamento in corso", 
+        description: "Attendere il caricamento dei moduli...",
+      });
+      return;
+    }
+    
     let moduleId = modules[0]?.id || "";
     
     // Auto-create module if none exist

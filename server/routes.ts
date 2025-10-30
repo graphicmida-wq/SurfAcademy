@@ -336,6 +336,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin module CRUD
+  app.post("/api/admin/modules", isAdmin, async (req, res) => {
+    try {
+      const validatedData = insertModuleSchema.parse(req.body);
+      const module = await storage.createModule(validatedData);
+      res.status(201).json(module);
+    } catch (error) {
+      console.error("Error creating module:", error);
+      res.status(400).json({ message: "Failed to create module" });
+    }
+  });
+  
   app.post("/api/admin/courses/:courseId/modules", isAdmin, async (req, res) => {
     try {
       const validatedData = insertModuleSchema.parse({
