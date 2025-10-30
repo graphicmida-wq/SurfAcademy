@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
@@ -8,6 +8,12 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { isUnauthorizedError } from "@/lib/authUtils";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { 
   Play, 
   Clock, 
@@ -20,7 +26,8 @@ import {
   ChevronRight,
   ChevronDown,
   Download,
-  Lock
+  Lock,
+  Folder
 } from "lucide-react";
 import type { Course, Module, Lesson } from "@shared/schema";
 import { PageHeader } from "@/components/PageHeader";
@@ -58,8 +65,8 @@ export default function CourseDetail() {
   const [, setLocation] = useLocation();
   const { isAuthenticated } = useAuth();
   const { toast } = useToast();
-  const [selectedContent, setSelectedContent] = useState<ContentType>('presentazione');
-  const [settimaneExpanded, setSettimaneExpanded] = useState(true);
+  const [selectedLessonId, setSelectedLessonId] = useState<string | null>(null);
+  const [expandedModules, setExpandedModules] = useState<string[]>([]);
   
   const { data: pageHeader } = usePageHeader(`course-${id}`);
 
@@ -74,6 +81,11 @@ export default function CourseDetail() {
 
   const { data: enrollment } = useQuery({
     queryKey: [`/api/enrollments/course/${id}`],
+    enabled: isAuthenticated && !!id,
+  });
+
+  const { data: lessonProgress = [] } = useQuery<{ lessonId: string; completed: boolean }[]>({
+    queryKey: [`/api/lesson-progress/course/${id}`],
     enabled: isAuthenticated && !!id,
   });
 
@@ -109,6 +121,36 @@ export default function CourseDetail() {
     },
   });
 
+  const toggleLessonCompleteMutation = useMutation({
+    mutationFn: async ({ lessonId, completed }: { lessonId: string; completed: boolean }) => {
+      await apiRequest("POST", "/api/lesson-progress", { lessonId, completed });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/lesson-progress/course/${id}`] });
+    },
+  });
+
+  // Initialize expanded modules based on defaultExpanded field
+  useEffect(() => {
+    if (modules && modules.length > 0 && expandedModules.length === 0) {
+      const defaultExpanded = modules
+        .filter(m => m.defaultExpanded)
+        .map(m => m.id);
+      setExpandedModules(defaultExpanded);
+    }
+  }, [modules, expandedModules.length]);
+
+  // Auto-select first lesson when modules load
+  useEffect(() => {
+    if (modules && modules.length > 0 && !selectedLessonId) {
+      const firstModule = modules.find(m => m.lessons && m.lessons.length > 0);
+      if (firstModule && firstModule.lessons && firstModule.lessons.length > 0) {
+        const sortedLessons = [...firstModule.lessons].sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0));
+        setSelectedLessonId(sortedLessons[0].id);
+      }
+    }
+  }, [modules, selectedLessonId]);
+
   if (courseLoading || !course) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -120,15 +162,12 @@ export default function CourseDetail() {
   const isEnrolled = !!enrollment;
   const canAccess = course.isFree || isEnrolled;
 
-  // Get lessons filtered by contentType
-  const getLessonsForContent = (contentType: ContentType): Lesson[] => {
-    if (!modules) return [];
-    return modules.flatMap(m => m.lessons || []).filter(l => l.contentType === contentType);
-  };
+  // Get selected lesson details
+  const selectedLesson = modules
+    ?.flatMap(m => m.lessons || [])
+    .find(l => l.id === selectedLessonId);
 
   const renderContent = () => {
-    const lessons = getLessonsForContent(selectedContent);
-
     if (!canAccess) {
       return (
         <Card className="p-12 text-center">
@@ -144,83 +183,119 @@ export default function CourseDetail() {
       );
     }
 
-    if (lessons.length === 0) {
+    if (!selectedLesson) {
       return (
         <Card className="p-12 text-center">
-          <FileText className="h-16 w-16 text-muted-foreground/50 mx-auto mb-4" />
-          <h3 className="font-display font-semibold text-xl mb-2">Nessun contenuto disponibile</h3>
+          <BookOpen className="h-16 w-16 text-muted-foreground/50 mx-auto mb-4" />
+          <h3 className="font-display font-semibold text-xl mb-2">Benvenuto/a!</h3>
           <p className="text-muted-foreground">
-            I contenuti per questa sezione saranno presto disponibili
+            Seleziona una lezione dal menu laterale per iniziare
           </p>
         </Card>
       );
     }
 
+    const lesson = selectedLesson;
+    const isCompleted = lessonProgress.some(p => p.lessonId === lesson.id && p.completed);
+
     return (
       <div className="space-y-6">
-        {lessons.map((lesson) => (
-          <Card key={lesson.id} data-testid={`lesson-card-${lesson.id}`}>
-            <CardHeader>
+        <Card data-testid={`lesson-card-${lesson.id}`}>
+          <CardHeader>
+            <div className="flex items-center justify-between">
               <CardTitle>{lesson.title}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Video URLs */}
-              {lesson.videoUrls && lesson.videoUrls.length > 0 && (
-                <div className="space-y-4">
-                  <h4 className="font-semibold">Video</h4>
-                  {lesson.videoUrls.map((videoUrl, idx) => (
-                    <div key={idx} className="aspect-video bg-muted rounded-lg overflow-hidden">
-                      <video 
-                        src={videoUrl} 
-                        controls 
-                        className="w-full h-full"
-                        data-testid={`video-${lesson.id}-${idx}`}
-                      />
-                    </div>
-                  ))}
-                </div>
+              {isCompleted && (
+                <Badge className="bg-chart-4 text-white">
+                  <CheckCircle2 className="h-3 w-3 mr-1" />
+                  Completata
+                </Badge>
               )}
-
-              {/* Single Video URL (backward compatibility) */}
-              {lesson.videoUrl && !lesson.videoUrls && (
-                <div className="aspect-video bg-muted rounded-lg overflow-hidden">
-                  <video 
-                    src={lesson.videoUrl} 
-                    controls 
-                    className="w-full h-full"
-                    data-testid={`video-${lesson.id}`}
-                  />
-                </div>
-              )}
-
-              {/* PDF Download */}
-              {lesson.pdfUrl && (
-                <div className="flex items-center gap-3 p-4 bg-muted rounded-lg">
-                  <FileText className="h-5 w-5 text-primary" />
-                  <div className="flex-1">
-                    <p className="font-medium">Materiale PDF</p>
-                    <p className="text-sm text-muted-foreground">Scarica o visualizza il documento</p>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Video URLs */}
+            {lesson.videoUrls && lesson.videoUrls.length > 0 && (
+              <div className="space-y-4">
+                <h4 className="font-semibold">Video</h4>
+                {lesson.videoUrls.map((videoUrl, idx) => (
+                  <div key={idx} className="aspect-video bg-muted rounded-lg overflow-hidden">
+                    <video 
+                      src={videoUrl} 
+                      controls 
+                      className="w-full h-full"
+                      data-testid={`video-${lesson.id}-${idx}`}
+                    />
                   </div>
-                  <Button variant="outline" size="sm" asChild>
-                    <a href={lesson.pdfUrl} download target="_blank" rel="noopener noreferrer" data-testid={`download-pdf-${lesson.id}`}>
-                      <Download className="h-4 w-4 mr-2" />
-                      Scarica
-                    </a>
-                  </Button>
-                </div>
-              )}
+                ))}
+              </div>
+            )}
 
-              {/* HTML Content */}
-              {lesson.htmlContent && (
-                <div 
-                  className="prose prose-sm max-w-none"
-                  dangerouslySetInnerHTML={{ __html: lesson.htmlContent }}
-                  data-testid={`html-content-${lesson.id}`}
+            {/* Single Video URL (backward compatibility) */}
+            {lesson.videoUrl && !lesson.videoUrls && (
+              <div className="aspect-video bg-muted rounded-lg overflow-hidden">
+                <video 
+                  src={lesson.videoUrl} 
+                  controls 
+                  className="w-full h-full"
+                  data-testid={`video-${lesson.id}`}
                 />
-              )}
-            </CardContent>
-          </Card>
-        ))}
+              </div>
+            )}
+
+            {/* PDF Download */}
+            {lesson.pdfUrl && (
+              <div className="flex items-center gap-3 p-4 bg-muted rounded-lg">
+                <FileText className="h-5 w-5 text-primary" />
+                <div className="flex-1">
+                  <p className="font-medium">Materiale PDF</p>
+                  <p className="text-sm text-muted-foreground">Scarica o visualizza il documento</p>
+                </div>
+                <Button variant="outline" size="sm" asChild>
+                  <a href={lesson.pdfUrl} download target="_blank" rel="noopener noreferrer" data-testid={`download-pdf-${lesson.id}`}>
+                    <Download className="h-4 w-4 mr-2" />
+                    Scarica
+                  </a>
+                </Button>
+              </div>
+            )}
+
+            {/* HTML Content */}
+            {lesson.htmlContent && (
+              <div 
+                className="prose prose-sm max-w-none"
+                dangerouslySetInnerHTML={{ __html: lesson.htmlContent }}
+                data-testid={`html-content-${lesson.id}`}
+              />
+            )}
+
+            {/* Completion Toggle */}
+            {isAuthenticated && canAccess && (
+              <div className="pt-4 border-t">
+                <Button
+                  variant={isCompleted ? "outline" : "default"}
+                  onClick={() => toggleLessonCompleteMutation.mutate({ 
+                    lessonId: lesson.id, 
+                    completed: !isCompleted 
+                  })}
+                  disabled={toggleLessonCompleteMutation.isPending}
+                  data-testid={`button-toggle-complete-${lesson.id}`}
+                >
+                  {isCompleted ? (
+                    <>
+                      <CheckCircle2 className="h-4 w-4 mr-2" />
+                      Segna come non completata
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="h-4 w-4 mr-2" />
+                      Segna come completata
+                    </>
+                  )}
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     );
   };
@@ -242,64 +317,76 @@ export default function CourseDetail() {
           <aside className="lg:sticky lg:top-20 h-fit">
             <Card className="p-4">
               <h2 className="font-display font-semibold text-lg mb-4 px-2">Contenuti del Corso</h2>
-              <nav className="space-y-1">
-                {/* Main Content Categories */}
-                {(['presentazione', 'ebook', 'planning', 'esercizio', 'riscaldamento'] as ContentType[]).map((type) => {
-                  const Icon = contentIcons[type];
-                  const isSelected = selectedContent === type;
-                  return (
-                    <button
-                      key={type}
-                      onClick={() => setSelectedContent(type)}
-                      className={cn(
-                        "w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                        isSelected 
-                          ? "bg-primary text-primary-foreground" 
-                          : "hover-elevate active-elevate-2"
-                      )}
-                      data-testid={`nav-${type}`}
-                    >
-                      <Icon className="h-4 w-4" />
-                      <span>{contentLabels[type]}</span>
-                    </button>
-                  );
-                })}
-
-                {/* Settimane Section with Submenu */}
-                <div>
-                  <button
-                    onClick={() => setSettimaneExpanded(!settimaneExpanded)}
-                    className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium hover-elevate active-elevate-2"
-                    data-testid="nav-settimane-toggle"
-                  >
-                    {settimaneExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                    <Calendar className="h-4 w-4" />
-                    <span>Settimane</span>
-                  </button>
-                  {settimaneExpanded && (
-                    <div className="ml-6 mt-1 space-y-1">
-                      {(['settimana-1', 'settimana-2', 'settimana-3', 'settimana-4'] as ContentType[]).map((type) => {
-                        const isSelected = selectedContent === type;
-                        return (
-                          <button
-                            key={type}
-                            onClick={() => setSelectedContent(type)}
-                            className={cn(
-                              "w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors",
-                              isSelected 
-                                ? "bg-primary text-primary-foreground" 
-                                : "hover-elevate active-elevate-2"
-                            )}
-                            data-testid={`nav-${type}`}
-                          >
-                            <span>{contentLabels[type]}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              </nav>
+              {!modules || modules.length === 0 ? (
+                <p className="text-sm text-muted-foreground px-2">Nessun modulo disponibile</p>
+              ) : (
+                <Accordion 
+                  type="multiple" 
+                  value={expandedModules} 
+                  onValueChange={setExpandedModules}
+                  className="w-full"
+                >
+                  {modules.map((module) => (
+                    <AccordionItem key={module.id} value={module.id} data-testid={`module-${module.id}`}>
+                      <AccordionTrigger className="px-2 hover:no-underline">
+                        <div className="flex items-center gap-2">
+                          <Folder className="h-4 w-4 text-primary" />
+                          <span className="font-medium text-sm">{module.title}</span>
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <div className="space-y-1 ml-6 mt-2">
+                          {(!module.lessons || module.lessons.length === 0) ? (
+                            <p className="text-xs text-muted-foreground px-2 py-1">Nessuna lezione</p>
+                          ) : (
+                            module.lessons
+                              .sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0))
+                              .map((lesson) => {
+                                const Icon = lesson.contentType && contentIcons[lesson.contentType as ContentType] 
+                                  ? contentIcons[lesson.contentType as ContentType] 
+                                  : FileText;
+                                const isSelected = selectedLessonId === lesson.id;
+                                const isCompleted = lessonProgress.some(p => p.lessonId === lesson.id && p.completed);
+                                return (
+                                  <div
+                                    key={lesson.id}
+                                    className={cn(
+                                      "flex items-center gap-2 rounded-md transition-colors",
+                                      isSelected 
+                                        ? "bg-primary text-primary-foreground" 
+                                        : ""
+                                    )}
+                                  >
+                                    <button
+                                      onClick={() => setSelectedLessonId(lesson.id)}
+                                      className={cn(
+                                        "flex-1 flex items-center gap-2 px-3 py-2 text-sm text-left",
+                                        !isSelected && "hover-elevate active-elevate-2"
+                                      )}
+                                      data-testid={`lesson-${lesson.id}`}
+                                    >
+                                      <Icon className="h-3.5 w-3.5 flex-shrink-0" />
+                                      <span className="truncate flex-1">{lesson.title}</span>
+                                    </button>
+                                    {isCompleted && (
+                                      <CheckCircle2 
+                                        className={cn(
+                                          "h-4 w-4 mr-2 flex-shrink-0",
+                                          isSelected ? "text-primary-foreground" : "text-chart-4"
+                                        )} 
+                                        data-testid={`lesson-completed-${lesson.id}`}
+                                      />
+                                    )}
+                                  </div>
+                                );
+                              })
+                          )}
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
+              )}
 
               {/* Course Info */}
               <div className="mt-6 pt-6 border-t">
@@ -339,10 +426,12 @@ export default function CourseDetail() {
           <div className="lg:col-span-3">
             <div className="mb-6">
               <h1 className="text-3xl font-display font-bold mb-2" data-testid="text-content-title">
-                {contentLabels[selectedContent]}
+                {selectedLesson ? selectedLesson.title : "Corso"}
               </h1>
               <p className="text-muted-foreground">
-                {canAccess ? "Esplora i contenuti di questa sezione" : "Iscriviti per accedere"}
+                {canAccess 
+                  ? (selectedLesson ? "Contenuto della lezione" : "Seleziona una lezione per iniziare") 
+                  : "Iscriviti per accedere"}
               </p>
             </div>
             {renderContent()}
