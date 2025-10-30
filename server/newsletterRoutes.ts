@@ -473,4 +473,90 @@ export function registerNewsletterRoutes(app: Express, isAuthenticated: any, isA
       res.status(500).json({ message: "Failed to fetch stats" });
     }
   });
+
+  // ========== SendGrid Webhook Handler ==========
+  
+  // Webhook endpoint for SendGrid events (bounces, spam, unsubscribes)
+  app.post('/api/webhook/sendgrid', async (req, res) => {
+    try {
+      const events = req.body;
+      
+      if (!Array.isArray(events)) {
+        return res.status(400).json({ message: "Invalid webhook payload" });
+      }
+
+      for (const event of events) {
+        const { email, event: eventType, sg_message_id } = event;
+        
+        if (!email || !eventType) {
+          console.warn('[SendGrid Webhook] Missing email or event type:', event);
+          continue;
+        }
+
+        const contact = await storage.getNewsletterContactByEmail(email);
+        
+        if (!contact) {
+          console.warn(`[SendGrid Webhook] Contact not found for email: ${email}`);
+          continue;
+        }
+
+        // Handle different event types
+        switch (eventType) {
+          case 'bounce':
+          case 'dropped':
+            await storage.updateNewsletterContact(contact.id, {
+              status: 'bounced',
+            });
+            
+            await storage.createNewsletterEvent({
+              campaignId: null,
+              contactId: contact.id,
+              eventType: 'bounced',
+              metadata: { reason: event.reason || 'unknown', sgMessageId: sg_message_id },
+            });
+            
+            console.log(`[SendGrid Webhook] Marked ${email} as bounced`);
+            break;
+
+          case 'spamreport':
+            await storage.updateNewsletterContact(contact.id, {
+              status: 'spam',
+            });
+            
+            await storage.createNewsletterEvent({
+              campaignId: null,
+              contactId: contact.id,
+              eventType: 'spam',
+              metadata: { sgMessageId: sg_message_id },
+            });
+            
+            console.log(`[SendGrid Webhook] Marked ${email} as spam`);
+            break;
+
+          case 'unsubscribe':
+            await storage.updateNewsletterContact(contact.id, {
+              status: 'unsubscribed',
+            });
+            
+            await storage.createNewsletterEvent({
+              campaignId: null,
+              contactId: contact.id,
+              eventType: 'unsubscribe',
+              metadata: { sgMessageId: sg_message_id },
+            });
+            
+            console.log(`[SendGrid Webhook] Unsubscribed ${email}`);
+            break;
+
+          default:
+            break;
+        }
+      }
+
+      res.status(200).json({ received: true });
+    } catch (error) {
+      console.error('[SendGrid Webhook] Error processing webhook:', error);
+      res.status(500).json({ message: "Webhook processing failed" });
+    }
+  });
 }
