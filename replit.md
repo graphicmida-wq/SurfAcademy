@@ -23,12 +23,16 @@ Scuola di Longboard is a comprehensive web-based learning management system (LMS
 **Admin Features - Course Content Management**:
 - **Complete CRUD for Modules**: Full create/update/delete operations for course modules with `title`, `description`, and `orderIndex` fields
 - **Complete CRUD for Lessons**: Full create/update/delete operations for lessons with support for multiple video URLs, PDF uploads, HTML content, and `contentType` categorization
+- **Auto-Module Creation System**: When selecting a course with no modules, clicking "Aggiungi Contenuto" on any content type section automatically creates a default "Contenuti Corso" module, eliminating manual module creation step
 - **Content Management UI** at `/admin/corsi/contenuti`:
-  - Three-level hierarchy: Course → Modules → Lessons
-  - Visual cards displaying modules with lesson counts
-  - Dialog-based forms for creating/editing modules and lessons
+  - Two-section layout: "Gestione Moduli" for manual module management + "Contenuti per Tipo" for content organization
+  - Content organized by type (Presentazione, E-Book, Planning, Esercizio, Riscaldamento, Settimane 1-4) matching student view
+  - Accordion-based interface with content counters for each type
+  - Auto-detection of custom/legacy content types not in predefined list
+  - Dialog-based forms with react-hook-form Select synchronization fix using setTimeout pattern
   - MediaUploadZone integration for video and PDF uploads
   - Real-time updates via TanStack Query cache invalidation
+  - Triple-guard system preventing module duplication: modulesLoading check, mutation.isPending check, and modules.length verification
 - **Quick Access Link**: "Gestisci Contenuti" button added to each course card in AdminCourses page
 
 **Backend API Enhancements**:
@@ -36,7 +40,7 @@ Scuola di Longboard is a comprehensive web-based learning management system (LMS
 - `GET /api/wavepoints`: Retrieves user's WavePoints balance from referral earnings
 - `GET /api/admin/enrollments`: Admin-only endpoint returning all users with their enrollments and progress data
 - `POST /api/admin/enroll/:courseId`: Admin-only instant enrollment without payment
-- **Module CRUD APIs**: `POST/PATCH/DELETE /api/admin/modules`, `GET /api/courses/:courseId/modules`
+- **Module CRUD APIs**: `POST /api/admin/modules` (accepts courseId in body for auto-creation), `POST /api/admin/courses/:courseId/modules` (courseId in path), `PATCH/DELETE /api/admin/modules/:id`, `GET /api/courses/:courseId/modules`
 - **Lesson CRUD APIs**: `POST/PATCH/DELETE /api/admin/lessons`, `GET /api/modules/:moduleId/lessons`
 - **Exercise CRUD APIs**: `POST/PATCH/DELETE /api/admin/exercises` (backend ready, frontend pending)
 
