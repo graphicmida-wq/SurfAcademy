@@ -2,6 +2,8 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { seedProductionDatabase } from "./seed";
+import { setupNewsletterCron } from "./newsletterCron";
+import { storage } from "./storage";
 
 const app = express();
 app.use(express.json());
@@ -42,6 +44,9 @@ app.use((req, res, next) => {
   await seedProductionDatabase();
   
   const server = await registerRoutes(app);
+
+  // Setup newsletter cron job for scheduled campaigns
+  setupNewsletterCron(storage);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;

@@ -1,13 +1,67 @@
 import type { Express, Response } from "express";
+import type { DatabaseStorage } from "./storage";
 import { storage } from "./storage";
 import { insertNewsletterContactSchema, insertNewsletterCampaignSchema, insertNewsletterEventSchema } from "@shared/schema";
 import { getUncachableSendGridClient, generateToken, generateEmailTemplate } from "./sendgrid";
 import { z } from "zod";
 
+const BASE_URL = process.env.REPL_SLUG 
+  ? `https://${process.env.REPL_SLUG}.${process.env.REPLIT_DEV_DOMAIN}`
+  : 'http://localhost:5000';
+
+export async function sendCampaignEmails(campaignId: string, storageInstance: DatabaseStorage) {
+  const campaign = await storageInstance.getNewsletterCampaign(campaignId);
+  if (!campaign) throw new Error("Campaign not found");
+
+  await storageInstance.updateNewsletterCampaign(campaignId, { status: 'sending' });
+
+  const tags = campaign.tags || [];
+  const contacts = await storageInstance.getContactsByTags(tags);
+
+  const { client, fromEmail } = await getUncachableSendGridClient();
+  let sentCount = 0;
+  let errorCount = 0;
+
+  for (const contact of contacts) {
+    try {
+      const unsubscribeUrl = `${BASE_URL}/newsletter/unsubscribe/${contact.unsubscribeToken}`;
+      const trackingUrl = `${BASE_URL}/track/open/${campaignId}/${contact.id}`;
+      const html = generateEmailTemplate(campaign.htmlContent, unsubscribeUrl, trackingUrl);
+
+      await client.send({
+        to: contact.email,
+        from: fromEmail,
+        subject: campaign.subject,
+        html,
+      });
+
+      await storageInstance.createNewsletterEvent({
+        campaignId,
+        contactId: contact.id,
+        eventType: 'sent',
+        metadata: {},
+      });
+
+      await storageInstance.updateNewsletterContact(contact.id, {
+        lastEmailSentAt: new Date(),
+      });
+
+      sentCount++;
+    } catch (error) {
+      console.error(`Error sending to ${contact.email}:`, error);
+      errorCount++;
+    }
+  }
+
+  await storageInstance.updateNewsletterCampaign(campaignId, {
+    status: 'sent',
+    sentAt: new Date(),
+    totalRecipients: contacts.length,
+    totalSent: sentCount,
+  });
+}
+
 export function registerNewsletterRoutes(app: Express, isAuthenticated: any, isAdmin: any) {
-  const BASE_URL = process.env.REPL_SLUG 
-    ? `https://${process.env.REPL_SLUG}.${process.env.REPLIT_DEV_DOMAIN}`
-    : 'http://localhost:5000';
 
   // ========== Public Newsletter Routes ==========
   
@@ -380,7 +434,7 @@ export function registerNewsletterRoutes(app: Express, isAuthenticated: any, isA
       }
 
       // Send immediately
-      await sendCampaign(id);
+      await sendCampaignEmails(id, storage);
       res.json({ message: "Campaign sent successfully" });
     } catch (error) {
       console.error("Error sending campaign:", error);
@@ -388,63 +442,6 @@ export function registerNewsletterRoutes(app: Express, isAuthenticated: any, isA
     }
   });
 
-  // Helper function to send campaign
-  async function sendCampaign(campaignId: string) {
-    const campaign = await storage.getNewsletterCampaign(campaignId);
-    if (!campaign) throw new Error("Campaign not found");
-
-    // Update status to sending
-    await storage.updateNewsletterCampaign(campaignId, { status: 'sending' });
-
-    // Get recipients based on tags
-    const tags = campaign.tags || [];
-    const contacts = await storage.getContactsByTags(tags);
-
-    const { client, fromEmail } = await getUncachableSendGridClient();
-    let sentCount = 0;
-    let errorCount = 0;
-
-    for (const contact of contacts) {
-      try {
-        const unsubscribeUrl = `${BASE_URL}/newsletter/unsubscribe/${contact.unsubscribeToken}`;
-        const trackingUrl = `${BASE_URL}/track/open/${campaignId}/${contact.id}`;
-        const html = generateEmailTemplate(campaign.htmlContent, unsubscribeUrl, trackingUrl);
-
-        await client.send({
-          to: contact.email,
-          from: fromEmail,
-          subject: campaign.subject,
-          html,
-        });
-
-        // Record sent event
-        await storage.createNewsletterEvent({
-          campaignId,
-          contactId: contact.id,
-          eventType: 'sent',
-          metadata: {},
-        });
-
-        // Update contact last email sent timestamp
-        await storage.updateNewsletterContact(contact.id, {
-          lastEmailSentAt: new Date(),
-        });
-
-        sentCount++;
-      } catch (error) {
-        console.error(`Error sending to ${contact.email}:`, error);
-        errorCount++;
-      }
-    }
-
-    // Update campaign stats
-    await storage.updateNewsletterCampaign(campaignId, {
-      status: 'sent',
-      sentAt: new Date(),
-      totalRecipients: contacts.length,
-      totalSent: sentCount,
-    });
-  }
 
   // Get campaign statistics (admin only)
   app.get('/api/admin/newsletter/campaigns/:id/stats', isAuthenticated, isAdmin, async (req, res) => {
