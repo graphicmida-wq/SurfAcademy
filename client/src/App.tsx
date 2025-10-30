@@ -25,6 +25,7 @@ import CustomPageEditor from "@/pages/admin/CustomPageEditor";
 import AdminCourses from "@/pages/admin/Courses";
 import AdminCourseContent from "@/pages/admin/CourseContent";
 import AdminIscrizioni from "@/pages/admin/Iscrizioni";
+import AdminNewsletter from "@/pages/admin/Newsletter";
 import NotFound from "@/pages/not-found";
 import { AdminLayout } from "@/components/AdminLayout";
 
@@ -114,9 +115,7 @@ function Router() {
           <Route path="/admin/newsletter">
             {user?.isAdmin ? (
               <AdminLayout>
-                <div className="py-20 text-center text-muted-foreground">
-                  Newsletter - In sviluppo
-                </div>
+                <AdminNewsletter />
               </AdminLayout>
             ) : <NotFound />}
           </Route>

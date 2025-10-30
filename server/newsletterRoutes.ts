@@ -50,15 +50,37 @@ export async function sendCampaignEmails(campaignId: string, storageInstance: Da
     } catch (error) {
       console.error(`Error sending to ${contact.email}:`, error);
       errorCount++;
+      
+      await storageInstance.createNewsletterEvent({
+        campaignId,
+        contactId: contact.id,
+        eventType: 'bounced',
+        metadata: { error: String(error) },
+      });
     }
   }
 
+  // Update campaign status based on success/failure
+  let finalStatus: string;
+  if (errorCount === contacts.length) {
+    finalStatus = 'draft'; // All failed - revert to draft
+  } else if (errorCount > 0) {
+    finalStatus = 'sending'; // Partial failure - keep in sending for manual review
+  } else {
+    finalStatus = 'sent'; // All succeeded
+  }
+  
   await storageInstance.updateNewsletterCampaign(campaignId, {
-    status: 'sent',
-    sentAt: new Date(),
+    status: finalStatus,
+    sentAt: sentCount > 0 ? new Date() : null,
     totalRecipients: contacts.length,
     totalSent: sentCount,
+    totalBounced: errorCount,
   });
+
+  if (errorCount > 0) {
+    console.warn(`[Newsletter] Campaign ${campaignId}: ${sentCount}/${contacts.length} sent successfully, ${errorCount} failed (status: ${finalStatus})`);
+  }
 }
 
 export function registerNewsletterRoutes(app: Express, isAuthenticated: any, isAdmin: any) {
@@ -68,11 +90,19 @@ export function registerNewsletterRoutes(app: Express, isAuthenticated: any, isA
   // Subscribe to newsletter (creates pending contact, sends confirmation email)
   app.post('/api/newsletter/subscribe', async (req, res) => {
     try {
-      const { email, firstName, lastName } = req.body;
-      
-      if (!email) {
-        return res.status(400).json({ message: "Email è obbligatoria" });
+      // Validate only user-provided fields (email, firstName, lastName)
+      const userDataSchema = z.object({
+        email: z.string().email(),
+        firstName: z.string().optional(),
+        lastName: z.string().optional(),
+      });
+
+      const validatedData = userDataSchema.safeParse(req.body);
+      if (!validatedData.success) {
+        return res.status(400).json({ message: "Dati non validi", errors: validatedData.error.errors });
       }
+
+      const { email, firstName, lastName } = validatedData.data;
 
       // Check if email already exists
       const existing = await storage.getNewsletterContactByEmail(email);
@@ -477,8 +507,22 @@ export function registerNewsletterRoutes(app: Express, isAuthenticated: any, isA
   // ========== SendGrid Webhook Handler ==========
   
   // Webhook endpoint for SendGrid events (bounces, spam, unsubscribes)
+  // IMPORTANT: Configure SENDGRID_WEBHOOK_SECRET in environment variables
   app.post('/api/webhook/sendgrid', async (req, res) => {
     try {
+      // SECURITY: Require webhook secret to prevent spoofing
+      const webhookSecret = process.env.SENDGRID_WEBHOOK_SECRET;
+      if (!webhookSecret) {
+        console.error('[SendGrid Webhook] SENDGRID_WEBHOOK_SECRET not configured - rejecting webhook');
+        return res.status(503).json({ message: "Webhook not configured" });
+      }
+      
+      const authHeader = req.headers['authorization'];
+      if (authHeader !== `Bearer ${webhookSecret}`) {
+        console.warn('[SendGrid Webhook] Unauthorized webhook attempt');
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
       const events = req.body;
       
       if (!Array.isArray(events)) {
