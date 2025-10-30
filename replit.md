@@ -21,7 +21,7 @@ Scuola di Longboard is a comprehensive web-based learning management system (LMS
 - **Admin auto-enrollment**: Admins can now instantly enroll in any course via "Iscriviti al Corso" button in AdminCourses without payment, enabling easy testing and content access
 
 **Admin Features - Course Content Management**:
-- **Complete CRUD for Modules**: Full create/update/delete operations for course modules with `title`, `description`, and `orderIndex` fields
+- **Complete CRUD for Modules**: Full create/update/delete operations for course modules with `title`, `description`, `orderIndex`, and `defaultExpanded` fields
 - **Complete CRUD for Lessons**: Full create/update/delete operations for lessons with support for multiple video URLs, PDF uploads, HTML content, and `contentType` categorization
 - **Auto-Module Creation System**: When selecting a course with no modules, clicking "Aggiungi Contenuto" on any content type section automatically creates a default "Contenuti Corso" module, eliminating manual module creation step
 - **Content Management UI** at `/admin/corsi/contenuti`:
@@ -33,7 +33,20 @@ Scuola di Longboard is a comprehensive web-based learning management system (LMS
   - MediaUploadZone integration for video and PDF uploads
   - Real-time updates via TanStack Query cache invalidation
   - Triple-guard system preventing module duplication: modulesLoading check, mutation.isPending check, and modules.length verification
+  - "Espandi di default" checkbox to control module expansion behavior in student view
 - **Quick Access Link**: "Gestisci Contenuti" button added to each course card in AdminCourses page
+
+**Student Course Interface Enhancements**:
+- **Module Accordion Navigation**: Modules displayed as collapsible accordion sections (using Shadcn Accordion) organizing related lessons
+- **Default Expansion Control**: Modules with `defaultExpanded=true` open automatically on course load using controlled accordion pattern
+- **Auto Lesson Selection**: First lesson in first available module auto-selected on course entry to prevent blank screen
+- **Lesson Progress Tracking**: 
+  - CheckCircle2 icons displayed next to completed lessons in sidebar
+  - "Completata" badge shown in lesson header when marked complete
+  - Toggle button below each lesson to mark/unmark completion
+  - Real-time progress updates via TanStack Query mutations
+- **Controlled Accordion State**: Uses `value/onValueChange` pattern with useEffect initialization to ensure async-loaded `defaultExpanded` flags are honored
+- **Visual Hierarchy**: Folder icons for modules, content-type specific icons for lessons (Video, FileText, Calendar, Dumbbell, Flame icons)
 
 **Backend API Enhancements**:
 - `PUT /api/profile`: Profile update endpoint with Zod validation and email uniqueness checking
