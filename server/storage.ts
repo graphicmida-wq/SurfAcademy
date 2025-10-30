@@ -10,8 +10,8 @@ import {
   badges,
   posts,
   comments,
-  surfCamps,
-  campRegistrations,
+  surfDays,
+  surfDayRegistrations,
   certificates,
   purchases,
   memberships,
@@ -37,10 +37,10 @@ import {
   type InsertPost,
   type Comment,
   type InsertComment,
-  type SurfCamp,
-  type InsertSurfCamp,
-  type CampRegistration,
-  type InsertCampRegistration,
+  type SurfDay,
+  type InsertSurfDay,
+  type SurfDayRegistration,
+  type InsertSurfDayRegistration,
   type Certificate,
   type InsertCertificate,
   type Purchase,
@@ -123,15 +123,15 @@ export interface IStorage {
   getCommentsByPost(postId: string): Promise<(Comment & { user: User })[]>;
   createComment(comment: InsertComment): Promise<Comment>;
   
-  // Surf camp operations
-  getAllSurfCamps(): Promise<SurfCamp[]>;
-  getSurfCamp(id: string): Promise<SurfCamp | undefined>;
-  createSurfCamp(camp: InsertSurfCamp): Promise<SurfCamp>;
-  updateSurfCampSpots(id: string, availableSpots: number): Promise<void>;
+  // SurfDay operations
+  getAllSurfDays(): Promise<SurfDay[]>;
+  getSurfDay(id: string): Promise<SurfDay | undefined>;
+  createSurfDay(surfDay: InsertSurfDay): Promise<SurfDay>;
+  updateSurfDaySpots(id: string, availableSpots: number): Promise<void>;
   
-  // Camp registration operations
-  getCampRegistrationsByUser(userId: string): Promise<CampRegistration[]>;
-  createCampRegistration(registration: InsertCampRegistration): Promise<CampRegistration>;
+  // SurfDay registration operations
+  getSurfDayRegistrationsByUser(userId: string): Promise<SurfDayRegistration[]>;
+  createSurfDayRegistration(registration: InsertSurfDayRegistration): Promise<SurfDayRegistration>;
   
   // Certificate operations
   getCertificateByUserAndCourse(userId: string, courseId: string): Promise<Certificate | undefined>;
@@ -551,36 +551,36 @@ export class DatabaseStorage implements IStorage {
     return newComment;
   }
 
-  // ========== Surf Camp Operations ==========
-  async getAllSurfCamps(): Promise<SurfCamp[]> {
-    return await db.select().from(surfCamps).orderBy(surfCamps.startDate);
+  // ========== SurfDay Operations ==========
+  async getAllSurfDays(): Promise<SurfDay[]> {
+    return await db.select().from(surfDays).orderBy(surfDays.startDate);
   }
 
-  async getSurfCamp(id: string): Promise<SurfCamp | undefined> {
-    const [camp] = await db.select().from(surfCamps).where(eq(surfCamps.id, id));
-    return camp;
+  async getSurfDay(id: string): Promise<SurfDay | undefined> {
+    const [surfDay] = await db.select().from(surfDays).where(eq(surfDays.id, id));
+    return surfDay;
   }
 
-  async createSurfCamp(camp: InsertSurfCamp): Promise<SurfCamp> {
-    const [newCamp] = await db.insert(surfCamps).values(camp).returning();
-    return newCamp;
+  async createSurfDay(surfDay: InsertSurfDay): Promise<SurfDay> {
+    const [newSurfDay] = await db.insert(surfDays).values(surfDay).returning();
+    return newSurfDay;
   }
 
-  async updateSurfCampSpots(id: string, availableSpots: number): Promise<void> {
-    await db.update(surfCamps).set({ availableSpots }).where(eq(surfCamps.id, id));
+  async updateSurfDaySpots(id: string, availableSpots: number): Promise<void> {
+    await db.update(surfDays).set({ availableSpots }).where(eq(surfDays.id, id));
   }
 
-  // ========== Camp Registration Operations ==========
-  async getCampRegistrationsByUser(userId: string): Promise<CampRegistration[]> {
+  // ========== SurfDay Registration Operations ==========
+  async getSurfDayRegistrationsByUser(userId: string): Promise<SurfDayRegistration[]> {
     return await db
       .select()
-      .from(campRegistrations)
-      .where(eq(campRegistrations.userId, userId))
-      .orderBy(desc(campRegistrations.registeredAt));
+      .from(surfDayRegistrations)
+      .where(eq(surfDayRegistrations.userId, userId))
+      .orderBy(desc(surfDayRegistrations.registeredAt));
   }
 
-  async createCampRegistration(registration: InsertCampRegistration): Promise<CampRegistration> {
-    const [newRegistration] = await db.insert(campRegistrations).values(registration).returning();
+  async createSurfDayRegistration(registration: InsertSurfDayRegistration): Promise<SurfDayRegistration> {
+    const [newRegistration] = await db.insert(surfDayRegistrations).values(registration).returning();
     return newRegistration;
   }
 
