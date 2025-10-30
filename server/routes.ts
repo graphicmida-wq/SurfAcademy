@@ -11,8 +11,8 @@ import {
   insertEnrollmentSchema,
   insertPostSchema,
   insertCommentSchema,
-  insertSurfCampSchema,
-  insertCampRegistrationSchema,
+  insertSurfDaySchema,
+  insertSurfDayRegistrationSchema,
   insertCertificateSchema,
   insertHeroSlideSchema,
   insertPageHeaderSchema,
@@ -666,56 +666,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // ========== Surf Camp Routes ==========
-  app.get("/api/surf-camps", async (req, res) => {
+  // ========== SurfDay Routes ==========
+  app.get("/api/surf-days", async (req, res) => {
     try {
-      const camps = await storage.getAllSurfCamps();
-      res.json(camps);
+      const surfDays = await storage.getAllSurfDays();
+      res.json(surfDays);
     } catch (error) {
-      console.error("Error fetching surf camps:", error);
-      res.status(500).json({ message: "Failed to fetch surf camps" });
+      console.error("Error fetching surf days:", error);
+      res.status(500).json({ message: "Failed to fetch surf days" });
     }
   });
 
-  app.post("/api/surf-camps", isAuthenticated, async (req, res) => {
+  app.post("/api/surf-days", isAuthenticated, async (req, res) => {
     try {
-      const validatedData = insertSurfCampSchema.parse(req.body);
-      const camp = await storage.createSurfCamp(validatedData);
-      res.status(201).json(camp);
+      const validatedData = insertSurfDaySchema.parse(req.body);
+      const surfDay = await storage.createSurfDay(validatedData);
+      res.status(201).json(surfDay);
     } catch (error) {
-      console.error("Error creating surf camp:", error);
-      res.status(400).json({ message: "Failed to create surf camp" });
+      console.error("Error creating surf day:", error);
+      res.status(400).json({ message: "Failed to create surf day" });
     }
   });
 
-  // ========== Camp Registration Routes ==========
-  app.get("/api/camp-registrations", isAuthenticated, async (req: any, res) => {
+  // ========== SurfDay Registration Routes ==========
+  app.get("/api/surf-day-registrations", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user?.claims?.sub || req.user?.id;
-      const registrations = await storage.getCampRegistrationsByUser(userId);
+      const registrations = await storage.getSurfDayRegistrationsByUser(userId);
       res.json(registrations);
     } catch (error) {
-      console.error("Error fetching camp registrations:", error);
-      res.status(500).json({ message: "Failed to fetch camp registrations" });
+      console.error("Error fetching surf day registrations:", error);
+      res.status(500).json({ message: "Failed to fetch surf day registrations" });
     }
   });
 
-  app.post("/api/camp-registrations", isAuthenticated, async (req: any, res) => {
+  app.post("/api/surf-day-registrations", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user?.claims?.sub || req.user?.id;
-      const validatedData = insertCampRegistrationSchema.parse({ ...req.body, userId });
+      const validatedData = insertSurfDayRegistrationSchema.parse({ ...req.body, userId });
       
       // Update available spots
-      const camp = await storage.getSurfCamp(validatedData.campId);
-      if (camp && camp.availableSpots > 0) {
-        await storage.updateSurfCampSpots(camp.id, camp.availableSpots - 1);
+      const surfDay = await storage.getSurfDay(validatedData.surfDayId);
+      if (surfDay && surfDay.availableSpots > 0) {
+        await storage.updateSurfDaySpots(surfDay.id, surfDay.availableSpots - 1);
       }
 
-      const registration = await storage.createCampRegistration(validatedData);
+      const registration = await storage.createSurfDayRegistration(validatedData);
       res.status(201).json(registration);
     } catch (error) {
-      console.error("Error creating camp registration:", error);
-      res.status(400).json({ message: "Failed to create camp registration" });
+      console.error("Error creating surf day registration:", error);
+      res.status(400).json({ message: "Failed to create surf day registration" });
     }
   });
 

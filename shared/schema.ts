@@ -536,7 +536,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   badges: many(badges),
   posts: many(posts),
   comments: many(comments),
-  campRegistrations: many(campRegistrations),
+  surfDayRegistrations: many(surfDayRegistrations),
 }));
 
 export const coursesRelations = relations(courses, ({ many }) => ({
@@ -590,18 +590,18 @@ export const commentsRelations = relations(comments, ({ one }) => ({
   }),
 }));
 
-export const surfCampsRelations = relations(surfCamps, ({ many }) => ({
-  registrations: many(campRegistrations),
+export const surfDaysRelations = relations(surfDays, ({ many }) => ({
+  registrations: many(surfDayRegistrations),
 }));
 
-export const campRegistrationsRelations = relations(campRegistrations, ({ one }) => ({
+export const surfDayRegistrationsRelations = relations(surfDayRegistrations, ({ one }) => ({
   user: one(users, {
-    fields: [campRegistrations.userId],
+    fields: [surfDayRegistrations.userId],
     references: [users.id],
   }),
-  camp: one(surfCamps, {
-    fields: [campRegistrations.campId],
-    references: [surfCamps.id],
+  surfDay: one(surfDays, {
+    fields: [surfDayRegistrations.surfDayId],
+    references: [surfDays.id],
   }),
 }));
 
