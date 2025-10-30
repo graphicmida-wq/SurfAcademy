@@ -71,6 +71,7 @@ export const modules = pgTable("modules", {
   courseId: varchar("course_id").notNull().references(() => courses.id, { onDelete: 'cascade' }),
   title: varchar("title", { length: 255 }).notNull(),
   description: text("description"),
+  defaultExpanded: boolean("default_expanded").default(true), // Whether module is expanded by default in student view
   orderIndex: integer("order_index").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
 });
