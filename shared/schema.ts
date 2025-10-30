@@ -778,3 +778,91 @@ export type InsertCustomPage = z.infer<typeof insertCustomPageSchema>;
 
 export type PageBlock = typeof pageBlocks.$inferSelect;
 export type InsertPageBlock = z.infer<typeof insertPageBlockSchema>;
+
+// ============================================================================
+// NEWSLETTER SYSTEM TABLES
+// ============================================================================
+
+export const newsletterContacts = pgTable("newsletter_contacts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  email: varchar("email", { length: 255 }).notNull().unique(),
+  firstName: varchar("first_name", { length: 100 }),
+  lastName: varchar("last_name", { length: 100 }),
+  status: varchar("status").notNull().default("pending"), // pending, confirmed, unsubscribed, bounced, spam_complaint
+  confirmToken: varchar("confirm_token").unique(),
+  unsubscribeToken: varchar("unsubscribe_token").unique(),
+  tags: text("tags").array(), // Array of tag strings for segmentation
+  subscribedIp: varchar("subscribed_ip"),
+  subscribedAt: timestamp("subscribed_at").defaultNow(),
+  confirmedAt: timestamp("confirmed_at"),
+  unsubscribedAt: timestamp("unsubscribed_at"),
+  lastEmailSentAt: timestamp("last_email_sent_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const newsletterCampaigns = pgTable("newsletter_campaigns", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: varchar("name", { length: 255 }).notNull(),
+  subject: varchar("subject", { length: 255 }).notNull(),
+  preheader: varchar("preheader", { length: 255 }),
+  htmlContent: text("html_content").notNull(),
+  status: varchar("status").notNull().default("draft"), // draft, scheduled, sending, sent, failed
+  tags: text("tags").array(), // Target contacts with these tags (empty = all confirmed)
+  scheduledFor: timestamp("scheduled_for"),
+  sentAt: timestamp("sent_at"),
+  totalRecipients: integer("total_recipients").default(0),
+  totalSent: integer("total_sent").default(0),
+  totalOpened: integer("total_opened").default(0),
+  totalClicked: integer("total_clicked").default(0),
+  totalBounced: integer("total_bounced").default(0),
+  createdBy: varchar("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const newsletterEvents = pgTable("newsletter_events", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  campaignId: varchar("campaign_id").notNull().references(() => newsletterCampaigns.id, { onDelete: 'cascade' }),
+  contactId: varchar("contact_id").notNull().references(() => newsletterContacts.id, { onDelete: 'cascade' }),
+  eventType: varchar("event_type").notNull(), // sent, opened, clicked, bounced, spam_complaint
+  metadata: jsonb("metadata"), // Additional data like clicked URL, bounce reason, etc.
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_newsletter_events_campaign").on(table.campaignId),
+  index("idx_newsletter_events_contact").on(table.contactId),
+  index("idx_newsletter_events_type").on(table.eventType),
+]);
+
+// Zod schemas for newsletter system
+export const insertNewsletterContactSchema = createInsertSchema(newsletterContacts).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertNewsletterCampaignSchema = createInsertSchema(newsletterCampaigns).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  totalRecipients: true,
+  totalSent: true,
+  totalOpened: true,
+  totalClicked: true,
+  totalBounced: true,
+});
+
+export const insertNewsletterEventSchema = createInsertSchema(newsletterEvents).omit({
+  id: true,
+  createdAt: true,
+});
+
+// Newsletter type exports
+export type NewsletterContact = typeof newsletterContacts.$inferSelect;
+export type InsertNewsletterContact = z.infer<typeof insertNewsletterContactSchema>;
+
+export type NewsletterCampaign = typeof newsletterCampaigns.$inferSelect;
+export type InsertNewsletterCampaign = z.infer<typeof insertNewsletterCampaignSchema>;
+
+export type NewsletterEvent = typeof newsletterEvents.$inferSelect;
+export type InsertNewsletterEvent = z.infer<typeof insertNewsletterEventSchema>;

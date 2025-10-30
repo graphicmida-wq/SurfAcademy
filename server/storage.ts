@@ -21,6 +21,9 @@ import {
   pageHeaders,
   customPages,
   pageBlocks,
+  newsletterContacts,
+  newsletterCampaigns,
+  newsletterEvents,
   type User,
   type UpsertUser,
   type Course,
@@ -59,6 +62,12 @@ import {
   type InsertCustomPage,
   type PageBlock,
   type InsertPageBlock,
+  type NewsletterContact,
+  type InsertNewsletterContact,
+  type NewsletterCampaign,
+  type InsertNewsletterCampaign,
+  type NewsletterEvent,
+  type InsertNewsletterEvent,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql } from "drizzle-orm";
@@ -189,6 +198,31 @@ export interface IStorage {
   updatePageBlock(id: string, block: Partial<InsertPageBlock>): Promise<PageBlock>;
   deletePageBlock(id: string): Promise<void>;
   reorderPageBlocks(blocks: { id: string; orderIndex: number }[]): Promise<void>;
+  
+  // Newsletter contact operations
+  getAllNewsletterContacts(status?: string): Promise<NewsletterContact[]>;
+  getNewsletterContactByEmail(email: string): Promise<NewsletterContact | undefined>;
+  getNewsletterContactById(id: string): Promise<NewsletterContact | undefined>;
+  getNewsletterContactByToken(token: string, tokenType: 'confirm' | 'unsubscribe'): Promise<NewsletterContact | undefined>;
+  createNewsletterContact(contact: InsertNewsletterContact): Promise<NewsletterContact>;
+  updateNewsletterContact(id: string, contact: Partial<InsertNewsletterContact>): Promise<NewsletterContact>;
+  confirmNewsletterContact(token: string): Promise<NewsletterContact | undefined>;
+  unsubscribeNewsletterContact(token: string): Promise<NewsletterContact | undefined>;
+  deleteNewsletterContact(id: string): Promise<void>;
+  getContactsByTags(tags: string[]): Promise<NewsletterContact[]>;
+  
+  // Newsletter campaign operations
+  getAllNewsletterCampaigns(): Promise<NewsletterCampaign[]>;
+  getNewsletterCampaign(id: string): Promise<NewsletterCampaign | undefined>;
+  createNewsletterCampaign(campaign: InsertNewsletterCampaign): Promise<NewsletterCampaign>;
+  updateNewsletterCampaign(id: string, campaign: Partial<InsertNewsletterCampaign>): Promise<NewsletterCampaign>;
+  deleteNewsletterCampaign(id: string): Promise<void>;
+  getScheduledCampaigns(): Promise<NewsletterCampaign[]>;
+  
+  // Newsletter event operations
+  createNewsletterEvent(event: InsertNewsletterEvent): Promise<NewsletterEvent>;
+  getEventsByCampaign(campaignId: string): Promise<NewsletterEvent[]>;
+  getEventsByContact(contactId: string): Promise<NewsletterEvent[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -895,6 +929,136 @@ export class DatabaseStorage implements IStorage {
         db.update(pageBlocks).set({ orderIndex, updatedAt: new Date() }).where(eq(pageBlocks.id, id))
       )
     );
+  }
+
+  // ========== Newsletter Contact Operations ==========
+  async getAllNewsletterContacts(status?: string): Promise<NewsletterContact[]> {
+    if (status) {
+      return await db.select().from(newsletterContacts).where(eq(newsletterContacts.status, status)).orderBy(desc(newsletterContacts.createdAt));
+    }
+    return await db.select().from(newsletterContacts).orderBy(desc(newsletterContacts.createdAt));
+  }
+
+  async getNewsletterContactByEmail(email: string): Promise<NewsletterContact | undefined> {
+    const [contact] = await db.select().from(newsletterContacts).where(eq(newsletterContacts.email, email));
+    return contact;
+  }
+
+  async getNewsletterContactById(id: string): Promise<NewsletterContact | undefined> {
+    const [contact] = await db.select().from(newsletterContacts).where(eq(newsletterContacts.id, id));
+    return contact;
+  }
+
+  async getNewsletterContactByToken(token: string, tokenType: 'confirm' | 'unsubscribe'): Promise<NewsletterContact | undefined> {
+    const column = tokenType === 'confirm' ? newsletterContacts.confirmToken : newsletterContacts.unsubscribeToken;
+    const [contact] = await db.select().from(newsletterContacts).where(eq(column, token));
+    return contact;
+  }
+
+  async createNewsletterContact(contact: InsertNewsletterContact): Promise<NewsletterContact> {
+    const [newContact] = await db.insert(newsletterContacts).values(contact).returning();
+    return newContact;
+  }
+
+  async updateNewsletterContact(id: string, contact: Partial<InsertNewsletterContact>): Promise<NewsletterContact> {
+    const [updatedContact] = await db
+      .update(newsletterContacts)
+      .set({ ...contact, updatedAt: new Date() })
+      .where(eq(newsletterContacts.id, id))
+      .returning();
+    return updatedContact;
+  }
+
+  async confirmNewsletterContact(token: string): Promise<NewsletterContact | undefined> {
+    const [contact] = await db
+      .update(newsletterContacts)
+      .set({ status: 'confirmed', confirmedAt: new Date(), updatedAt: new Date() })
+      .where(eq(newsletterContacts.confirmToken, token))
+      .returning();
+    return contact;
+  }
+
+  async unsubscribeNewsletterContact(token: string): Promise<NewsletterContact | undefined> {
+    const [contact] = await db
+      .update(newsletterContacts)
+      .set({ status: 'unsubscribed', unsubscribedAt: new Date(), updatedAt: new Date() })
+      .where(eq(newsletterContacts.unsubscribeToken, token))
+      .returning();
+    return contact;
+  }
+
+  async deleteNewsletterContact(id: string): Promise<void> {
+    await db.delete(newsletterContacts).where(eq(newsletterContacts.id, id));
+  }
+
+  async getContactsByTags(tags: string[]): Promise<NewsletterContact[]> {
+    if (tags.length === 0) {
+      return await db.select().from(newsletterContacts).where(eq(newsletterContacts.status, 'confirmed'));
+    }
+    // Get confirmed contacts that have at least one of the specified tags
+    return await db
+      .select()
+      .from(newsletterContacts)
+      .where(
+        and(
+          eq(newsletterContacts.status, 'confirmed'),
+          sql`${newsletterContacts.tags} && ${tags}`
+        )
+      );
+  }
+
+  // ========== Newsletter Campaign Operations ==========
+  async getAllNewsletterCampaigns(): Promise<NewsletterCampaign[]> {
+    return await db.select().from(newsletterCampaigns).orderBy(desc(newsletterCampaigns.createdAt));
+  }
+
+  async getNewsletterCampaign(id: string): Promise<NewsletterCampaign | undefined> {
+    const [campaign] = await db.select().from(newsletterCampaigns).where(eq(newsletterCampaigns.id, id));
+    return campaign;
+  }
+
+  async createNewsletterCampaign(campaign: InsertNewsletterCampaign): Promise<NewsletterCampaign> {
+    const [newCampaign] = await db.insert(newsletterCampaigns).values(campaign).returning();
+    return newCampaign;
+  }
+
+  async updateNewsletterCampaign(id: string, campaign: Partial<InsertNewsletterCampaign>): Promise<NewsletterCampaign> {
+    const [updatedCampaign] = await db
+      .update(newsletterCampaigns)
+      .set({ ...campaign, updatedAt: new Date() })
+      .where(eq(newsletterCampaigns.id, id))
+      .returning();
+    return updatedCampaign;
+  }
+
+  async deleteNewsletterCampaign(id: string): Promise<void> {
+    await db.delete(newsletterCampaigns).where(eq(newsletterCampaigns.id, id));
+  }
+
+  async getScheduledCampaigns(): Promise<NewsletterCampaign[]> {
+    return await db
+      .select()
+      .from(newsletterCampaigns)
+      .where(
+        and(
+          eq(newsletterCampaigns.status, 'scheduled'),
+          sql`${newsletterCampaigns.scheduledFor} <= NOW()`
+        )
+      );
+  }
+
+  // ========== Newsletter Event Operations ==========
+  async createNewsletterEvent(event: InsertNewsletterEvent): Promise<NewsletterEvent> {
+    const [newEvent] = await db.insert(newsletterEvents).values(event).returning();
+    return newEvent;
+  }
+
+  async getEventsByCampaign(campaignId: string): Promise<NewsletterEvent[]> {
+    return await db.select().from(newsletterEvents).where(eq(newsletterEvents.campaignId, campaignId));
+  }
+
+  async getEventsByContact(contactId: string): Promise<NewsletterEvent[]> {
+    return await db.select().from(newsletterEvents).where(eq(newsletterEvents.contactId, contactId));
   }
 }
 
