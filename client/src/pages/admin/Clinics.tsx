@@ -9,9 +9,12 @@ import { MediaUploadZone } from "@/components/MediaUploadZone";
 import { SimpleRichTextEditor } from "@/components/SimpleRichTextEditor";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
+import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Plus, Trash2, Edit, MapPin, Calendar, Users } from "lucide-react";
-import type { Clinic, InsertClinic } from "@shared/schema";
+import { Loader2, Plus, Trash2, Edit, MapPin, Calendar, Users, Clock, CheckCircle2 } from "lucide-react";
+import type { Clinic, InsertClinic, ClinicRegistration } from "@shared/schema";
 import { insertClinicSchema } from "@shared/schema";
 import {
   Dialog,
@@ -120,6 +123,23 @@ export default function AdminClinics() {
     },
     onError: () => {
       toast({ title: "Errore durante l'eliminazione", variant: "destructive" });
+    },
+  });
+
+  const activateMutation = useMutation({
+    mutationFn: async ({ id, activationStatus }: { id: string; activationStatus: string }) => {
+      const res = await apiRequest("PATCH", `/api/admin/clinics/${id}/activate`, {
+        activationStatus,
+        purchasableFrom: activationStatus === "active" ? new Date().toISOString() : null,
+      });
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/clinics"] });
+      toast({ title: "Stato clinic aggiornato con successo" });
+    },
+    onError: () => {
+      toast({ title: "Errore durante l'aggiornamento dello stato", variant: "destructive" });
     },
   });
 
