@@ -6,6 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { MediaUploadZone } from "@/components/MediaUploadZone";
+import { SimpleRichTextEditor } from "@/components/SimpleRichTextEditor";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Plus, Trash2, Edit, MapPin, Calendar, Users } from "lucide-react";
 import type { Clinic, InsertClinic } from "@shared/schema";
@@ -67,6 +70,10 @@ export default function AdminClinics() {
       availableSpots: 10,
       imageUrl: "",
       imageGallery: [],
+      galleryLayout: "grid",
+      galleryColumns: 3,
+      galleryGap: "16px",
+      galleryAspectRatio: "original",
     },
   });
 
@@ -129,6 +136,10 @@ export default function AdminClinics() {
       availableSpots: clinic.availableSpots,
       imageUrl: clinic.imageUrl || "",
       imageGallery: clinic.imageGallery || [],
+      galleryLayout: clinic.galleryLayout || "grid",
+      galleryColumns: clinic.galleryColumns || 3,
+      galleryGap: clinic.galleryGap || "16px",
+      galleryAspectRatio: clinic.galleryAspectRatio || "original",
     });
     setIsDialogOpen(true);
   };
@@ -146,15 +157,26 @@ export default function AdminClinics() {
       availableSpots: 10,
       imageUrl: "",
       imageGallery: [],
+      galleryLayout: "grid",
+      galleryColumns: 3,
+      galleryGap: "16px",
+      galleryAspectRatio: "original",
     });
     setIsDialogOpen(true);
   };
 
   const handleSubmit = (data: InsertClinic) => {
+    // Convert date strings to Date objects
+    const formattedData = {
+      ...data,
+      startDate: new Date(data.startDate),
+      endDate: new Date(data.endDate),
+    };
+    
     if (editingClinic) {
-      updateMutation.mutate({ id: editingClinic.id, data });
+      updateMutation.mutate({ id: editingClinic.id, data: formattedData });
     } else {
-      createMutation.mutate(data);
+      createMutation.mutate(formattedData);
     }
   };
 
@@ -213,12 +235,10 @@ export default function AdminClinics() {
                     <FormItem>
                       <FormLabel>Descrizione</FormLabel>
                       <FormControl>
-                        <Textarea 
-                          {...field}
+                        <SimpleRichTextEditor
                           value={field.value ?? ""}
-                          placeholder="Descrizione della clinic" 
-                          data-testid="input-clinic-description"
-                          className="min-h-[100px]"
+                          onChange={field.onChange}
+                          placeholder="Descrizione della clinic"
                         />
                       </FormControl>
                       <FormMessage />
@@ -350,12 +370,106 @@ export default function AdminClinics() {
                           onChange={(e) => field.onChange(e.target.value.split(",").map(s => s.trim()).filter(Boolean))}
                           placeholder="https://..., https://..."
                           className="min-h-[80px]"
+                          data-testid="textarea-image-gallery"
                         />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+
+                <div className="space-y-4">
+                  <h3 className="text-sm font-medium">Configurazione Galleria</h3>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="galleryLayout"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Layout Galleria</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value || "grid"}>
+                            <FormControl>
+                              <SelectTrigger data-testid="select-gallery-layout">
+                                <SelectValue placeholder="Seleziona layout" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="grid" data-testid="option-layout-grid">Griglia</SelectItem>
+                              <SelectItem value="masonry" data-testid="option-layout-masonry">Masonry</SelectItem>
+                              <SelectItem value="carousel" data-testid="option-layout-carousel">Carousel</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="galleryColumns"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Colonne ({field.value || 3})</FormLabel>
+                          <FormControl>
+                            <Slider
+                              min={1}
+                              max={6}
+                              step={1}
+                              value={[field.value || 3]}
+                              onValueChange={(vals) => field.onChange(vals[0])}
+                              data-testid="slider-gallery-columns"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="galleryGap"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Spaziatura</FormLabel>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              value={field.value || "16px"}
+                              placeholder="16px, 1rem, ecc."
+                              data-testid="input-gallery-gap"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="galleryAspectRatio"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Aspect Ratio</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value || "original"}>
+                            <FormControl>
+                              <SelectTrigger data-testid="select-gallery-aspect-ratio">
+                                <SelectValue placeholder="Seleziona aspect ratio" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="1:1" data-testid="option-ratio-1-1">1:1 (Quadrato)</SelectItem>
+                              <SelectItem value="4:3" data-testid="option-ratio-4-3">4:3 (Standard)</SelectItem>
+                              <SelectItem value="16:9" data-testid="option-ratio-16-9">16:9 (Widescreen)</SelectItem>
+                              <SelectItem value="original" data-testid="option-ratio-original">Originale</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
 
                 <div className="flex justify-end gap-2">
                   <Button

@@ -234,6 +234,10 @@ export const clinics = pgTable("clinics", {
   availableSpots: integer("available_spots").notNull(),
   imageUrl: varchar("image_url"),
   imageGallery: text("image_gallery").array(), // Array of image URLs for gallery
+  galleryLayout: varchar("gallery_layout").default("grid"), // grid, masonry, carousel
+  galleryColumns: integer("gallery_columns").default(3), // 1-6 columns
+  galleryGap: varchar("gallery_gap").default("16px"), // spacing between items
+  galleryAspectRatio: varchar("gallery_aspect_ratio").default("original"), // 1:1, 4:3, 16:9, original
   createdAt: timestamp("created_at").defaultNow(),
 });
 
