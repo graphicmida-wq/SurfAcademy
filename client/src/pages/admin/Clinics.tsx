@@ -329,11 +329,8 @@ export default function AdminClinics() {
                       <FormLabel>Immagine Copertina</FormLabel>
                       <FormControl>
                         <MediaUploadZone
-                          value={field.value || ""}
-                          onChange={field.onChange}
-                          accept="image/*"
-                          maxSizeMB={50}
-                          data-testid="upload-clinic-cover"
+                          currentUrl={field.value || ""}
+                          onUploadComplete={(url) => field.onChange(url)}
                         />
                       </FormControl>
                       <FormMessage />
@@ -346,15 +343,13 @@ export default function AdminClinics() {
                   name="imageGallery"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Galleria Foto</FormLabel>
+                      <FormLabel>Galleria Foto (URL separati da virgola)</FormLabel>
                       <FormControl>
-                        <MediaUploadZone
-                          value={field.value || []}
-                          onChange={field.onChange}
-                          accept="image/*"
-                          maxSizeMB={50}
-                          multiple
-                          data-testid="upload-clinic-gallery"
+                        <Textarea
+                          value={field.value?.join(", ") || ""}
+                          onChange={(e) => field.onChange(e.target.value.split(",").map(s => s.trim()).filter(Boolean))}
+                          placeholder="https://..., https://..."
+                          className="min-h-[80px]"
                         />
                       </FormControl>
                       <FormMessage />

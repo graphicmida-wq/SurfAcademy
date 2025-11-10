@@ -24,6 +24,7 @@ import AdminCustomPages from "@/pages/admin/CustomPages";
 import CustomPageEditor from "@/pages/admin/CustomPageEditor";
 import AdminCourses from "@/pages/admin/Courses";
 import AdminCourseContent from "@/pages/admin/CourseContent";
+import AdminClinics from "@/pages/admin/Clinics";
 import AdminIscrizioni from "@/pages/admin/Iscrizioni";
 import AdminNewsletter from "@/pages/admin/Newsletter";
 import NotFound from "@/pages/not-found";
@@ -85,9 +86,7 @@ function Router() {
           <Route path="/admin/clinic">
             {user?.isAdmin ? (
               <AdminLayout>
-                <div className="py-20 text-center text-muted-foreground">
-                  Gestione Clinic - In sviluppo
-                </div>
+                <AdminClinics />
               </AdminLayout>
             ) : <NotFound />}
           </Route>
