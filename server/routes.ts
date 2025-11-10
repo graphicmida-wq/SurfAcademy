@@ -692,6 +692,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ========== Admin Clinic Routes ==========
+  app.get("/api/admin/clinics", isAdmin, async (req, res) => {
+    try {
+      const clinics = await storage.getAllClinics();
+      res.json(clinics);
+    } catch (error) {
+      console.error("Error fetching clinics:", error);
+      res.status(500).json({ message: "Failed to fetch clinics" });
+    }
+  });
+
+  app.post("/api/admin/clinics", isAdmin, async (req, res) => {
+    try {
+      const validatedData = insertClinicSchema.parse(req.body);
+      const clinic = await storage.createClinic(validatedData);
+      res.status(201).json(clinic);
+    } catch (error) {
+      console.error("Error creating clinic:", error);
+      res.status(400).json({ message: "Failed to create clinic" });
+    }
+  });
+
+  app.patch("/api/admin/clinics/:id", isAdmin, async (req, res) => {
+    try {
+      const clinic = await storage.getClinic(req.params.id);
+      if (!clinic) {
+        return res.status(404).json({ message: "Clinic not found" });
+      }
+      const validatedData = insertClinicSchema.partial().parse(req.body);
+      const updatedClinic = await storage.updateClinic(req.params.id, validatedData);
+      res.json(updatedClinic);
+    } catch (error) {
+      console.error("Error updating clinic:", error);
+      res.status(400).json({ message: "Failed to update clinic" });
+    }
+  });
+
+  app.delete("/api/admin/clinics/:id", isAdmin, async (req, res) => {
+    try {
+      const clinic = await storage.getClinic(req.params.id);
+      if (!clinic) {
+        return res.status(404).json({ message: "Clinic not found" });
+      }
+      await storage.deleteClinic(req.params.id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting clinic:", error);
+      res.status(500).json({ message: "Failed to delete clinic" });
+    }
+  });
+
   // ========== Clinic Registration Routes ==========
   app.get("/api/clinic-registrations", isAuthenticated, async (req: any, res) => {
     try {

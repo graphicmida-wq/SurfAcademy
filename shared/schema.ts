@@ -233,6 +233,7 @@ export const clinics = pgTable("clinics", {
   totalSpots: integer("total_spots").notNull(),
   availableSpots: integer("available_spots").notNull(),
   imageUrl: varchar("image_url"),
+  imageGallery: text("image_gallery").array(), // Array of image URLs for gallery
   createdAt: timestamp("created_at").defaultNow(),
 });
 
