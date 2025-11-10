@@ -6,17 +6,30 @@ Scuola di Longboard is a comprehensive web-based learning management system (LMS
 
 ### Recent Changes (Nov 2025)
 
+**Clinic Waiting Period System - Complete Implementation**:
+- **Waiting Period Workflow**: Added `activationStatus` (waitlist/active) and `purchasableFrom` fields to clinics schema with migration
+- **Admin Waitlist Management**: 
+  - GET `/api/admin/clinics` now returns `ClinicWithWaitlistCount` type with real-time waitlist counts
+  - AdminClinics.tsx displays waitlist badge with count for each clinic
+  - Toggle switch allows admin to activate clinics (waitlist → active) instantly
+  - Visual feedback with CheckCircle2 icon for active clinics, Clock icon for waitlist
+- **User Experience**:
+  - ClinicDetail page with dynamic CTAs: "Lista d'attesa" (waitlist), "Prenota Ora" (active), "Sold Out" (full)
+  - AuthPrompt component for inline login/signup without page redirect
+  - Real-time spot tracking (X/Y format) with "Sold Out" badge when full
+  - Configurable image gallery (grid/masonry/carousel) with HTML description rendering
+- **Backend APIs**: GET `/api/clinics/:id` with user registration status, POST `/api/clinics/:id/waitlist`, PATCH `/api/admin/clinics/:id/activate`, GET `/api/admin/clinics/:id/registrations`
+- **Type Safety**: Created `ClinicWithWaitlistCount` shared type extending Clinic with waitlistCount for admin views
+
 **Complete "SurfDay" to "Clinic" Refactoring**:
 - **Database Migration**: Renamed tables `surf_days` → `clinics`, `surf_day_registrations` → `clinic_registrations` while preserving all data
 - **Schema Updates**: Updated `shared/schema.ts` with new table names, types, relations, and insert schemas
 - **Storage Layer**: Refactored all storage interface methods and implementations from SurfDay → Clinic naming
 - **API Routes**: Changed all endpoints from `/api/surf-days` → `/api/clinics`
-- **Frontend Pages**: Renamed `SurfDay.tsx` → `Clinic.tsx` with complete internal refactoring
-- **Routing**: Updated App.tsx route from `/surf-day` → `/clinic`
+- **Frontend Pages**: Renamed `SurfDay.tsx` → `Clinic.tsx` with "Dettagli" links to individual clinic pages
+- **Routing**: Updated App.tsx routes: `/clinic` (list), `/clinic/:id` (detail)
 - **Navigation**: Updated Navbar, Footer, AdminLayout menus to use "Clinic" terminology
-- **Admin Pages**: Removed all "Surf Camp" references from admin Dashboard and PageHeaders
-- **User Pages**: Updated Landing.tsx and Dashboard.tsx to reference "Clinic" instead of "SurfDay"
-- **Standardized Terminology**: Platform now consistently uses "Clinic" for single-day surf lessons (no more "SurfDay" or "Surf Camp" confusion)
+- **Standardized Terminology**: Platform now consistently uses "Clinic" for single-day surf lessons
 
 ### Recent Changes (Oct 2025)
 
