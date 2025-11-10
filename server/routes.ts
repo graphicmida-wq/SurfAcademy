@@ -743,6 +743,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.patch("/api/admin/clinics/:id/activate", isAdmin, async (req, res) => {
+    try {
+      const { activationStatus, purchasableFrom } = req.body;
+      const clinic = await storage.activateClinic(
+        req.params.id,
+        activationStatus,
+        purchasableFrom ? new Date(purchasableFrom) : undefined
+      );
+      res.json(clinic);
+    } catch (error) {
+      console.error("Error activating clinic:", error);
+      res.status(400).json({ message: "Failed to activate clinic" });
+    }
+  });
+
+  app.get("/api/admin/clinics/:id/registrations", isAdmin, async (req, res) => {
+    try {
+      const registrations = await storage.getClinicRegistrationsByClinic(req.params.id);
+      res.json(registrations);
+    } catch (error) {
+      console.error("Error fetching clinic registrations:", error);
+      res.status(500).json({ message: "Failed to fetch registrations" });
+    }
+  });
+
+  // ========== Public Clinic Routes ==========
+  app.get("/api/clinics/:id", async (req: any, res) => {
+    try {
+      const clinic = await storage.getClinic(req.params.id);
+      if (!clinic) {
+        return res.status(404).json({ message: "Clinic not found" });
+      }
+
+      let userRegistration = null;
+      if (req.user) {
+        const userId = req.user?.claims?.sub || req.user?.id;
+        userRegistration = await storage.getUserClinicRegistration(userId, req.params.id);
+      }
+
+      res.json({ clinic, userRegistration });
+    } catch (error) {
+      console.error("Error fetching clinic:", error);
+      res.status(500).json({ message: "Failed to fetch clinic" });
+    }
+  });
+
   // ========== Clinic Registration Routes ==========
   app.get("/api/clinic-registrations", isAuthenticated, async (req: any, res) => {
     try {
@@ -755,22 +801,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/clinic-registrations", isAuthenticated, async (req: any, res) => {
+  app.post("/api/clinics/:id/waitlist", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user?.claims?.sub || req.user?.id;
-      const validatedData = insertClinicRegistrationSchema.parse({ ...req.body, userId });
-      
-      // Update available spots
-      const clinic = await storage.getClinic(validatedData.clinicId);
-      if (clinic && clinic.availableSpots > 0) {
-        await storage.updateClinicSpots(clinic.id, clinic.availableSpots - 1);
+      const clinicId = req.params.id;
+
+      const existingRegistration = await storage.getUserClinicRegistration(userId, clinicId);
+      if (existingRegistration) {
+        return res.status(400).json({ message: "Already registered for this clinic" });
       }
 
-      const registration = await storage.createClinicRegistration(validatedData);
+      const registration = await storage.createClinicRegistration({
+        userId,
+        clinicId,
+        status: "waitlist",
+      });
       res.status(201).json(registration);
     } catch (error) {
-      console.error("Error creating clinic registration:", error);
-      res.status(400).json({ message: "Failed to create clinic registration" });
+      console.error("Error joining waitlist:", error);
+      res.status(400).json({ message: "Failed to join waitlist" });
     }
   });
 

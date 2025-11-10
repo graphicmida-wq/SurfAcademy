@@ -15,6 +15,7 @@ import CourseDetail from "@/pages/CourseDetail";
 import Dashboard from "@/pages/Dashboard";
 import Community from "@/pages/Community";
 import Clinic from "@/pages/Clinic";
+import ClinicDetail from "@/pages/ClinicDetail";
 import DynamicPage from "@/pages/DynamicPage";
 import LocalAuth from "@/pages/LocalAuth";
 import AdminDashboard from "@/pages/admin/Dashboard";
@@ -143,6 +144,7 @@ function Router() {
           <Route path="/corsi" component={Courses} />
           <Route path="/corsi/:id" component={CourseDetail} />
           <Route path="/clinic" component={Clinic} />
+          <Route path="/clinic/:id" component={ClinicDetail} />
           <Route path="/community" component={Community} />
           
           {/* Auth routes */}

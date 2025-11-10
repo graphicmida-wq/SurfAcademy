@@ -238,6 +238,8 @@ export const clinics = pgTable("clinics", {
   galleryColumns: integer("gallery_columns").default(3), // 1-6 columns
   galleryGap: varchar("gallery_gap").default("16px"), // spacing between items
   galleryAspectRatio: varchar("gallery_aspect_ratio").default("original"), // 1:1, 4:3, 16:9, original
+  activationStatus: varchar("activation_status").default("waitlist"), // waitlist, active, closed
+  purchasableFrom: timestamp("purchasable_from"), // When clinic becomes purchasable (nullable)
   createdAt: timestamp("created_at").defaultNow(),
 });
 

@@ -1,12 +1,10 @@
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
+import { Link } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useToast } from "@/hooks/use-toast";
-import { apiRequest, queryClient } from "@/lib/queryClient";
-import { isUnauthorizedError } from "@/lib/authUtils";
-import { Calendar, MapPin, Users, Euro, Clock } from "lucide-react";
+import { Calendar, MapPin, Users, Clock } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { PageHeader } from "@/components/PageHeader";
@@ -14,55 +12,11 @@ import { usePageHeader } from "@/hooks/usePageHeader";
 import type { Clinic as ClinicType, ClinicRegistration } from "@shared/schema";
 
 export default function Clinic() {
-  const { isAuthenticated } = useAuth();
-  const { toast } = useToast();
-
   const { data: clinics, isLoading } = useQuery<ClinicType[]>({
     queryKey: ["/api/clinics"],
   });
 
-  const { data: registrations } = useQuery<ClinicRegistration[]>({
-    queryKey: ["/api/clinic-registrations"],
-    enabled: isAuthenticated,
-  });
-
   const { data: pageHeader } = usePageHeader('clinic');
-
-  const registerMutation = useMutation({
-    mutationFn: async (clinicId: string) => {
-      await apiRequest("POST", "/api/clinic-registrations", { clinicId });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/clinic-registrations"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/clinics"] });
-      toast({
-        title: "Prenotazione completata!",
-        description: "Sei stato aggiunto alla lista per la Clinic. Ti contatteremo quando le condizioni saranno perfette!",
-      });
-    },
-    onError: (error: Error) => {
-      if (isUnauthorizedError(error)) {
-        toast({
-          title: "Accesso richiesto",
-          description: "Effettua il login per prenotare la Clinic.",
-          variant: "destructive",
-        });
-        setTimeout(() => {
-          window.location.href = "/api/login";
-        }, 500);
-        return;
-      }
-      toast({
-        title: "Errore",
-        description: "Impossibile completare la prenotazione. Riprova.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const isRegistered = (clinicId: string) => {
-    return registrations?.some((reg) => reg.clinicId === clinicId);
-  };
 
   return (
     <div className="min-h-screen">
@@ -89,7 +43,6 @@ export default function Clinic() {
             {clinics.map((clinic) => {
               const isLowAvailability = clinic.availableSpots <= 5 && clinic.availableSpots > 0;
               const isFull = clinic.availableSpots === 0;
-              const registered = isRegistered(clinic.id);
 
               return (
                 <Card
@@ -127,7 +80,7 @@ export default function Clinic() {
                     </h3>
 
                     <p className="text-sm text-muted-foreground mb-4 line-clamp-2" data-testid={`text-clinic-description-${clinic.id}`}>
-                      {clinic.description}
+                      {clinic.description?.replace(/<[^>]*>/g, '')}
                     </p>
 
                     <div className="space-y-2 text-sm mt-auto">
@@ -160,28 +113,11 @@ export default function Clinic() {
                       €{(clinic.price / 100).toFixed(0)}
                     </div>
 
-                    {registered ? (
-                      <Badge className="bg-chart-4/10 text-chart-4 border-chart-4/20 px-4 py-2">
-                        Prenotato
-                      </Badge>
-                    ) : isFull ? (
-                      <Button
-                        disabled={!isAuthenticated || registerMutation.isPending}
-                        onClick={() => registerMutation.mutate(clinic.id)}
-                        variant="outline"
-                        data-testid={`button-join-waitlist-${clinic.id}`}
-                      >
-                        {!isAuthenticated ? "Accedi" : "Lista d'Attesa"}
+                    <Link href={`/clinic/${clinic.id}`}>
+                      <Button data-testid={`button-clinic-details-${clinic.id}`}>
+                        Dettagli
                       </Button>
-                    ) : (
-                      <Button
-                        disabled={!isAuthenticated || registerMutation.isPending}
-                        onClick={() => registerMutation.mutate(clinic.id)}
-                        data-testid={`button-register-${clinic.id}`}
-                      >
-                        {!isAuthenticated ? "Accedi per Prenotare" : "Prenota"}
-                      </Button>
-                    )}
+                    </Link>
                   </CardFooter>
                 </Card>
               );
