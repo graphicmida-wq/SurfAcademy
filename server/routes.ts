@@ -11,8 +11,8 @@ import {
   insertEnrollmentSchema,
   insertPostSchema,
   insertCommentSchema,
-  insertSurfDaySchema,
-  insertSurfDayRegistrationSchema,
+  insertClinicSchema,
+  insertClinicRegistrationSchema,
   insertCertificateSchema,
   insertHeroSlideSchema,
   insertPageHeaderSchema,
@@ -670,56 +670,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // ========== SurfDay Routes ==========
-  app.get("/api/surf-days", async (req, res) => {
+  // ========== Clinic Routes ==========
+  app.get("/api/clinics", async (req, res) => {
     try {
-      const surfDays = await storage.getAllSurfDays();
-      res.json(surfDays);
+      const clinics = await storage.getAllClinics();
+      res.json(clinics);
     } catch (error) {
-      console.error("Error fetching surf days:", error);
-      res.status(500).json({ message: "Failed to fetch surf days" });
+      console.error("Error fetching clinics:", error);
+      res.status(500).json({ message: "Failed to fetch clinics" });
     }
   });
 
-  app.post("/api/surf-days", isAuthenticated, async (req, res) => {
+  app.post("/api/clinics", isAuthenticated, async (req, res) => {
     try {
-      const validatedData = insertSurfDaySchema.parse(req.body);
-      const surfDay = await storage.createSurfDay(validatedData);
-      res.status(201).json(surfDay);
+      const validatedData = insertClinicSchema.parse(req.body);
+      const clinic = await storage.createClinic(validatedData);
+      res.status(201).json(clinic);
     } catch (error) {
-      console.error("Error creating surf day:", error);
-      res.status(400).json({ message: "Failed to create surf day" });
+      console.error("Error creating clinic:", error);
+      res.status(400).json({ message: "Failed to create clinic" });
     }
   });
 
-  // ========== SurfDay Registration Routes ==========
-  app.get("/api/surf-day-registrations", isAuthenticated, async (req: any, res) => {
+  // ========== Clinic Registration Routes ==========
+  app.get("/api/clinic-registrations", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user?.claims?.sub || req.user?.id;
-      const registrations = await storage.getSurfDayRegistrationsByUser(userId);
+      const registrations = await storage.getClinicRegistrationsByUser(userId);
       res.json(registrations);
     } catch (error) {
-      console.error("Error fetching surf day registrations:", error);
-      res.status(500).json({ message: "Failed to fetch surf day registrations" });
+      console.error("Error fetching clinic registrations:", error);
+      res.status(500).json({ message: "Failed to fetch clinic registrations" });
     }
   });
 
-  app.post("/api/surf-day-registrations", isAuthenticated, async (req: any, res) => {
+  app.post("/api/clinic-registrations", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user?.claims?.sub || req.user?.id;
-      const validatedData = insertSurfDayRegistrationSchema.parse({ ...req.body, userId });
+      const validatedData = insertClinicRegistrationSchema.parse({ ...req.body, userId });
       
       // Update available spots
-      const surfDay = await storage.getSurfDay(validatedData.surfDayId);
-      if (surfDay && surfDay.availableSpots > 0) {
-        await storage.updateSurfDaySpots(surfDay.id, surfDay.availableSpots - 1);
+      const clinic = await storage.getClinic(validatedData.clinicId);
+      if (clinic && clinic.availableSpots > 0) {
+        await storage.updateClinicSpots(clinic.id, clinic.availableSpots - 1);
       }
 
-      const registration = await storage.createSurfDayRegistration(validatedData);
+      const registration = await storage.createClinicRegistration(validatedData);
       res.status(201).json(registration);
     } catch (error) {
-      console.error("Error creating surf day registration:", error);
-      res.status(400).json({ message: "Failed to create surf day registration" });
+      console.error("Error creating clinic registration:", error);
+      res.status(400).json({ message: "Failed to create clinic registration" });
     }
   });
 

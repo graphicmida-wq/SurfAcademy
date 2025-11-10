@@ -3,7 +3,7 @@
 import { neonConfig, Pool } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-serverless";
 import ws from "ws";
-import { heroSlides, pageHeaders, courses, surfCamps, customPages, pageBlocks } from "../shared/schema";
+import { heroSlides, pageHeaders, courses, clinics, customPages, pageBlocks } from "../shared/schema";
 import { writeFileSync } from "fs";
 import { join } from "path";
 
@@ -32,9 +32,9 @@ async function exportData() {
   const coursesData = await db.select().from(courses);
   console.log(`✅ Exported ${coursesData.length} courses`);
 
-  // Export surf camps
-  const surfCampsData = await db.select().from(surfCamps);
-  console.log(`✅ Exported ${surfCampsData.length} surf camps`);
+  // Export clinics
+  const clinicsData = await db.select().from(clinics);
+  console.log(`✅ Exported ${clinicsData.length} clinics`);
 
   // Export custom pages
   const customPagesData = await db.select().from(customPages);
@@ -49,7 +49,7 @@ async function exportData() {
     heroSlides: heroSlidesData,
     pageHeaders: pageHeadersData,
     courses: coursesData,
-    surfCamps: surfCampsData,
+    clinics: clinicsData,
     customPages: customPagesData,
     pageBlocks: pageBlocksData,
     exportedAt: new Date().toISOString(),
@@ -64,7 +64,7 @@ async function exportData() {
   console.log(`  - ${heroSlidesData.length} hero slides`);
   console.log(`  - ${pageHeadersData.length} page headers`);
   console.log(`  - ${coursesData.length} courses`);
-  console.log(`  - ${surfCampsData.length} surf camps`);
+  console.log(`  - ${clinicsData.length} clinics`);
   console.log(`  - ${customPagesData.length} custom pages`);
   console.log(`  - ${pageBlocksData.length} page blocks`);
 

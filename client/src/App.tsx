@@ -14,7 +14,7 @@ import Courses from "@/pages/Courses";
 import CourseDetail from "@/pages/CourseDetail";
 import Dashboard from "@/pages/Dashboard";
 import Community from "@/pages/Community";
-import SurfDay from "@/pages/SurfDay";
+import Clinic from "@/pages/Clinic";
 import DynamicPage from "@/pages/DynamicPage";
 import LocalAuth from "@/pages/LocalAuth";
 import AdminDashboard from "@/pages/admin/Dashboard";
@@ -82,11 +82,11 @@ function Router() {
               </AdminLayout>
             ) : <NotFound />}
           </Route>
-          <Route path="/admin/surf-day">
+          <Route path="/admin/clinic">
             {user?.isAdmin ? (
               <AdminLayout>
                 <div className="py-20 text-center text-muted-foreground">
-                  Gestione Surf Camp - In sviluppo
+                  Gestione Clinic - In sviluppo
                 </div>
               </AdminLayout>
             ) : <NotFound />}
@@ -143,7 +143,7 @@ function Router() {
           <Route path="/" component={Landing} />
           <Route path="/corsi" component={Courses} />
           <Route path="/corsi/:id" component={CourseDetail} />
-          <Route path="/surf-day" component={SurfDay} />
+          <Route path="/clinic" component={Clinic} />
           <Route path="/community" component={Community} />
           
           {/* Auth routes */}

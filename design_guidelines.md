@@ -105,7 +105,7 @@
 - **Levels Overview:** 3-column grid (mobile: 1-col), each with surfista silhouette icon, level name, brief description, "Esplora" link
 - **Featured Courses:** Horizontal scroll cards (mobile), 3-col grid (desktop), each with video thumbnail, title, level badge, duration, "free" or price tag
 - **Community Snapshot:** 2-col split - left: latest feed posts preview, right: testimonial with user avatar + quote
-- **Surf Camp CTA:** Full-width banner with beach image, overlay text, countdown to next camp, waitlist button
+- **Clinic CTA:** Full-width banner with beach image, overlay text, countdown to next clinic, waitlist button
 - **Footer:** 4-col (mobile: 1-col) - About, Corsi, Community, Contatti; newsletter signup; social icons; logo
 
 ### Course Catalog
@@ -125,8 +125,8 @@
 - **Exercises Assigned:** Checklist with timer buttons, reps/series display, completion checkboxes
 - **Community Feed:** Integrated thread preview with "partecipa" links
 
-### Surf Camp Pages
-- **Camp Cards:** Large image, location pin, dates, spots remaining (urgent if <5), price, gallery thumbnails, waitlist/book CTA
+### Clinic Pages
+- **Clinic Cards:** Large image, location pin, dates, spots remaining (urgent if <5), price, gallery thumbnails, waitlist/book CTA
 - **Detail Modal/Page:** Image carousel, full description, itinerary timeline, equipment included, FAQ accordion, booking form
 
 ## Images
@@ -135,7 +135,7 @@
 - Homepage: Fullscreen (100vh) surf action shot - longboarder riding wave at Italian beach (Liguria/Sardegna style), warm sunset/sunrise lighting
 - Course thumbnails: High-quality surf instruction moments, consistent framing (16:9 aspect)
 - Instructor photos: Professional headshots with beach/ocean background, circular crop
-- Surf camp: Gallery of camp locations, activities, groups surfing, beach lifestyle
+- Clinic: Gallery of clinic locations, activities, groups surfing, beach lifestyle
 - Community: User-generated content feel, authentic moments, varied surfing situations
 - Exercise demos: Clear instructional photos/illustrations on neutral background
 

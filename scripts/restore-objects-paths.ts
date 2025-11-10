@@ -3,7 +3,7 @@
 import { neonConfig, Pool } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-serverless";
 import ws from "ws";
-import { heroSlides, pageHeaders, courses, surfCamps, customPages, pageBlocks } from "../shared/schema";
+import { heroSlides, pageHeaders, courses, clinics, customPages, pageBlocks } from "../shared/schema";
 import { eq } from "drizzle-orm";
 
 neonConfig.webSocketConstructor = ws;
@@ -45,11 +45,11 @@ async function restoreObjectsPaths() {
     const newMediaUrl = convertPath(slide.mediaUrl);
     const newLogoUrl = convertPath(slide.logoUrl);
     if (newMediaUrl !== slide.mediaUrl || newLogoUrl !== slide.logoUrl) {
+      const updates: any = {};
+      if (newMediaUrl !== undefined) updates.mediaUrl = newMediaUrl;
+      if (newLogoUrl !== undefined) updates.logoUrl = newLogoUrl;
       await db.update(heroSlides)
-        .set({ 
-          mediaUrl: newMediaUrl,
-          logoUrl: newLogoUrl 
-        })
+        .set(updates)
         .where(eq(heroSlides.id, slide.id));
       console.log(`✅ Restored hero slide ${slide.id}`);
     }
@@ -70,27 +70,27 @@ async function restoreObjectsPaths() {
   // Restore courses
   const coursesData = await db.select().from(courses);
   for (const course of coursesData) {
-    if (course.imageUrl) {
-      const newImageUrl = convertPath(course.imageUrl);
-      if (newImageUrl !== course.imageUrl) {
+    if (course.thumbnailUrl) {
+      const newThumbnailUrl = convertPath(course.thumbnailUrl);
+      if (newThumbnailUrl !== course.thumbnailUrl) {
         await db.update(courses)
-          .set({ imageUrl: newImageUrl })
+          .set({ thumbnailUrl: newThumbnailUrl })
           .where(eq(courses.id, course.id));
         console.log(`✅ Restored course ${course.id}`);
       }
     }
   }
 
-  // Restore surf camps
-  const camps = await db.select().from(surfCamps);
-  for (const camp of camps) {
-    if (camp.imageUrl) {
-      const newImageUrl = convertPath(camp.imageUrl);
-      if (newImageUrl !== camp.imageUrl) {
-        await db.update(surfCamps)
+  // Restore clinics
+  const clinicsData = await db.select().from(clinics);
+  for (const clinic of clinicsData) {
+    if (clinic.imageUrl) {
+      const newImageUrl = convertPath(clinic.imageUrl);
+      if (newImageUrl !== clinic.imageUrl) {
+        await db.update(clinics)
           .set({ imageUrl: newImageUrl })
-          .where(eq(surfCamps.id, camp.id));
-        console.log(`✅ Restored surf camp ${camp.id}`);
+          .where(eq(clinics.id, clinic.id));
+        console.log(`✅ Restored clinic ${clinic.id}`);
       }
     }
   }

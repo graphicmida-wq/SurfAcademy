@@ -5,7 +5,7 @@ import { Sliders, Waves, BookOpen, Mail, Calendar } from "lucide-react";
 export default function AdminDashboard() {
   const quickLinks = [
     { title: "Hero Slider", icon: Sliders, href: "/admin/slider", description: "Gestisci le slide della homepage" },
-    { title: "SurfDay", icon: Waves, href: "/admin/surf-day", description: "Gestione SurfDay" },
+    { title: "Clinic", icon: Waves, href: "/admin/clinic", description: "Gestione Clinic" },
     { title: "Corsi", icon: BookOpen, href: "/admin/corsi", description: "Gestione corsi" },
     { title: "Newsletter", icon: Mail, href: "/admin/newsletter", description: "Gestione newsletter" },
     { title: "Eventi", icon: Calendar, href: "/admin/eventi", description: "Gestione eventi" },

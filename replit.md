@@ -2,7 +2,21 @@
 
 ## Overview
 
-Scuola di Longboard is a comprehensive web-based learning management system (LMS) for a surf and longboard school. It allows students to enroll in courses, track progress, participate in community discussions, and register for surf camps. The platform supports students, instructors, and administrators with role-specific dashboards and features. It's a full-stack TypeScript monorepo using React, Express, and PostgreSQL (via Neon), integrated with Replit's authentication. The design is inspired by surf culture with a turquoise and ocean-blue palette.
+Scuola di Longboard is a comprehensive web-based learning management system (LMS) for a surf and longboard school. It allows students to enroll in courses, track progress, participate in community discussions, and register for surf clinics (single-day lessons scheduled during optimal wave conditions). The platform supports students, instructors, and administrators with role-specific dashboards and features. It's a full-stack TypeScript monorepo using React, Express, and PostgreSQL (via Neon), integrated with Replit's authentication. The design is inspired by surf culture with a turquoise and ocean-blue palette.
+
+### Recent Changes (Nov 2025)
+
+**Complete "SurfDay" to "Clinic" Refactoring**:
+- **Database Migration**: Renamed tables `surf_days` → `clinics`, `surf_day_registrations` → `clinic_registrations` while preserving all data
+- **Schema Updates**: Updated `shared/schema.ts` with new table names, types, relations, and insert schemas
+- **Storage Layer**: Refactored all storage interface methods and implementations from SurfDay → Clinic naming
+- **API Routes**: Changed all endpoints from `/api/surf-days` → `/api/clinics`
+- **Frontend Pages**: Renamed `SurfDay.tsx` → `Clinic.tsx` with complete internal refactoring
+- **Routing**: Updated App.tsx route from `/surf-day` → `/clinic`
+- **Navigation**: Updated Navbar, Footer, AdminLayout menus to use "Clinic" terminology
+- **Admin Pages**: Removed all "Surf Camp" references from admin Dashboard and PageHeaders
+- **User Pages**: Updated Landing.tsx and Dashboard.tsx to reference "Clinic" instead of "SurfDay"
+- **Standardized Terminology**: Platform now consistently uses "Clinic" for single-day surf lessons (no more "SurfDay" or "Surf Camp" confusion)
 
 ### Recent Changes (Oct 2025)
 
@@ -73,7 +87,7 @@ The backend is an Express.js server with TypeScript, serving API endpoints and s
 
 ### Data Storage
 
-PostgreSQL, hosted on Neon, is the primary database, accessed via the `@neondatabase/serverless` driver. Drizzle ORM provides type-safe queries and schema management. The database schema includes `users`, `courses`, `modules`, `lessons`, `exercises`, `enrollments`, `progress tracking`, `community features`, `surf camps`, and `certificates`. Session data is stored in a `sessions` table. Drizzle Kit manages schema migrations. The platform also includes a production database seeding system to populate content from development.
+PostgreSQL, hosted on Neon, is the primary database, accessed via the `@neondatabase/serverless` driver. Drizzle ORM provides type-safe queries and schema management. The database schema includes `users`, `courses`, `modules`, `lessons`, `exercises`, `enrollments`, `progress tracking`, `community features`, `clinics` (single-day surf lessons), `clinic_registrations`, `newsletter` system, and `certificates`. Session data is stored in a `sessions` table. Drizzle Kit manages schema migrations. The platform also includes a production database seeding system to populate content from development.
 
 ### Authentication & Authorization
 
@@ -96,7 +110,9 @@ Typography uses Montserrat for headers and Inter for body text.
 
 ### Technical Implementations
 
-The project is structured as a full-stack TypeScript monorepo. It uses `zod` for schema validation and `date-fns` for date handling. Server-side image uploads are managed directly to Google Cloud Storage (GCS) into a `/public/` directory, returning public GCS URLs. A system is in place to export development data (hero slides, page headers, courses, surf camps, custom pages with blocks) to a `production-seed-data.json` file, which automatically seeds the production database on first deploy.
+The project is structured as a full-stack TypeScript monorepo. It uses `zod` for schema validation and `date-fns` for date handling. Server-side image uploads are managed directly to Google Cloud Storage (GCS) into a `/public/` directory, returning public GCS URLs. A system is in place to export development data (hero slides, page headers, courses, clinics, custom pages with blocks) to a `production-seed-data.json` file, which automatically seeds the production database on first deploy.
+
+**Newsletter System**: Integrated SendGrid-based newsletter management with contact management, campaign creation, double opt-in subscription, email tracking via webhooks, GDPR compliance (IP tracking, timestamps), and automated cron job for scheduled campaigns.
 
 ## External Dependencies
 

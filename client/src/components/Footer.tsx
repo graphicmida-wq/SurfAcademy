@@ -81,11 +81,11 @@ export function Footer() {
               </li>
               <li>
                 <Link 
-                  href="/surf-day"
+                  href="/clinic"
                   className="text-muted-foreground hover:text-primary transition-colors" 
-                  data-testid="footer-link-surf-day"
+                  data-testid="footer-link-clinic"
                 >
-                  SurfDay
+                  Clinic
                 </Link>
               </li>
             </ul>

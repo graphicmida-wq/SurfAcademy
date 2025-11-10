@@ -13,7 +13,7 @@ import type { PageHeader, CustomPage } from "@shared/schema";
 
 const STATIC_PAGES = [
   { key: 'courses', label: 'Corsi (lista)' },
-  { key: 'surf-camp', label: 'Surf Camp (lista)' },
+  { key: 'clinic', label: 'Clinic (lista)' },
   { key: 'community', label: 'Community' },
   { key: 'dashboard', label: 'Dashboard' }
 ];
@@ -34,22 +34,22 @@ export default function AdminPageHeaders() {
     queryKey: ['/api/courses'],
   });
 
-  const { data: surfCamps } = useQuery<any[]>({
-    queryKey: ['/api/surf-camps'],
+  const { data: clinics } = useQuery<any[]>({
+    queryKey: ['/api/clinics'],
   });
 
   const currentHeader = pageHeaders?.find(h => h.page === selectedPage);
 
-  // Combine static pages + courses + surf camps + custom pages
+  // Combine static pages + courses + clinics + custom pages
   const allPages = [
     ...STATIC_PAGES,
     ...(courses || []).map(course => ({
       key: `course-${course.id}`,
       label: `${course.title} (corso)`
     })),
-    ...(surfCamps || []).map(camp => ({
-      key: `surf-camp-${camp.id}`,
-      label: `${camp.name} (camp)`
+    ...(clinics || []).map(clinic => ({
+      key: `clinic-${clinic.id}`,
+      label: `${clinic.title} (clinic)`
     })),
     ...(customPages || []).map(page => ({
       key: page.slug,
@@ -93,14 +93,14 @@ export default function AdminPageHeaders() {
           });
           return;
         }
-      } else if (selectedPage.startsWith('surf-camp-')) {
-        const campId = parseInt(selectedPage.replace('surf-camp-', ''));
-        const camp = surfCamps?.find(c => c.id === campId);
-        if (camp) {
+      } else if (selectedPage.startsWith('clinic-')) {
+        const clinicId = selectedPage.replace('clinic-', '');
+        const clinic = clinics?.find(c => c.id === clinicId);
+        if (clinic) {
           setFormData({
-            imageUrl: camp.imageUrl || '',
-            title: camp.name || '',
-            subtitle: camp.description || '',
+            imageUrl: clinic.imageUrl || '',
+            title: clinic.title || '',
+            subtitle: clinic.description || '',
             paddingTop: 'py-16',
             paddingBottom: 'py-24',
             minHeight: 'min-h-96'
@@ -123,7 +123,7 @@ export default function AdminPageHeaders() {
         }
       }
     }
-  }, [currentHeader, customPages, courses, surfCamps, selectedPage]);
+  }, [currentHeader, customPages, courses, clinics, selectedPage]);
 
   const updateMutation = useMutation({
     mutationFn: async (data: { imageUrl: string; title: string; subtitle: string; paddingTop: string; paddingBottom: string; minHeight: string }) => {
@@ -165,14 +165,14 @@ export default function AdminPageHeaders() {
           });
           return;
         }
-      } else if (pageKey.startsWith('surf-camp-')) {
-        const campId = parseInt(pageKey.replace('surf-camp-', ''));
-        const camp = surfCamps?.find(c => c.id === campId);
-        if (camp) {
+      } else if (pageKey.startsWith('clinic-')) {
+        const clinicId = pageKey.replace('clinic-', '');
+        const clinic = clinics?.find(c => c.id === clinicId);
+        if (clinic) {
           setFormData({
-            imageUrl: camp.imageUrl || '',
-            title: camp.name || '',
-            subtitle: camp.description || '',
+            imageUrl: clinic.imageUrl || '',
+            title: clinic.title || '',
+            subtitle: clinic.description || '',
             paddingTop: 'py-16',
             paddingBottom: 'py-24',
             minHeight: 'min-h-96'

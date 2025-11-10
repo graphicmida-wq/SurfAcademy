@@ -50,8 +50,8 @@ const adminMenuItems = [
     icon: FilePlus2,
   },
   {
-    title: "Gestione SurfDay",
-    url: "/admin/surf-day",
+    title: "Gestione Clinic",
+    url: "/admin/clinic",
     icon: Waves,
   },
   {

@@ -10,8 +10,8 @@ import {
   badges,
   posts,
   comments,
-  surfDays,
-  surfDayRegistrations,
+  clinics,
+  clinicRegistrations,
   certificates,
   purchases,
   memberships,
@@ -40,10 +40,10 @@ import {
   type InsertPost,
   type Comment,
   type InsertComment,
-  type SurfDay,
-  type InsertSurfDay,
-  type SurfDayRegistration,
-  type InsertSurfDayRegistration,
+  type Clinic,
+  type InsertClinic,
+  type ClinicRegistration,
+  type InsertClinicRegistration,
   type Certificate,
   type InsertCertificate,
   type Purchase,
@@ -132,15 +132,15 @@ export interface IStorage {
   getCommentsByPost(postId: string): Promise<(Comment & { user: User })[]>;
   createComment(comment: InsertComment): Promise<Comment>;
   
-  // SurfDay operations
-  getAllSurfDays(): Promise<SurfDay[]>;
-  getSurfDay(id: string): Promise<SurfDay | undefined>;
-  createSurfDay(surfDay: InsertSurfDay): Promise<SurfDay>;
-  updateSurfDaySpots(id: string, availableSpots: number): Promise<void>;
+  // Clinic operations
+  getAllClinics(): Promise<Clinic[]>;
+  getClinic(id: string): Promise<Clinic | undefined>;
+  createClinic(clinic: InsertClinic): Promise<Clinic>;
+  updateClinicSpots(id: string, availableSpots: number): Promise<void>;
   
-  // SurfDay registration operations
-  getSurfDayRegistrationsByUser(userId: string): Promise<SurfDayRegistration[]>;
-  createSurfDayRegistration(registration: InsertSurfDayRegistration): Promise<SurfDayRegistration>;
+  // Clinic registration operations
+  getClinicRegistrationsByUser(userId: string): Promise<ClinicRegistration[]>;
+  createClinicRegistration(registration: InsertClinicRegistration): Promise<ClinicRegistration>;
   
   // Certificate operations
   getCertificateByUserAndCourse(userId: string, courseId: string): Promise<Certificate | undefined>;
@@ -585,36 +585,36 @@ export class DatabaseStorage implements IStorage {
     return newComment;
   }
 
-  // ========== SurfDay Operations ==========
-  async getAllSurfDays(): Promise<SurfDay[]> {
-    return await db.select().from(surfDays).orderBy(surfDays.startDate);
+  // ========== Clinic Operations ==========
+  async getAllClinics(): Promise<Clinic[]> {
+    return await db.select().from(clinics).orderBy(clinics.startDate);
   }
 
-  async getSurfDay(id: string): Promise<SurfDay | undefined> {
-    const [surfDay] = await db.select().from(surfDays).where(eq(surfDays.id, id));
-    return surfDay;
+  async getClinic(id: string): Promise<Clinic | undefined> {
+    const [clinic] = await db.select().from(clinics).where(eq(clinics.id, id));
+    return clinic;
   }
 
-  async createSurfDay(surfDay: InsertSurfDay): Promise<SurfDay> {
-    const [newSurfDay] = await db.insert(surfDays).values(surfDay).returning();
-    return newSurfDay;
+  async createClinic(clinic: InsertClinic): Promise<Clinic> {
+    const [newClinic] = await db.insert(clinics).values(clinic).returning();
+    return newClinic;
   }
 
-  async updateSurfDaySpots(id: string, availableSpots: number): Promise<void> {
-    await db.update(surfDays).set({ availableSpots }).where(eq(surfDays.id, id));
+  async updateClinicSpots(id: string, availableSpots: number): Promise<void> {
+    await db.update(clinics).set({ availableSpots }).where(eq(clinics.id, id));
   }
 
-  // ========== SurfDay Registration Operations ==========
-  async getSurfDayRegistrationsByUser(userId: string): Promise<SurfDayRegistration[]> {
+  // ========== Clinic Registration Operations ==========
+  async getClinicRegistrationsByUser(userId: string): Promise<ClinicRegistration[]> {
     return await db
       .select()
-      .from(surfDayRegistrations)
-      .where(eq(surfDayRegistrations.userId, userId))
-      .orderBy(desc(surfDayRegistrations.registeredAt));
+      .from(clinicRegistrations)
+      .where(eq(clinicRegistrations.userId, userId))
+      .orderBy(desc(clinicRegistrations.registeredAt));
   }
 
-  async createSurfDayRegistration(registration: InsertSurfDayRegistration): Promise<SurfDayRegistration> {
-    const [newRegistration] = await db.insert(surfDayRegistrations).values(registration).returning();
+  async createClinicRegistration(registration: InsertClinicRegistration): Promise<ClinicRegistration> {
+    const [newRegistration] = await db.insert(clinicRegistrations).values(registration).returning();
     return newRegistration;
   }
 

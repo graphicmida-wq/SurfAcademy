@@ -484,10 +484,10 @@ export default function Dashboard() {
                     Community
                   </Button>
                 </Link>
-                <Link href="/surf-camp">
-                  <Button variant="outline" className="w-full justify-start" data-testid="button-surf-camp">
+                <Link href="/clinic">
+                  <Button variant="outline" className="w-full justify-start" data-testid="button-clinic">
                     <Target className="h-4 w-4 mr-2" />
-                    Surf Camp
+                    Clinic
                   </Button>
                 </Link>
               </CardContent>

@@ -219,10 +219,10 @@ export const comments = pgTable("comments", {
 });
 
 // ============================================================================
-// SURF DAY TABLES
+// CLINIC TABLES (Single-day surf lessons scheduled within waiting periods)
 // ============================================================================
 
-export const surfDays = pgTable("surf_days", {
+export const clinics = pgTable("clinics", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   title: varchar("title", { length: 255 }).notNull(),
   description: text("description"),
@@ -236,10 +236,10 @@ export const surfDays = pgTable("surf_days", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-export const surfDayRegistrations = pgTable("surf_day_registrations", {
+export const clinicRegistrations = pgTable("clinic_registrations", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
-  surfDayId: varchar("surf_day_id").notNull().references(() => surfDays.id, { onDelete: 'cascade' }),
+  clinicId: varchar("clinic_id").notNull().references(() => clinics.id, { onDelete: 'cascade' }),
   status: varchar("status").default("waitlist"), // waitlist, confirmed, cancelled
   registeredAt: timestamp("registered_at").defaultNow(),
 });
@@ -536,7 +536,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   badges: many(badges),
   posts: many(posts),
   comments: many(comments),
-  surfDayRegistrations: many(surfDayRegistrations),
+  clinicRegistrations: many(clinicRegistrations),
 }));
 
 export const coursesRelations = relations(courses, ({ many }) => ({
@@ -590,18 +590,18 @@ export const commentsRelations = relations(comments, ({ one }) => ({
   }),
 }));
 
-export const surfDaysRelations = relations(surfDays, ({ many }) => ({
-  registrations: many(surfDayRegistrations),
+export const clinicsRelations = relations(clinics, ({ many }) => ({
+  registrations: many(clinicRegistrations),
 }));
 
-export const surfDayRegistrationsRelations = relations(surfDayRegistrations, ({ one }) => ({
+export const clinicRegistrationsRelations = relations(clinicRegistrations, ({ one }) => ({
   user: one(users, {
-    fields: [surfDayRegistrations.userId],
+    fields: [clinicRegistrations.userId],
     references: [users.id],
   }),
-  surfDay: one(surfDays, {
-    fields: [surfDayRegistrations.surfDayId],
-    references: [surfDays.id],
+  clinic: one(clinics, {
+    fields: [clinicRegistrations.clinicId],
+    references: [clinics.id],
   }),
 }));
 
@@ -658,12 +658,12 @@ export const insertCommentSchema = createInsertSchema(comments).omit({
   createdAt: true,
 });
 
-export const insertSurfDaySchema = createInsertSchema(surfDays).omit({
+export const insertClinicSchema = createInsertSchema(clinics).omit({
   id: true,
   createdAt: true,
 });
 
-export const insertSurfDayRegistrationSchema = createInsertSchema(surfDayRegistrations).omit({
+export const insertClinicRegistrationSchema = createInsertSchema(clinicRegistrations).omit({
   id: true,
   registeredAt: true,
 });
@@ -746,11 +746,11 @@ export type InsertPost = z.infer<typeof insertPostSchema>;
 export type Comment = typeof comments.$inferSelect;
 export type InsertComment = z.infer<typeof insertCommentSchema>;
 
-export type SurfDay = typeof surfDays.$inferSelect;
-export type InsertSurfDay = z.infer<typeof insertSurfDaySchema>;
+export type Clinic = typeof clinics.$inferSelect;
+export type InsertClinic = z.infer<typeof insertClinicSchema>;
 
-export type SurfDayRegistration = typeof surfDayRegistrations.$inferSelect;
-export type InsertSurfDayRegistration = z.infer<typeof insertSurfDayRegistrationSchema>;
+export type ClinicRegistration = typeof clinicRegistrations.$inferSelect;
+export type InsertClinicRegistration = z.infer<typeof insertClinicRegistrationSchema>;
 
 export type Certificate = typeof certificates.$inferSelect;
 export type InsertCertificate = z.infer<typeof insertCertificateSchema>;

@@ -118,22 +118,22 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* SurfDay CTA */}
-      <section className="py-16 sm:py-24 bg-gradient-to-r from-primary to-chart-2 text-white" data-testid="section-surf-day">
+      {/* Clinic CTA */}
+      <section className="py-16 sm:py-24 bg-gradient-to-r from-primary to-chart-2 text-white" data-testid="section-clinic">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-4xl mx-auto text-center">
             <div className="w-24 h-24 rounded-3xl bg-white/10 backdrop-blur-sm flex items-center justify-center mx-auto mb-6 hover:scale-105 transition-transform duration-300">
               <GiPalmTree className="h-16 w-16 opacity-90" />
             </div>
             <h2 className="font-display font-bold text-3xl sm:text-4xl md:text-5xl mb-6">
-              Prenota il Tuo SurfDay
+              Prenota la Tua Clinic
             </h2>
             <p className="text-lg sm:text-xl text-white/90 mb-8">
               Giornate singole di surf basate sulle condizioni perfette. Prenota ora e ti contattiamo durante il waiting period quando le onde sono al massimo!
             </p>
-            <Link href="/surf-day">
-              <Button size="lg" variant="secondary" className="bg-white text-primary hover:bg-white/90 text-lg px-8 py-6 rounded-full" data-testid="button-view-surfdays">
-                Scopri i SurfDay
+            <Link href="/clinic">
+              <Button size="lg" variant="secondary" className="bg-white text-primary hover:bg-white/90 text-lg px-8 py-6 rounded-full" data-testid="button-view-clinics">
+                Scopri le Clinic
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
