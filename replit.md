@@ -6,7 +6,7 @@ Scuola di Longboard is a comprehensive web-based learning management system (LMS
 
 ### Recent Changes (Nov 2025)
 
-**Clinic Waiting Period System - Complete Implementation**:
+**Clinic Waiting Period System - Complete Implementation** ✅:
 - **Waiting Period Workflow**: Added `activationStatus` (waitlist/active) and `purchasableFrom` fields to clinics schema with migration
 - **Admin Waitlist Management**: 
   - GET `/api/admin/clinics` now returns `ClinicWithWaitlistCount` type with real-time waitlist counts
@@ -14,12 +14,15 @@ Scuola di Longboard is a comprehensive web-based learning management system (LMS
   - Toggle switch allows admin to activate clinics (waitlist → active) instantly
   - Visual feedback with CheckCircle2 icon for active clinics, Clock icon for waitlist
 - **User Experience**:
-  - ClinicDetail page with dynamic CTAs: "Lista d'attesa" (waitlist), "Prenota Ora" (active), "Sold Out" (full)
+  - Clinic.tsx list page with "Dettagli" links to individual clinic pages
+  - ClinicDetail page with dynamic CTAs: "Lista d'attesa" (waitlist), "Prenota Ora" (shows toast pending Stripe), "Sold Out" (full)
   - AuthPrompt component for inline login/signup without page redirect
   - Real-time spot tracking (X/Y format) with "Sold Out" badge when full
-  - Configurable image gallery (grid/masonry/carousel) with HTML description rendering
+  - Configurable image gallery with switch-based column mapping (1-6 cols), aspect ratios, and layout variants (grid/masonry/carousel)
+  - HTML description rendering with proper formatting
 - **Backend APIs**: GET `/api/clinics/:id` with user registration status, POST `/api/clinics/:id/waitlist`, PATCH `/api/admin/clinics/:id/activate`, GET `/api/admin/clinics/:id/registrations`
 - **Type Safety**: Created `ClinicWithWaitlistCount` shared type extending Clinic with waitlistCount for admin views
+- **Next Step**: Stripe integration for clinic checkout (requires VITE_STRIPE_PUBLIC_KEY and STRIPE_SECRET_KEY configuration)
 
 **Complete "SurfDay" to "Clinic" Refactoring**:
 - **Database Migration**: Renamed tables `surf_days` → `clinics`, `surf_day_registrations` → `clinic_registrations` while preserving all data
