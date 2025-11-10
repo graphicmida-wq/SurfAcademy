@@ -696,7 +696,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/admin/clinics", isAdmin, async (req, res) => {
     try {
       const clinics = await storage.getAllClinics();
-      res.json(clinics);
+      const clinicsWithCounts = await Promise.all(
+        clinics.map(async (clinic) => {
+          const registrations = await storage.getClinicRegistrationsByClinic(clinic.id);
+          const waitlistCount = registrations.filter(r => r.status === 'waitlist').length;
+          return { ...clinic, waitlistCount };
+        })
+      );
+      res.json(clinicsWithCounts);
     } catch (error) {
       console.error("Error fetching clinics:", error);
       res.status(500).json({ message: "Failed to fetch clinics" });

@@ -14,7 +14,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Plus, Trash2, Edit, MapPin, Calendar, Users, Clock, CheckCircle2 } from "lucide-react";
-import type { Clinic, InsertClinic, ClinicRegistration } from "@shared/schema";
+import type { Clinic, InsertClinic, ClinicRegistration, ClinicWithWaitlistCount } from "@shared/schema";
 import { insertClinicSchema } from "@shared/schema";
 import {
   Dialog,
@@ -52,7 +52,7 @@ export default function AdminClinics() {
   const [editingClinic, setEditingClinic] = useState<Clinic | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const { data: clinics = [], isLoading: clinicsLoading } = useQuery<Clinic[]>({
+  const { data: clinics = [], isLoading: clinicsLoading } = useQuery<ClinicWithWaitlistCount[]>({
     queryKey: ["/api/admin/clinics"],
   });
 
@@ -565,9 +565,9 @@ export default function AdminClinics() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="space-y-2">
+                <div className="space-y-4">
                   {clinic.description && (
-                    <p className="text-muted-foreground text-sm">{clinic.description}</p>
+                    <p className="text-muted-foreground text-sm line-clamp-2">{clinic.description?.replace(/<[^>]*>/g, '')}</p>
                   )}
                   <div className="flex flex-wrap gap-4 text-sm">
                     <div className="flex items-center gap-2">
@@ -584,9 +584,45 @@ export default function AdminClinics() {
                       <Users className="h-4 w-4 text-muted-foreground" />
                       <span>{clinic.availableSpots} / {clinic.totalSpots} posti disponibili</span>
                     </div>
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-muted-foreground" />
+                      <Badge variant="outline" data-testid={`badge-waitlist-count-${clinic.id}`}>
+                        {clinic.waitlistCount || 0} in lista d'attesa
+                      </Badge>
+                    </div>
                   </div>
-                  <div className="text-lg font-semibold">
-                    €{(clinic.price / 100).toFixed(2)}
+                  
+                  <div className="flex items-center justify-between pt-2 border-t">
+                    <div className="text-lg font-semibold">
+                      €{(clinic.price / 100).toFixed(2)}
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Label htmlFor={`activate-${clinic.id}`} className="text-sm cursor-pointer">
+                        {clinic.activationStatus === 'active' ? (
+                          <Badge className="bg-chart-4 hover:bg-chart-4" data-testid={`badge-status-${clinic.id}`}>
+                            <CheckCircle2 className="h-3 w-3 mr-1" />
+                            Attiva
+                          </Badge>
+                        ) : (
+                          <Badge variant="secondary" data-testid={`badge-status-${clinic.id}`}>
+                            <Clock className="h-3 w-3 mr-1" />
+                            Waitlist
+                          </Badge>
+                        )}
+                      </Label>
+                      <Switch
+                        id={`activate-${clinic.id}`}
+                        checked={clinic.activationStatus === 'active'}
+                        onCheckedChange={(checked) => {
+                          activateMutation.mutate({
+                            id: clinic.id,
+                            activationStatus: checked ? 'active' : 'waitlist'
+                          });
+                        }}
+                        disabled={activateMutation.isPending}
+                        data-testid={`switch-activate-${clinic.id}`}
+                      />
+                    </div>
                   </div>
                 </div>
               </CardContent>

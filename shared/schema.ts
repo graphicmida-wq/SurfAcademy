@@ -755,6 +755,7 @@ export type InsertComment = z.infer<typeof insertCommentSchema>;
 
 export type Clinic = typeof clinics.$inferSelect;
 export type InsertClinic = z.infer<typeof insertClinicSchema>;
+export type ClinicWithWaitlistCount = Clinic & { waitlistCount: number };
 
 export type ClinicRegistration = typeof clinicRegistrations.$inferSelect;
 export type InsertClinicRegistration = z.infer<typeof insertClinicRegistrationSchema>;
