@@ -6,23 +6,35 @@ Scuola di Longboard is a comprehensive web-based learning management system (LMS
 
 ### Recent Changes (Nov 2025)
 
-**Clinic Waiting Period System - Complete Implementation** ✅:
-- **Waiting Period Workflow**: Added `activationStatus` (waitlist/active) and `purchasableFrom` fields to clinics schema with migration
-- **Admin Waitlist Management**: 
-  - GET `/api/admin/clinics` now returns `ClinicWithWaitlistCount` type with real-time waitlist counts
-  - AdminClinics.tsx displays waitlist badge with count for each clinic
-  - Toggle switch allows admin to activate clinics (waitlist → active) instantly
-  - Visual feedback with CheckCircle2 icon for active clinics, Clock icon for waitlist
-- **User Experience**:
-  - Clinic.tsx list page with "Dettagli" links to individual clinic pages
-  - ClinicDetail page with dynamic CTAs: "Lista d'attesa" (waitlist), "Prenota Ora" (shows toast pending Stripe), "Sold Out" (full)
-  - AuthPrompt component for inline login/signup without page redirect
-  - Real-time spot tracking (X/Y format) with "Sold Out" badge when full
-  - Configurable image gallery with switch-based column mapping (1-6 cols), aspect ratios, and layout variants (grid/masonry/carousel)
-  - HTML description rendering with proper formatting
-- **Backend APIs**: GET `/api/clinics/:id` with user registration status, POST `/api/clinics/:id/waitlist`, PATCH `/api/admin/clinics/:id/activate`, GET `/api/admin/clinics/:id/registrations`
-- **Type Safety**: Created `ClinicWithWaitlistCount` shared type extending Clinic with waitlistCount for admin views
-- **Next Step**: Stripe integration for clinic checkout (requires VITE_STRIPE_PUBLIC_KEY and STRIPE_SECRET_KEY configuration)
+**WooCommerce Integration - Complete Architecture Shift** ✅:
+- **External Checkout System**: All purchases (courses and clinics) now handled by WordPress/WooCommerce instead of internal Stripe integration
+- **Database Schema Updates**:
+  - Courses: Added `externalCheckoutUrl`, `fullDescription`, `programContent`, `imageGallery`, `activationStatus`, `purchasableFrom`
+  - Clinics: Added `externalCheckoutUrl`
+- **Course Dual-Page System**:
+  - **CourseInfo.tsx** (`/corsi/:id`): Public info page showing description, program, image gallery, and dynamic CTA button
+  - **CoursePlayer.tsx** (`/corsi/:id/player`): Restricted player for enrolled users only with module/lesson navigation
+  - CTA Logic: "Vai al Corso" (enrolled) → player, "Acquista" (not enrolled + active) → WooCommerce, "Non ancora disponibile" (waitlist)
+- **Clinic Updates**:
+  - ClinicDetail.tsx: Removed internal waitlist mutations, now uses `externalCheckoutUrl` for checkout
+  - `activationStatus` controls button state: active = clickable WooCommerce link, waitlist = disabled
+- **Dashboard Enhancements**:
+  - Added clinic registrations section showing user's enrolled clinics
+  - Course cards link to `/player` route instead of old `/corsi/:id`
+- **Backend APIs**:
+  - GET `/api/courses/:id/info`: Returns course data + `isEnrolled` flag for public CourseInfo page
+  - Existing enrollment/clinic registration endpoints preserved for dual-system compatibility
+- **Pending Implementation**:
+  - Admin forms for new fields (externalCheckoutUrl, fullDescription, programContent, imageGallery in AdminCourses)
+  - WooCommerce webhook endpoint (`POST /api/webhooks/woocommerce`) for automatic enrollment
+  - Manual enrollment UI in admin panel
+  - Cleanup of deprecated internal enrollment/waitlist APIs
+
+**Clinic Waiting Period System** ✅:
+- **Waiting Period Workflow**: `activationStatus` (waitlist/active) and `purchasableFrom` fields control purchasability
+- **Admin Management**: Toggle switch in AdminClinics to activate clinics (waitlist → active) instantly
+- **User Experience**: Real-time spot tracking, configurable image gallery, HTML description rendering
+- **Type Safety**: `ClinicWithWaitlistCount` shared type for admin views with waitlist counts
 
 **Complete "SurfDay" to "Clinic" Refactoring**:
 - **Database Migration**: Renamed tables `surf_days` → `clinics`, `surf_day_registrations` → `clinic_registrations` while preserving all data
