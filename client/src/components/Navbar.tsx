@@ -32,8 +32,6 @@ export function Navbar() {
 
   const navLinks = [
     { href: "/", label: "Home" },
-    { href: "/corsi", label: "Corsi" },
-    { href: "/clinic", label: "Clinic" },
     { href: "/community", label: "Community" },
     ...(isAuthenticated ? [{ href: "/dashboard", label: "Dashboard" }] : []),
   ];

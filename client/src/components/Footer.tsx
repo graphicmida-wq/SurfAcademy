@@ -63,29 +63,11 @@ export function Footer() {
             <ul className="space-y-2 text-sm">
               <li>
                 <Link 
-                  href="/corsi"
-                  className="text-muted-foreground hover:text-primary transition-colors" 
-                  data-testid="footer-link-courses"
-                >
-                  Tutti i Corsi
-                </Link>
-              </li>
-              <li>
-                <Link 
                   href="/community"
                   className="text-muted-foreground hover:text-primary transition-colors" 
                   data-testid="footer-link-community"
                 >
                   Community
-                </Link>
-              </li>
-              <li>
-                <Link 
-                  href="/clinic"
-                  className="text-muted-foreground hover:text-primary transition-colors" 
-                  data-testid="footer-link-clinic"
-                >
-                  Clinic
                 </Link>
               </li>
             </ul>
