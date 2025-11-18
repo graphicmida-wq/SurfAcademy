@@ -10,8 +10,6 @@ import {
   badges,
   posts,
   comments,
-  clinics,
-  clinicRegistrations,
   certificates,
   purchases,
   memberships,
@@ -40,10 +38,6 @@ import {
   type InsertPost,
   type Comment,
   type InsertComment,
-  type Clinic,
-  type InsertClinic,
-  type ClinicRegistration,
-  type InsertClinicRegistration,
   type Certificate,
   type InsertCertificate,
   type Purchase,
@@ -131,22 +125,6 @@ export interface IStorage {
   // Comment operations
   getCommentsByPost(postId: string): Promise<(Comment & { user: User })[]>;
   createComment(comment: InsertComment): Promise<Comment>;
-  
-  // Clinic operations
-  getAllClinics(): Promise<Clinic[]>;
-  getClinic(id: string): Promise<Clinic | undefined>;
-  createClinic(clinic: InsertClinic): Promise<Clinic>;
-  updateClinic(id: string, clinic: Partial<InsertClinic>): Promise<Clinic>;
-  deleteClinic(id: string): Promise<void>;
-  updateClinicSpots(id: string, availableSpots: number): Promise<void>;
-  activateClinic(id: string, activationStatus: string, purchasableFrom?: Date): Promise<Clinic>;
-  
-  // Clinic registration operations
-  getClinicRegistrationsByUser(userId: string): Promise<ClinicRegistration[]>;
-  getClinicRegistrationsByClinic(clinicId: string): Promise<(ClinicRegistration & { user: User })[]>;
-  getUserClinicRegistration(userId: string, clinicId: string): Promise<ClinicRegistration | undefined>;
-  createClinicRegistration(registration: InsertClinicRegistration): Promise<ClinicRegistration>;
-  updateClinicRegistrationStatus(id: string, status: string): Promise<ClinicRegistration>;
   
   // Certificate operations
   getCertificateByUserAndCourse(userId: string, courseId: string): Promise<Certificate | undefined>;
@@ -589,95 +567,6 @@ export class DatabaseStorage implements IStorage {
   async createComment(comment: InsertComment): Promise<Comment> {
     const [newComment] = await db.insert(comments).values(comment).returning();
     return newComment;
-  }
-
-  // ========== Clinic Operations ==========
-  async getAllClinics(): Promise<Clinic[]> {
-    return await db.select().from(clinics).orderBy(clinics.startDate);
-  }
-
-  async getClinic(id: string): Promise<Clinic | undefined> {
-    const [clinic] = await db.select().from(clinics).where(eq(clinics.id, id));
-    return clinic;
-  }
-
-  async createClinic(clinic: InsertClinic): Promise<Clinic> {
-    const [newClinic] = await db.insert(clinics).values(clinic).returning();
-    return newClinic;
-  }
-
-  async updateClinic(id: string, clinic: Partial<InsertClinic>): Promise<Clinic> {
-    const [updatedClinic] = await db
-      .update(clinics)
-      .set(clinic)
-      .where(eq(clinics.id, id))
-      .returning();
-    return updatedClinic;
-  }
-
-  async deleteClinic(id: string): Promise<void> {
-    await db.delete(clinics).where(eq(clinics.id, id));
-  }
-
-  async updateClinicSpots(id: string, availableSpots: number): Promise<void> {
-    await db.update(clinics).set({ availableSpots }).where(eq(clinics.id, id));
-  }
-
-  async activateClinic(id: string, activationStatus: string, purchasableFrom?: Date): Promise<Clinic> {
-    const [updatedClinic] = await db
-      .update(clinics)
-      .set({ activationStatus, purchasableFrom })
-      .where(eq(clinics.id, id))
-      .returning();
-    return updatedClinic;
-  }
-
-  // ========== Clinic Registration Operations ==========
-  async getClinicRegistrationsByUser(userId: string): Promise<ClinicRegistration[]> {
-    return await db
-      .select()
-      .from(clinicRegistrations)
-      .where(eq(clinicRegistrations.userId, userId))
-      .orderBy(desc(clinicRegistrations.registeredAt));
-  }
-
-  async getClinicRegistrationsByClinic(clinicId: string): Promise<(ClinicRegistration & { user: User })[]> {
-    const registrations = await db
-      .select({
-        registration: clinicRegistrations,
-        user: users,
-      })
-      .from(clinicRegistrations)
-      .innerJoin(users, eq(clinicRegistrations.userId, users.id))
-      .where(eq(clinicRegistrations.clinicId, clinicId))
-      .orderBy(clinicRegistrations.registeredAt);
-
-    return registrations.map(({ registration, user }) => ({
-      ...registration,
-      user,
-    }));
-  }
-
-  async getUserClinicRegistration(userId: string, clinicId: string): Promise<ClinicRegistration | undefined> {
-    const [registration] = await db
-      .select()
-      .from(clinicRegistrations)
-      .where(and(eq(clinicRegistrations.userId, userId), eq(clinicRegistrations.clinicId, clinicId)));
-    return registration;
-  }
-
-  async createClinicRegistration(registration: InsertClinicRegistration): Promise<ClinicRegistration> {
-    const [newRegistration] = await db.insert(clinicRegistrations).values(registration).returning();
-    return newRegistration;
-  }
-
-  async updateClinicRegistrationStatus(id: string, status: string): Promise<ClinicRegistration> {
-    const [updatedRegistration] = await db
-      .update(clinicRegistrations)
-      .set({ status })
-      .where(eq(clinicRegistrations.id, id))
-      .returning();
-    return updatedRegistration;
   }
 
   // ========== Certificate Operations ==========

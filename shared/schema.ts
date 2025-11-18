@@ -225,40 +225,6 @@ export const comments = pgTable("comments", {
 });
 
 // ============================================================================
-// CLINIC TABLES (Single-day surf lessons scheduled within waiting periods)
-// ============================================================================
-
-export const clinics = pgTable("clinics", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  title: varchar("title", { length: 255 }).notNull(),
-  description: text("description"),
-  location: varchar("location").notNull(),
-  startDate: timestamp("start_date").notNull(), // Waiting period start
-  endDate: timestamp("end_date").notNull(), // Waiting period end
-  price: integer("price").notNull(), // in cents
-  totalSpots: integer("total_spots").notNull(),
-  availableSpots: integer("available_spots").notNull(),
-  imageUrl: varchar("image_url"),
-  imageGallery: text("image_gallery").array(), // Array of image URLs for gallery
-  galleryLayout: varchar("gallery_layout").default("grid"), // grid, masonry, carousel
-  galleryColumns: integer("gallery_columns").default(3), // 1-6 columns
-  galleryGap: varchar("gallery_gap").default("16px"), // spacing between items
-  galleryAspectRatio: varchar("gallery_aspect_ratio").default("original"), // 1:1, 4:3, 16:9, original
-  activationStatus: varchar("activation_status").default("waitlist"), // waitlist, active, closed
-  purchasableFrom: timestamp("purchasable_from"), // When clinic becomes purchasable (nullable)
-  externalCheckoutUrl: text("external_checkout_url"), // WooCommerce checkout URL
-  createdAt: timestamp("created_at").defaultNow(),
-});
-
-export const clinicRegistrations = pgTable("clinic_registrations", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
-  clinicId: varchar("clinic_id").notNull().references(() => clinics.id, { onDelete: 'cascade' }),
-  status: varchar("status").default("waitlist"), // waitlist, confirmed, cancelled
-  registeredAt: timestamp("registered_at").defaultNow(),
-});
-
-// ============================================================================
 // HERO SLIDER MANAGEMENT
 // ============================================================================
 
@@ -550,7 +516,6 @@ export const usersRelations = relations(users, ({ many }) => ({
   badges: many(badges),
   posts: many(posts),
   comments: many(comments),
-  clinicRegistrations: many(clinicRegistrations),
 }));
 
 export const coursesRelations = relations(courses, ({ many }) => ({
@@ -604,20 +569,6 @@ export const commentsRelations = relations(comments, ({ one }) => ({
   }),
 }));
 
-export const clinicsRelations = relations(clinics, ({ many }) => ({
-  registrations: many(clinicRegistrations),
-}));
-
-export const clinicRegistrationsRelations = relations(clinicRegistrations, ({ one }) => ({
-  user: one(users, {
-    fields: [clinicRegistrations.userId],
-    references: [users.id],
-  }),
-  clinic: one(clinics, {
-    fields: [clinicRegistrations.clinicId],
-    references: [clinics.id],
-  }),
-}));
 
 export const customPagesRelations = relations(customPages, ({ many }) => ({
   blocks: many(pageBlocks),
@@ -672,15 +623,6 @@ export const insertCommentSchema = createInsertSchema(comments).omit({
   createdAt: true,
 });
 
-export const insertClinicSchema = createInsertSchema(clinics).omit({
-  id: true,
-  createdAt: true,
-});
-
-export const insertClinicRegistrationSchema = createInsertSchema(clinicRegistrations).omit({
-  id: true,
-  registeredAt: true,
-});
 
 export const insertCertificateSchema = createInsertSchema(certificates).omit({
   id: true,
@@ -760,12 +702,6 @@ export type InsertPost = z.infer<typeof insertPostSchema>;
 export type Comment = typeof comments.$inferSelect;
 export type InsertComment = z.infer<typeof insertCommentSchema>;
 
-export type Clinic = typeof clinics.$inferSelect;
-export type InsertClinic = z.infer<typeof insertClinicSchema>;
-export type ClinicWithWaitlistCount = Clinic & { waitlistCount: number };
-
-export type ClinicRegistration = typeof clinicRegistrations.$inferSelect;
-export type InsertClinicRegistration = z.infer<typeof insertClinicRegistrationSchema>;
 
 export type Certificate = typeof certificates.$inferSelect;
 export type InsertCertificate = z.infer<typeof insertCertificateSchema>;

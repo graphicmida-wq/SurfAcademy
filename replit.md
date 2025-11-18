@@ -2,49 +2,43 @@
 
 ## Overview
 
-Scuola di Longboard is a comprehensive web-based learning management system (LMS) for a surf and longboard school. It allows students to enroll in courses, track progress, participate in community discussions, and register for surf clinics (single-day lessons scheduled during optimal wave conditions). The platform supports students, instructors, and administrators with role-specific dashboards and features. It's a full-stack TypeScript monorepo using React, Express, and PostgreSQL (via Neon), integrated with Replit's authentication. The design is inspired by surf culture with a turquoise and ocean-blue palette.
+Scuola di Longboard is a full-stack surf school learning platform serving as an **authentication-only course player** integrated with WordPress/WooCommerce. **WordPress handles ALL public pages, marketing, and sales via WooCommerce**; Replit provides the **private dashboard and course content player exclusively for enrolled students**. Enrollment is tracked via WooCommerce webhooks (automatic) and manual admin additions only. The platform is a TypeScript monorepo using React, Express, and PostgreSQL (via Neon), with Replit authentication. The design is inspired by surf culture with a turquoise and ocean-blue palette.
 
 ### Recent Changes (Nov 2025)
 
-**WooCommerce Integration - Complete Architecture Shift** ✅:
-- **External Checkout System**: All purchases (courses and clinics) now handled by WordPress/WooCommerce instead of internal Stripe integration
-- **Database Schema Updates**:
-  - Courses: Added `externalCheckoutUrl`, `fullDescription`, `programContent`, `imageGallery`, `activationStatus`, `purchasableFrom`
-  - Clinics: Added `externalCheckoutUrl`
-- **Course Dual-Page System**:
-  - **CourseInfo.tsx** (`/corsi/:id`): Public info page showing description, program, image gallery, and dynamic CTA button
-  - **CoursePlayer.tsx** (`/corsi/:id/player`): Restricted player for enrolled users only with module/lesson navigation
-  - CTA Logic: "Vai al Corso" (enrolled) → player, "Acquista" (not enrolled + active) → WooCommerce, "Non ancora disponibile" (waitlist)
-- **Clinic Updates**:
-  - ClinicDetail.tsx: Removed internal waitlist mutations, now uses `externalCheckoutUrl` for checkout
-  - `activationStatus` controls button state: active = clickable WooCommerce link, waitlist = disabled
-- **Dashboard Enhancements**:
-  - Added clinic registrations section showing user's enrolled clinics
-  - Course cards link to `/player` route instead of old `/corsi/:id`
-- **Backend APIs**:
-  - GET `/api/courses/:id/info`: Returns course data + `isEnrolled` flag for public CourseInfo page
-  - Existing enrollment/clinic registration endpoints preserved for dual-system compatibility
-- **Pending Implementation**:
-  - Admin forms for new fields (externalCheckoutUrl, fullDescription, programContent, imageGallery in AdminCourses)
-  - WooCommerce webhook endpoint (`POST /api/webhooks/woocommerce`) for automatic enrollment
-  - Manual enrollment UI in admin panel
-  - Cleanup of deprecated internal enrollment/waitlist APIs
+**Complete Architectural Refactoring - Authentication-Only Platform** ✅:
+- **Core Architecture**: Replit is now strictly authentication-only; WordPress handles ALL public-facing content, marketing, course listings, and sales
+- **Removed All Public Routes**: Deleted `/corsi`, `/corsi/:id`, `/clinic`, `/clinic/:id` - all replaced by WordPress pages
+- **Deprecated Pages Removed**: CourseInfo.tsx, Clinic.tsx, ClinicDetail.tsx, Courses.tsx (public listing) completely removed
+- **Homepage Simplification**: 
+  - Non-authenticated users: Hero Slider + Footer only
+  - Authenticated users: Auto-redirect to `/dashboard`
+- **Navigation Streamlined**: 
+  - Header: Home, Community (optional), Dashboard (authenticated only), account controls
+  - Footer: Minimal links only
+  - Removed all "Corsi" and "Clinic" navigation links
+- **Admin Panel Simplified**: Removed Hero Slider, Newsletter, Eventi, Clinic management; kept only:
+  - Dashboard Admin
+  - Dashboard Utente (testing)
+  - Iscrizioni (enrollments)
+  - Intestazioni Pagine
+  - Pagine Custom
+  - Gestione Corsi (content management only)
 
-**Clinic Waiting Period System** ✅:
-- **Waiting Period Workflow**: `activationStatus` (waitlist/active) and `purchasableFrom` fields control purchasability
-- **Admin Management**: Toggle switch in AdminClinics to activate clinics (waitlist → active) instantly
-- **User Experience**: Real-time spot tracking, configurable image gallery, HTML description rendering
-- **Type Safety**: `ClinicWithWaitlistCount` shared type for admin views with waitlist counts
+**Complete Clinic Functionality Removal** ✅:
+- **Database Migration**: Dropped `clinics` and `clinic_registrations` tables completely using `npm run db:push --force`
+- **Schema Cleanup**: Removed all Clinic/ClinicRegistration types, relations, and insert schemas from `shared/schema.ts`
+- **Storage Layer**: Removed all clinic-related methods from IStorage interface and DBStorage implementation
+- **API Routes**: Removed all `/api/clinics/*` endpoints and clinic-related routes
+- **Frontend Cleanup**: Deleted Clinic.tsx, ClinicDetail.tsx, AdminClinics.tsx files
+- **Dashboard Updates**: Removed clinic registrations query and display section
+- **Seed Data**: Removed clinic references from production seed system
 
-**Complete "SurfDay" to "Clinic" Refactoring**:
-- **Database Migration**: Renamed tables `surf_days` → `clinics`, `surf_day_registrations` → `clinic_registrations` while preserving all data
-- **Schema Updates**: Updated `shared/schema.ts` with new table names, types, relations, and insert schemas
-- **Storage Layer**: Refactored all storage interface methods and implementations from SurfDay → Clinic naming
-- **API Routes**: Changed all endpoints from `/api/surf-days` → `/api/clinics`
-- **Frontend Pages**: Renamed `SurfDay.tsx` → `Clinic.tsx` with "Dettagli" links to individual clinic pages
-- **Routing**: Updated App.tsx routes: `/clinic` (list), `/clinic/:id` (detail)
-- **Navigation**: Updated Navbar, Footer, AdminLayout menus to use "Clinic" terminology
-- **Standardized Terminology**: Platform now consistently uses "Clinic" for single-day surf lessons
+**Enrollment Architecture** ✅:
+- **WooCommerce Webhook** (pending implementation): Automatic enrollment via `POST /api/webhooks/woocommerce`
+- **Manual Admin Enrollment** (existing): Admins can instantly enroll users via admin panel
+- **Dashboard Display**: Shows only courses user is enrolled in (purchased via WooCommerce or admin-enrolled)
+- **CoursePlayer Access**: Restricted to enrolled users only; redirects unauthorized users
 
 ### Recent Changes (Oct 2025)
 
@@ -105,9 +99,32 @@ Preferred communication style: Simple, everyday language.
 
 ## System Architecture
 
+### Platform Purpose & Architecture
+
+**Replit = Authentication-Only Platform**:
+- Serves **ONLY authenticated users** with dashboard and course player
+- **NO public marketing pages** (all handled by WordPress)
+- Purpose: Secure course content delivery to enrolled students only
+
+**WordPress = Public-Facing Platform**:
+- Handles ALL public pages: homepage, about, course listings, clinic info
+- WooCommerce manages all sales and payments
+- Sends enrollment data to Replit via webhooks
+
+**Integration Points**:
+- WooCommerce webhook (pending): Automatic enrollment on purchase
+- Manual admin enrollment: Backup/testing enrollment method
+
 ### Frontend Architecture
 
-The frontend uses React 18 with TypeScript and Vite. Wouter handles client-side routing. State management relies on TanStack Query for server state. UI components are built with Radix UI primitives and styled using Tailwind CSS, following a shadcn/ui pattern. The styling uses HSL values with CSS custom properties for theming and Montserrat/Inter fonts.
+The frontend uses React 18 with TypeScript and Vite. Wouter handles client-side routing with these routes:
+- `/`: Landing page (Hero Slider + Footer) with auto-redirect to `/dashboard` for authenticated users
+- `/dashboard`: User dashboard showing enrolled courses only (authentication required)
+- `/corsi/:id/player`: CoursePlayer for enrolled users (authentication + enrollment required)
+- `/community`: Community discussion board (authentication required)
+- `/admin/*`: Admin panel pages (admin authentication required)
+
+State management relies on TanStack Query for server state. UI components are built with Radix UI primitives and styled using Tailwind CSS, following a shadcn/ui pattern. The styling uses HSL values with CSS custom properties for theming and Montserrat/Inter fonts.
 
 ### Backend Architecture
 
@@ -115,7 +132,18 @@ The backend is an Express.js server with TypeScript, serving API endpoints and s
 
 ### Data Storage
 
-PostgreSQL, hosted on Neon, is the primary database, accessed via the `@neondatabase/serverless` driver. Drizzle ORM provides type-safe queries and schema management. The database schema includes `users`, `courses`, `modules`, `lessons`, `exercises`, `enrollments`, `progress tracking`, `community features`, `clinics` (single-day surf lessons), `clinic_registrations`, `newsletter` system, and `certificates`. Session data is stored in a `sessions` table. Drizzle Kit manages schema migrations. The platform also includes a production database seeding system to populate content from development.
+PostgreSQL, hosted on Neon, is the primary database, accessed via the `@neondatabase/serverless` driver. Drizzle ORM provides type-safe queries and schema management. The database schema includes:
+- **Core Tables**: `users`, `courses`, `modules`, `lessons`, `exercises`, `enrollments`
+- **Progress Tracking**: `lessonProgress`, `exerciseProgress`, `certificates`
+- **Community**: `posts`, `comments`, `badges`
+- **CMS**: `heroSlides`, `pageHeaders`, `customPages`, `pageBlocks`
+- **Newsletter**: `newsletterContacts`, `newsletterCampaigns`, `newsletterEvents`
+- **Referrals**: `referralCodes`, `referralEarnings`
+- **Sessions**: `sessions` (Express session storage)
+
+**Note**: All clinic-related tables (`clinics`, `clinic_registrations`) have been completely removed from the system.
+
+Session data is stored in a `sessions` table. Drizzle Kit manages schema migrations. The platform includes a production database seeding system to populate content from development (hero slides, page headers, courses, custom pages with blocks).
 
 ### Authentication & Authorization
 
@@ -125,7 +153,7 @@ The platform supports **dual authentication**: Replit Auth (OpenID Connect) and 
 
 The design features a surf-culture aesthetic with a turquoise and ocean-blue color palette. Hero sliders and page headers are customizable, supporting images, titles, subtitles, and optional logos with size and position controls. 
 
-**Advanced Page Builder CMS**: Custom pages now feature a professional page builder system similar to Elementor/WordPress with:
+**Advanced Page Builder CMS**: Custom pages feature a professional page builder system similar to Elementor/WordPress with:
 - **Menu Integration**: Pages can be published to header menu, footer menu, or kept hidden
 - **Text Blocks**: Visual editor with full typography controls (font family, size, weight, line-height, letter-spacing, color, alignment) and spacing/padding controls
 - **Image Blocks**: File upload support with dimension controls, aspect ratios, and alignment options
@@ -138,7 +166,7 @@ Typography uses Montserrat for headers and Inter for body text.
 
 ### Technical Implementations
 
-The project is structured as a full-stack TypeScript monorepo. It uses `zod` for schema validation and `date-fns` for date handling. Server-side image uploads are managed directly to Google Cloud Storage (GCS) into a `/public/` directory, returning public GCS URLs. A system is in place to export development data (hero slides, page headers, courses, clinics, custom pages with blocks) to a `production-seed-data.json` file, which automatically seeds the production database on first deploy.
+The project is structured as a full-stack TypeScript monorepo. It uses `zod` for schema validation and `date-fns` for date handling. Server-side image uploads are managed directly to Google Cloud Storage (GCS) into a `/public/` directory, returning public GCS URLs. A system is in place to export development data (hero slides, page headers, courses, custom pages with blocks) to a `production-seed-data.json` file, which automatically seeds the production database on first deploy.
 
 **Newsletter System**: Integrated SendGrid-based newsletter management with contact management, campaign creation, double opt-in subscription, email tracking via webhooks, GDPR compliance (IP tracking, timestamps), and automated cron job for scheduled campaigns.
 
@@ -146,7 +174,7 @@ The project is structured as a full-stack TypeScript monorepo. It uses `zod` for
 
 *   **Authentication**: Replit Auth (OpenID Connect)
 *   **Database**: Neon Serverless PostgreSQL
-*   **Payment Processing**: Stripe (`@stripe/stripe-js`, `@stripe/react-stripe-js`)
+*   **Payment Processing**: Stripe (`@stripe/stripe-js`, `@stripe/react-stripe-js`) - Note: Currently deprecated, WooCommerce handles all payments
 *   **Date Handling**: `date-fns`
 *   **Form Validation**: `@hookform/resolvers` with Zod
 *   **UI Components**: Radix UI primitives (`@radix-ui/react-*`)

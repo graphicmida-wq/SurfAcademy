@@ -2,7 +2,7 @@ import { storage } from "./storage";
 import { neonConfig, Pool } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-serverless";
 import ws from "ws";
-import { heroSlides, pageHeaders, courses, clinics, customPages, pageBlocks } from "../shared/schema";
+import { heroSlides, pageHeaders, courses, customPages, pageBlocks } from "../shared/schema";
 import { readFileSync, existsSync } from "fs";
 import { join } from "path";
 import { fileURLToPath } from "url";
@@ -67,12 +67,6 @@ export async function seedProductionDatabase() {
     if (seedData.courses?.length > 0) {
       await db.insert(courses).values(seedData.courses);
       console.log(`✅ Seeded ${seedData.courses.length} courses`);
-    }
-
-    // Seed clinics
-    if (seedData.clinics?.length > 0) {
-      await db.insert(clinics).values(seedData.clinics);
-      console.log(`✅ Seeded ${seedData.clinics.length} clinics`);
     }
 
     // Seed custom pages
