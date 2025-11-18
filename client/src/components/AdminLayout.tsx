@@ -35,11 +35,6 @@ const adminMenuItems = [
     icon: Users,
   },
   {
-    title: "Hero Slider",
-    url: "/admin/slider",
-    icon: Sliders,
-  },
-  {
     title: "Intestazioni Pagine",
     url: "/admin/page-headers",
     icon: FileText,
@@ -50,24 +45,9 @@ const adminMenuItems = [
     icon: FilePlus2,
   },
   {
-    title: "Gestione Clinic",
-    url: "/admin/clinic",
-    icon: Waves,
-  },
-  {
     title: "Gestione Corsi",
     url: "/admin/corsi",
     icon: BookOpen,
-  },
-  {
-    title: "Newsletter",
-    url: "/admin/newsletter",
-    icon: Mail,
-  },
-  {
-    title: "Gestione Eventi",
-    url: "/admin/eventi",
-    icon: Calendar,
   },
 ];
 
