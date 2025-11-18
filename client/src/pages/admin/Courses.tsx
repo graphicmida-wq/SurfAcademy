@@ -65,6 +65,9 @@ export default function AdminCourses() {
       trailerUrl: insertCourseSchema.shape.trailerUrl.transform(v => v || ""),
       instructorName: insertCourseSchema.shape.instructorName.transform(v => v || ""),
       instructorAvatar: insertCourseSchema.shape.instructorAvatar.transform(v => v || ""),
+      externalCheckoutUrl: insertCourseSchema.shape.externalCheckoutUrl.transform(v => v || ""),
+      fullDescription: insertCourseSchema.shape.fullDescription.transform(v => v || ""),
+      programContent: insertCourseSchema.shape.programContent.transform(v => v || ""),
     })),
     defaultValues: {
       title: "",
@@ -78,6 +81,11 @@ export default function AdminCourses() {
       trailerUrl: "",
       instructorName: "",
       instructorAvatar: "",
+      externalCheckoutUrl: "",
+      fullDescription: "",
+      programContent: "",
+      imageGallery: [],
+      activationStatus: "active",
     },
   });
 
@@ -158,6 +166,11 @@ export default function AdminCourses() {
       trailerUrl: course.trailerUrl || "",
       instructorName: course.instructorName || "",
       instructorAvatar: course.instructorAvatar || "",
+      externalCheckoutUrl: course.externalCheckoutUrl || "",
+      fullDescription: course.fullDescription || "",
+      programContent: course.programContent || "",
+      imageGallery: course.imageGallery || [],
+      activationStatus: course.activationStatus || "active",
     });
     setIsDialogOpen(true);
   };
@@ -176,6 +189,11 @@ export default function AdminCourses() {
       trailerUrl: "",
       instructorName: "",
       instructorAvatar: "",
+      externalCheckoutUrl: "",
+      fullDescription: "",
+      programContent: "",
+      imageGallery: [],
+      activationStatus: "active",
     });
     setIsDialogOpen(true);
   };
@@ -407,6 +425,112 @@ export default function AdminCourses() {
                             onUploadComplete={(url) => field.onChange(url)}
                           />
                         </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="border-t pt-4 space-y-4">
+                  <h3 className="text-sm font-medium">Integrazione WooCommerce</h3>
+
+                  <FormField
+                    control={form.control}
+                    name="externalCheckoutUrl"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>URL Checkout WooCommerce</FormLabel>
+                        <FormControl>
+                          <Input {...field} value={field.value ?? ""} placeholder="https://yoursite.com/product/corso-remata" data-testid="input-external-checkout" />
+                        </FormControl>
+                        <FormDescription>Link al prodotto WooCommerce per l'acquisto</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="activationStatus"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Stato Disponibilità</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value ?? "active"}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-activation-status">
+                              <SelectValue placeholder="Seleziona stato" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="active">Attivo (acquistabile)</SelectItem>
+                            <SelectItem value="waitlist">Lista d'Attesa (non acquistabile)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>Controlla se il pulsante di acquisto è cliccabile</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="fullDescription"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Descrizione Completa</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            {...field}
+                            value={field.value ?? ""}
+                            placeholder="Descrizione dettagliata del corso per la pagina info..."
+                            rows={5}
+                            data-testid="input-full-description"
+                          />
+                        </FormControl>
+                        <FormDescription>Mostrata nella pagina pubblica del corso</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="programContent"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Programma del Corso</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            {...field}
+                            value={field.value ?? ""}
+                            placeholder="Contenuti e obiettivi del corso..."
+                            rows={5}
+                            data-testid="input-program-content"
+                          />
+                        </FormControl>
+                        <FormDescription>Dettagli sul programma mostrati nella pagina info</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="imageGallery"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Galleria Immagini (URLs)</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            {...field}
+                            value={field.value?.join('\n') ?? ""}
+                            onChange={(e) => field.onChange(e.target.value.split('\n').filter(url => url.trim()))}
+                            placeholder="https://example.com/image1.jpg&#10;https://example.com/image2.jpg"
+                            rows={4}
+                            data-testid="input-image-gallery"
+                          />
+                        </FormControl>
+                        <FormDescription>Un URL per riga - mostrate nella galleria CourseInfo</FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}

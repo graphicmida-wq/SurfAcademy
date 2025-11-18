@@ -77,6 +77,8 @@ export default function AdminClinics() {
       galleryColumns: 3,
       galleryGap: "16px",
       galleryAspectRatio: "original",
+      externalCheckoutUrl: "",
+      activationStatus: "active",
     },
   });
 
@@ -160,6 +162,8 @@ export default function AdminClinics() {
       galleryColumns: clinic.galleryColumns || 3,
       galleryGap: clinic.galleryGap || "16px",
       galleryAspectRatio: clinic.galleryAspectRatio || "original",
+      externalCheckoutUrl: clinic.externalCheckoutUrl || "",
+      activationStatus: clinic.activationStatus || "active",
     });
     setIsDialogOpen(true);
   };
@@ -181,6 +185,8 @@ export default function AdminClinics() {
       galleryColumns: 3,
       galleryGap: "16px",
       galleryAspectRatio: "original",
+      externalCheckoutUrl: "",
+      activationStatus: "active",
     });
     setIsDialogOpen(true);
   };
@@ -489,6 +495,46 @@ export default function AdminClinics() {
                       )}
                     />
                   </div>
+                </div>
+
+                <div className="border-t pt-4 space-y-4">
+                  <h3 className="text-sm font-medium">Integrazione WooCommerce</h3>
+
+                  <FormField
+                    control={form.control}
+                    name="externalCheckoutUrl"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>URL Checkout WooCommerce</FormLabel>
+                        <FormControl>
+                          <Input {...field} value={field.value ?? ""} placeholder="https://yoursite.com/product/clinic-nome" data-testid="input-external-checkout-clinic" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="activationStatus"
+                    render={({ field }) => (
+                      <FormItem className="flex items-center justify-between rounded-lg border p-3">
+                        <div>
+                          <FormLabel>Stato Disponibilità</FormLabel>
+                          <p className="text-sm text-muted-foreground">
+                            {field.value === "active" ? "Clinic acquistabile (pulsante attivo)" : "Lista d'attesa (pulsante disabilitato)"}
+                          </p>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value === "active"}
+                            onCheckedChange={(checked) => field.onChange(checked ? "active" : "waitlist")}
+                            data-testid="switch-activation-status-clinic"
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
                 </div>
 
                 <div className="flex justify-end gap-2">
