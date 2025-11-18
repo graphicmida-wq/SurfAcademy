@@ -11,7 +11,8 @@ import { Footer } from "@/components/Footer";
 // Pages
 import Landing from "@/pages/Landing";
 import Courses from "@/pages/Courses";
-import CourseDetail from "@/pages/CourseDetail";
+import CourseInfo from "@/pages/CourseInfo";
+import CoursePlayer from "@/pages/CoursePlayer";
 import Dashboard from "@/pages/Dashboard";
 import Community from "@/pages/Community";
 import Clinic from "@/pages/Clinic";
@@ -142,7 +143,8 @@ function Router() {
           {/* Public routes */}
           <Route path="/" component={Landing} />
           <Route path="/corsi" component={Courses} />
-          <Route path="/corsi/:id" component={CourseDetail} />
+          <Route path="/corsi/:id/player" component={CoursePlayer} />
+          <Route path="/corsi/:id" component={CourseInfo} />
           <Route path="/clinic" component={Clinic} />
           <Route path="/clinic/:id" component={ClinicDetail} />
           <Route path="/community" component={Community} />

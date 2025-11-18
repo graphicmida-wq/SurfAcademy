@@ -1,15 +1,13 @@
 import { useParams, useLocation } from "wouter";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { Calendar, MapPin, Users, Clock, Euro } from "lucide-react";
+import { Calendar, MapPin, Users, ExternalLink, CheckCircle } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
-import AuthPrompt from "@/components/AuthPrompt";
 
 interface Clinic {
   id: string;
@@ -29,6 +27,7 @@ interface Clinic {
   galleryAspectRatio?: string;
   activationStatus: string;
   purchasableFrom?: string;
+  externalCheckoutUrl?: string;
 }
 
 interface ClinicRegistration {
@@ -54,50 +53,36 @@ export default function ClinicDetail() {
   const clinic = data?.clinic as Clinic | undefined;
   const userRegistration = data?.userRegistration as ClinicRegistration | undefined;
 
-  const joinWaitlistMutation = useMutation({
-    mutationFn: () => apiRequest("POST", `/api/clinics/${id}/waitlist`, {}),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/clinics", id] });
-      toast({ title: "Iscritto alla lista d'attesa!", description: "Ti avviseremo quando sarà possibile prenotare." });
-    },
-    onError: (error: any) => {
+  const handleCheckout = () => {
+    if (clinic?.externalCheckoutUrl) {
+      window.open(clinic.externalCheckoutUrl, '_blank');
+    } else {
       toast({
-        title: "Errore",
-        description: error.message || "Impossibile iscriversi alla lista d'attesa",
+        title: "URL Checkout non configurato",
+        description: "Contatta l'amministratore per completare la configurazione",
         variant: "destructive",
       });
-    },
-  });
-
-  const handleCheckout = () => {
-    toast({
-      title: "Checkout non ancora disponibile",
-      description: "Il sistema di pagamento Stripe sarà configurato a breve. Per ora puoi iscriverti alla lista d'attesa!",
-      variant: "default",
-    });
+    }
   };
 
-  const getButtonState = () => {
-    if (!userData) {
-      return { label: "Accedi per prenotare", action: null, variant: "default" as const, disabled: false };
-    }
+  const isPurchasable = clinic?.activationStatus === "active";
+  const hasCheckoutUrl = !!clinic?.externalCheckoutUrl;
+  const isRegistered = userRegistration?.status === "confirmed";
 
+  const getButtonState = () => {
     if (clinic?.availableSpots === 0) {
       return { label: "Sold Out", action: null, variant: "secondary" as const, disabled: true };
     }
 
-    if (clinic?.activationStatus === "active") {
-      if (userRegistration?.status === "confirmed") {
-        return { label: "Già prenotato", action: null, variant: "secondary" as const, disabled: true };
-      }
-      return { label: "Prenota Ora", action: handleCheckout, variant: "default" as const, disabled: false };
+    if (isRegistered) {
+      return { label: "Già Iscritto", action: null, variant: "secondary" as const, disabled: true };
     }
 
-    if (userRegistration?.status === "waitlist") {
-      return { label: "In Lista d'Attesa", action: null, variant: "secondary" as const, disabled: true };
+    if (isPurchasable && hasCheckoutUrl) {
+      return { label: "Iscriviti alla Clinic", action: handleCheckout, variant: "default" as const, disabled: false };
     }
 
-    return { label: "Lista d'Attesa", action: () => joinWaitlistMutation.mutate(), variant: "outline" as const, disabled: false };
+    return { label: "Non ancora disponibile", action: null, variant: "secondary" as const, disabled: true };
   };
 
   const renderGallery = () => {
@@ -276,24 +261,28 @@ export default function ClinicDetail() {
                   </div>
                 </div>
 
-                {!userData ? (
-                  <div className="mt-6">
-                    <AuthPrompt
-                      title="Prenotazione Clinic"
-                      description="Per prenotare o iscriverti alla lista d'attesa, devi prima accedere"
-                      onSuccess={() => queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] })}
-                    />
+                <Button
+                  className="w-full mt-6"
+                  variant={buttonState.variant}
+                  disabled={buttonState.disabled}
+                  onClick={buttonState.action || undefined}
+                  data-testid="button-clinic-action"
+                >
+                  <ExternalLink className="w-4 h-4 mr-2" />
+                  {buttonState.label}
+                </Button>
+
+                {isRegistered && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground mt-2">
+                    <CheckCircle className="w-4 h-4 text-chart-4" />
+                    <span>Sei già iscritto a questa clinic</span>
                   </div>
-                ) : (
-                  <Button
-                    className="w-full mt-6"
-                    variant={buttonState.variant}
-                    disabled={buttonState.disabled || joinWaitlistMutation.isPending}
-                    onClick={buttonState.action || undefined}
-                    data-testid="button-clinic-action"
-                  >
-                    {joinWaitlistMutation.isPending ? "Iscrizione..." : buttonState.label}
-                  </Button>
+                )}
+
+                {!isPurchasable && clinic.purchasableFrom && (
+                  <p className="text-sm text-muted-foreground text-center mt-2">
+                    Disponibile dal {format(new Date(clinic.purchasableFrom), "d MMMM yyyy", { locale: it })}
+                  </p>
                 )}
               </div>
             </Card>

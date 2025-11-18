@@ -89,38 +89,6 @@ export default function CourseDetail() {
     enabled: isAuthenticated && !!id,
   });
 
-  const enrollMutation = useMutation({
-    mutationFn: async () => {
-      await apiRequest("POST", "/api/enrollments", { courseId: id });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/enrollments/course/${id}`] });
-      toast({
-        title: "Iscrizione completata!",
-        description: "Ora puoi accedere a tutte le lezioni del corso.",
-      });
-      setLocation("/dashboard");
-    },
-    onError: (error: Error) => {
-      if (isUnauthorizedError(error)) {
-        toast({
-          title: "Accesso richiesto",
-          description: "Effettua il login per iscriverti al corso.",
-          variant: "destructive",
-        });
-        setTimeout(() => {
-          window.location.href = "/api/login";
-        }, 500);
-        return;
-      }
-      toast({
-        title: "Errore",
-        description: "Impossibile completare l'iscrizione. Riprova.",
-        variant: "destructive",
-      });
-    },
-  });
-
   const toggleLessonCompleteMutation = useMutation({
     mutationFn: async ({ lessonId, completed }: { lessonId: string; completed: boolean }) => {
       await apiRequest("POST", "/api/lesson-progress", { lessonId, completed });
@@ -174,10 +142,10 @@ export default function CourseDetail() {
           <Lock className="h-16 w-16 text-muted-foreground/50 mx-auto mb-4" />
           <h3 className="font-display font-semibold text-xl mb-2">Contenuto Riservato</h3>
           <p className="text-muted-foreground mb-4">
-            Iscriviti al corso per accedere a tutti i contenuti
+            Questo contenuto è disponibile solo per chi ha acquistato il corso
           </p>
-          <Button onClick={() => enrollMutation.mutate()} disabled={enrollMutation.isPending}>
-            {enrollMutation.isPending ? "Iscrizione..." : "Iscriviti Ora"}
+          <Button onClick={() => setLocation(`/corsi/${id}`)}>
+            Vai alla Pagina del Corso
           </Button>
         </Card>
       );
@@ -404,11 +372,10 @@ export default function CourseDetail() {
                   {!canAccess && (
                     <Button 
                       className="w-full mt-4" 
-                      onClick={() => enrollMutation.mutate()}
-                      disabled={enrollMutation.isPending}
-                      data-testid="button-enroll-sidebar"
+                      onClick={() => setLocation(`/corsi/${id}`)}
+                      data-testid="button-go-to-course-info"
                     >
-                      {course.isFree ? "Inizia Gratis" : `Iscriviti - €${((course.price || 0) / 100).toFixed(2)}`}
+                      Vai alla Pagina del Corso
                     </Button>
                   )}
                   {isEnrolled && (

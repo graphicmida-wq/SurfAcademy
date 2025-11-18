@@ -62,6 +62,12 @@ export const courses = pgTable("courses", {
   instructorName: varchar("instructor_name"),
   instructorAvatar: varchar("instructor_avatar"),
   duration: integer("duration"), // in minutes
+  externalCheckoutUrl: text("external_checkout_url"), // WooCommerce checkout URL
+  fullDescription: text("full_description"), // HTML content for public course info page
+  programContent: text("program_content"), // HTML content for course program section
+  imageGallery: text("image_gallery").array(), // Array of image URLs for course gallery
+  activationStatus: varchar("activation_status").default("active"), // waitlist, active
+  purchasableFrom: timestamp("purchasable_from"), // When course becomes purchasable (nullable)
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -240,6 +246,7 @@ export const clinics = pgTable("clinics", {
   galleryAspectRatio: varchar("gallery_aspect_ratio").default("original"), // 1:1, 4:3, 16:9, original
   activationStatus: varchar("activation_status").default("waitlist"), // waitlist, active, closed
   purchasableFrom: timestamp("purchasable_from"), // When clinic becomes purchasable (nullable)
+  externalCheckoutUrl: text("external_checkout_url"), // WooCommerce checkout URL
   createdAt: timestamp("created_at").defaultNow(),
 });
 
