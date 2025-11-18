@@ -91,11 +91,6 @@ export default function Dashboard() {
 
   const wavePointsBalance = wavePointsData?.balance || 0;
 
-  const { data: clinicRegistrations } = useQuery<any[]>({
-    queryKey: ["/api/clinic-registrations"],
-    enabled: isAuthenticated,
-  });
-
   const updateProfileMutation = useMutation({
     mutationFn: async (data: z.infer<typeof profileSchema>) => {
       const res = await apiRequest("PUT", "/api/profile", data);
@@ -259,34 +254,6 @@ export default function Dashboard() {
               </div>
             )}
 
-            {/* My Clinics */}
-            {clinicRegistrations && clinicRegistrations.length > 0 && (
-              <div>
-                <h2 className="font-display font-bold text-2xl mb-6">Le Mie Clinic</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4" data-testid="list-clinic-registrations">
-                  {clinicRegistrations.map((registration: any) => (
-                    <Card key={registration.id} className="hover-elevate active-elevate-2 transition-all">
-                      <Link href={`/clinic/${registration.clinic.id}`} className="block p-4">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Target className="h-5 w-5 text-primary" />
-                          <h3 className="font-semibold line-clamp-1">{registration.clinic.title}</h3>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Clock className="h-4 w-4" />
-                          <span>{new Date(registration.clinic.startDate).toLocaleDateString("it-IT")}</span>
-                        </div>
-                        <Badge 
-                          variant={registration.status === "confirmed" ? "default" : "secondary"}
-                          className="mt-2"
-                        >
-                          {registration.status === "confirmed" ? "Confermato" : registration.status}
-                        </Badge>
-                      </Link>
-                    </Card>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
 
           {/* Sidebar */}
