@@ -170,7 +170,7 @@ export function Navbar() {
 
         {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden border-t border-border py-4 bg-background" data-testid="mobile-menu">
+          <div className="md:hidden border-t border-border py-4 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60" data-testid="mobile-menu">
             <div className="flex flex-col space-y-2">
               {navLinks.map((link) => (
                 <Link 
