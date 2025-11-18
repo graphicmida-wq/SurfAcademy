@@ -10,25 +10,18 @@ import { Footer } from "@/components/Footer";
 
 // Pages
 import Landing from "@/pages/Landing";
-import Courses from "@/pages/Courses";
-import CourseInfo from "@/pages/CourseInfo";
 import CoursePlayer from "@/pages/CoursePlayer";
 import Dashboard from "@/pages/Dashboard";
 import Community from "@/pages/Community";
-import Clinic from "@/pages/Clinic";
-import ClinicDetail from "@/pages/ClinicDetail";
 import DynamicPage from "@/pages/DynamicPage";
 import LocalAuth from "@/pages/LocalAuth";
 import AdminDashboard from "@/pages/admin/Dashboard";
-import AdminHeroSlider from "@/pages/admin/HeroSlider";
 import AdminPageHeaders from "@/pages/admin/PageHeaders";
 import AdminCustomPages from "@/pages/admin/CustomPages";
 import CustomPageEditor from "@/pages/admin/CustomPageEditor";
 import AdminCourses from "@/pages/admin/Courses";
 import AdminCourseContent from "@/pages/admin/CourseContent";
-import AdminClinics from "@/pages/admin/Clinics";
 import AdminIscrizioni from "@/pages/admin/Iscrizioni";
-import AdminNewsletter from "@/pages/admin/Newsletter";
 import NotFound from "@/pages/not-found";
 import { AdminLayout } from "@/components/AdminLayout";
 
@@ -47,13 +40,6 @@ function Router() {
             {user?.isAdmin ? (
               <AdminLayout>
                 <AdminDashboard />
-              </AdminLayout>
-            ) : <NotFound />}
-          </Route>
-          <Route path="/admin/slider">
-            {user?.isAdmin ? (
-              <AdminLayout>
-                <AdminHeroSlider />
               </AdminLayout>
             ) : <NotFound />}
           </Route>
@@ -85,13 +71,6 @@ function Router() {
               </AdminLayout>
             ) : <NotFound />}
           </Route>
-          <Route path="/admin/clinic">
-            {user?.isAdmin ? (
-              <AdminLayout>
-                <AdminClinics />
-              </AdminLayout>
-            ) : <NotFound />}
-          </Route>
           <Route path="/admin/corsi">
             {user?.isAdmin ? (
               <AdminLayout>
@@ -113,22 +92,6 @@ function Router() {
               </AdminLayout>
             ) : <NotFound />}
           </Route>
-          <Route path="/admin/newsletter">
-            {user?.isAdmin ? (
-              <AdminLayout>
-                <AdminNewsletter />
-              </AdminLayout>
-            ) : <NotFound />}
-          </Route>
-          <Route path="/admin/eventi">
-            {user?.isAdmin ? (
-              <AdminLayout>
-                <div className="py-20 text-center text-muted-foreground">
-                  Gestione Eventi - In sviluppo
-                </div>
-              </AdminLayout>
-            ) : <NotFound />}
-          </Route>
           <Route component={NotFound} />
         </Switch>
       </div>
@@ -142,11 +105,6 @@ function Router() {
         <Switch>
           {/* Public routes */}
           <Route path="/" component={Landing} />
-          <Route path="/corsi" component={Courses} />
-          <Route path="/corsi/:id/player" component={CoursePlayer} />
-          <Route path="/corsi/:id" component={CourseInfo} />
-          <Route path="/clinic" component={Clinic} />
-          <Route path="/clinic/:id" component={ClinicDetail} />
           <Route path="/community" component={Community} />
           
           {/* Auth routes */}
@@ -155,6 +113,7 @@ function Router() {
           
           {/* Protected routes */}
           <Route path="/dashboard" component={Dashboard} />
+          <Route path="/corsi/:id/player" component={CoursePlayer} />
           
           {/* Dynamic custom pages */}
           <Route path="/p/:slug" component={DynamicPage} />
