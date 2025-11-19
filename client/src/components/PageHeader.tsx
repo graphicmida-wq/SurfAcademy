@@ -26,7 +26,7 @@ export function PageHeader({ imageUrl, title, subtitle, paddingTop = 'py-16', pa
       )}
       <div className={`absolute inset-0 flex flex-col items-center justify-center px-4 text-center ${paddingClass}`}>
         <h1 
-          className="text-4xl md:text-5xl lg:text-6xl font-bold text-white pt-[-16px] pb-[-16px] mt-[6px] mb-[6px]"
+          className="text-4xl md:text-5xl lg:text-6xl font-bold text-white pt-[-16px] pb-[-16px] mt-[6px] mb-[6px] uppercase"
           data-testid="page-header-title"
         >
           {title}
