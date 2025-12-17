@@ -264,6 +264,44 @@ export class ObjectStorageService {
       requestedPermission: requestedPermission ?? ObjectPermission.READ,
     });
   }
+
+  // Copy a file from private to public directory and return the public URL
+  async copyToPublic(fileId: string): Promise<string> {
+    const privateDir = this.getPrivateObjectDir();
+    const publicPaths = this.getPublicObjectSearchPaths();
+    
+    if (!publicPaths || publicPaths.length === 0) {
+      throw new Error("PUBLIC_OBJECT_SEARCH_PATHS not configured");
+    }
+    
+    const { bucketName } = parseObjectPath(privateDir);
+    const bucket = objectStorageClient.bucket(bucketName);
+    
+    const sourceObjectName = `.private/uploads/${fileId}`;
+    const destObjectName = `public/uploads/${fileId}`;
+    
+    const sourceFile = bucket.file(sourceObjectName);
+    const destFile = bucket.file(destObjectName);
+    
+    // Check if source exists
+    const [sourceExists] = await sourceFile.exists();
+    if (!sourceExists) {
+      throw new Error(`Source file not found: ${sourceObjectName}`);
+    }
+    
+    // Check if destination already exists
+    const [destExists] = await destFile.exists();
+    if (!destExists) {
+      // Copy the file
+      await sourceFile.copy(destFile);
+      console.log(`Copied ${sourceObjectName} to ${destObjectName}`);
+    } else {
+      console.log(`File already exists: ${destObjectName}`);
+    }
+    
+    // Return the public URL
+    return `https://storage.googleapis.com/${bucketName}/${destObjectName}`;
+  }
 }
 
 function parseObjectPath(path: string): { bucketName: string; objectName: string } {

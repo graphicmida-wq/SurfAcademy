@@ -1161,6 +1161,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin endpoint to migrate images from private to public directory
+  app.post("/api/admin/migrate-images", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const results: { original: string; newUrl: string; success: boolean; error?: string }[] = [];
+      
+      // Get all image URLs from page_headers and hero_slides
+      const pageHeaders = await storage.getAllPageHeaders();
+      const heroSlides = await storage.getAllHeroSlides();
+      
+      // Extract unique file IDs from /objects/uploads/ paths
+      const fileIds: string[] = [];
+      
+      for (const header of pageHeaders) {
+        if (header.imageUrl?.startsWith('/objects/uploads/')) {
+          const fileId = header.imageUrl.replace('/objects/uploads/', '');
+          if (!fileIds.includes(fileId)) {
+            fileIds.push(fileId);
+          }
+        }
+      }
+      
+      for (const slide of heroSlides) {
+        if (slide.mediaUrl?.startsWith('/objects/uploads/')) {
+          const fileId = slide.mediaUrl.replace('/objects/uploads/', '');
+          if (!fileIds.includes(fileId)) {
+            fileIds.push(fileId);
+          }
+        }
+      }
+      
+      console.log(`Found ${fileIds.length} unique files to migrate`);
+      
+      // Copy each file to public directory
+      for (const fileId of fileIds) {
+        try {
+          const publicUrl = await objectStorageService.copyToPublic(fileId);
+          results.push({ original: fileId, newUrl: publicUrl, success: true });
+          
+          // Update database references
+          await storage.updateImageUrls(fileId, publicUrl);
+        } catch (error: any) {
+          console.error(`Error migrating ${fileId}:`, error.message);
+          results.push({ original: fileId, newUrl: '', success: false, error: error.message });
+        }
+      }
+      
+      res.json({ 
+        message: `Migrated ${results.filter(r => r.success).length}/${fileIds.length} files`,
+        results 
+      });
+    } catch (error) {
+      console.error("Error migrating images:", error);
+      res.status(500).json({ message: "Failed to migrate images" });
+    }
+  });
+
   app.get("/objects/*", async (req: any, res) => {
     try {
       const objectPath = `/objects/${req.params[0]}`;

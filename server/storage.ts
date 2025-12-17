@@ -168,6 +168,9 @@ export interface IStorage {
   upsertPageHeader(header: InsertPageHeader): Promise<PageHeader>;
   deletePageHeader(page: string): Promise<void>;
   
+  // Image URL migration helper
+  updateImageUrls(fileId: string, newUrl: string): Promise<void>;
+  
   // Custom page operations
   getAllCustomPages(publishedOnly?: boolean): Promise<CustomPage[]>;
   getCustomPageBySlug(slug: string): Promise<CustomPage | undefined>;
@@ -805,6 +808,20 @@ export class DatabaseStorage implements IStorage {
 
   async deletePageHeader(page: string): Promise<void> {
     await db.delete(pageHeaders).where(eq(pageHeaders.page, page));
+  }
+
+  async updateImageUrls(fileId: string, newUrl: string): Promise<void> {
+    const oldPattern = `/objects/uploads/${fileId}`;
+    
+    // Update page_headers
+    await db.update(pageHeaders)
+      .set({ imageUrl: newUrl })
+      .where(eq(pageHeaders.imageUrl, oldPattern));
+    
+    // Update hero_slides
+    await db.update(heroSlides)
+      .set({ mediaUrl: newUrl })
+      .where(eq(heroSlides.mediaUrl, oldPattern));
   }
 
   // ========== Custom Page Operations ==========
