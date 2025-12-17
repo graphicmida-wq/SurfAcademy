@@ -51,6 +51,34 @@ export async function seedProductionDatabase() {
     const seedData = JSON.parse(readFileSync(dataPath, "utf-8"));
     console.log(`📦 Loading seed data from ${seedData.exportedAt}`);
 
+    // Helper function to convert timestamp strings to Date objects
+    const convertDates = (obj: any) => {
+      if (!obj || typeof obj !== 'object') return obj;
+      if (Array.isArray(obj)) {
+        return obj.map(convertDates);
+      }
+      const result: any = {};
+      for (const key of Object.keys(obj)) {
+        const value = obj[key];
+        // Check if value looks like an ISO timestamp string
+        if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(value)) {
+          result[key] = new Date(value);
+        } else if (typeof value === 'object') {
+          result[key] = convertDates(value);
+        } else {
+          result[key] = value;
+        }
+      }
+      return result;
+    };
+
+    // Convert all timestamp strings to Date objects
+    if (seedData.heroSlides) seedData.heroSlides = convertDates(seedData.heroSlides);
+    if (seedData.pageHeaders) seedData.pageHeaders = convertDates(seedData.pageHeaders);
+    if (seedData.courses) seedData.courses = convertDates(seedData.courses);
+    if (seedData.customPages) seedData.customPages = convertDates(seedData.customPages);
+    if (seedData.pageBlocks) seedData.pageBlocks = convertDates(seedData.pageBlocks);
+
     // Seed hero slides
     if (seedData.heroSlides?.length > 0) {
       await db.insert(heroSlides).values(seedData.heroSlides);
