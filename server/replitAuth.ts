@@ -8,12 +8,18 @@ import memoize from "memoizee";
 import connectPg from "connect-pg-simple";
 import { storage } from "./storage";
 
-if (!process.env.REPLIT_DOMAINS) {
-  throw new Error("Environment variable REPLIT_DOMAINS not provided");
+// Check if Replit Auth is available (both REPLIT_DOMAINS and REPL_ID must exist)
+const isReplitAuthAvailable = !!(process.env.REPLIT_DOMAINS && process.env.REPL_ID);
+
+if (!isReplitAuthAvailable) {
+  console.log("⚠️  Replit Auth not available (REPLIT_DOMAINS or REPL_ID missing). Using local auth only.");
 }
 
 const getOidcConfig = memoize(
   async () => {
+    if (!isReplitAuthAvailable) {
+      throw new Error("OIDC not available - Replit Auth is disabled");
+    }
     return await client.discovery(
       new URL(process.env.ISSUER_URL ?? "https://replit.com/oidc"),
       process.env.REPL_ID!
@@ -32,9 +38,6 @@ export function getSession() {
     tableName: "sessions",
   });
   
-  // Replit dev URLs use HTTPS, so we need secure cookies
-  const isProduction = process.env.NODE_ENV === 'production';
-  
   return session({
     secret: process.env.SESSION_SECRET!,
     store: sessionStore,
@@ -42,9 +45,9 @@ export function getSession() {
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      secure: true, // Always use secure cookies (Replit uses HTTPS everywhere)
+      secure: true, // Always use secure cookies (HTTPS everywhere)
       maxAge: sessionTtl,
-      sameSite: 'lax', // Use 'lax' for better compatibility
+      sameSite: 'lax',
     },
   });
 }
@@ -75,58 +78,73 @@ export async function setupAuth(app: Express) {
   app.use(passport.initialize());
   app.use(passport.session());
 
-  const config = await getOidcConfig();
-
-  const verify: VerifyFunction = async (
-    tokens: client.TokenEndpointResponse & client.TokenEndpointResponseHelpers,
-    verified: passport.AuthenticateCallback
-  ) => {
-    const user = {};
-    updateUserSession(user, tokens);
-    await upsertUser(tokens.claims());
-    verified(null, user);
-  };
-
-  for (const domain of process.env.REPLIT_DOMAINS!.split(",")) {
-    const strategy = new Strategy(
-      {
-        name: `replitauth:${domain}`,
-        config,
-        scope: "openid email profile offline_access",
-        callbackURL: `https://${domain}/api/callback`,
-      },
-      verify,
-    );
-    passport.use(strategy);
-  }
-
+  // Serialize/deserialize users (works for both local and Replit auth)
   passport.serializeUser((user: Express.User, cb) => cb(null, user));
   passport.deserializeUser((user: Express.User, cb) => cb(null, user));
 
-  app.get("/api/login", (req, res, next) => {
-    passport.authenticate(`replitauth:${req.hostname}`, {
-      prompt: "login consent",
-      scope: ["openid", "email", "profile", "offline_access"],
-    })(req, res, next);
-  });
+  // Only setup Replit OIDC if available
+  if (isReplitAuthAvailable) {
+    console.log("✅ Replit Auth enabled - setting up OIDC strategies");
+    
+    const config = await getOidcConfig();
 
-  app.get("/api/callback", (req, res, next) => {
-    passport.authenticate(`replitauth:${req.hostname}`, {
-      successReturnToOrRedirect: "/",
-      failureRedirect: "/api/login",
-    })(req, res, next);
-  });
+    const verify: VerifyFunction = async (
+      tokens: client.TokenEndpointResponse & client.TokenEndpointResponseHelpers,
+      verified: passport.AuthenticateCallback
+    ) => {
+      const user = {};
+      updateUserSession(user, tokens);
+      await upsertUser(tokens.claims());
+      verified(null, user);
+    };
 
-  app.get("/api/logout", (req, res) => {
-    req.logout(() => {
-      res.redirect(
-        client.buildEndSessionUrl(config, {
-          client_id: process.env.REPL_ID!,
-          post_logout_redirect_uri: `${req.protocol}://${req.hostname}`,
-        }).href
+    for (const domain of process.env.REPLIT_DOMAINS!.split(",")) {
+      const strategy = new Strategy(
+        {
+          name: `replitauth:${domain}`,
+          config,
+          scope: "openid email profile offline_access",
+          callbackURL: `https://${domain}/api/callback`,
+        },
+        verify,
       );
+      passport.use(strategy);
+    }
+
+    app.get("/api/login", (req, res, next) => {
+      passport.authenticate(`replitauth:${req.hostname}`, {
+        prompt: "login consent",
+        scope: ["openid", "email", "profile", "offline_access"],
+      })(req, res, next);
     });
-  });
+
+    app.get("/api/callback", (req, res, next) => {
+      passport.authenticate(`replitauth:${req.hostname}`, {
+        successReturnToOrRedirect: "/",
+        failureRedirect: "/api/login",
+      })(req, res, next);
+    });
+
+    app.get("/api/logout", (req, res) => {
+      req.logout(() => {
+        res.redirect(
+          client.buildEndSessionUrl(config, {
+            client_id: process.env.REPL_ID!,
+            post_logout_redirect_uri: `${req.protocol}://${req.hostname}`,
+          }).href
+        );
+      });
+    });
+  } else {
+    console.log("ℹ️  Local auth only - Replit OIDC routes not registered");
+    
+    // Simple logout for local auth
+    app.get("/api/logout", (req, res) => {
+      req.logout(() => {
+        res.redirect("/");
+      });
+    });
+  }
 }
 
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
@@ -153,6 +171,12 @@ export const isAuthenticated: RequestHandler = async (req, res, next) => {
 
   const refreshToken = user.refresh_token;
   if (!refreshToken) {
+    res.status(401).json({ message: "Unauthorized" });
+    return;
+  }
+
+  // Only try to refresh if Replit Auth is available
+  if (!isReplitAuthAvailable) {
     res.status(401).json({ message: "Unauthorized" });
     return;
   }
