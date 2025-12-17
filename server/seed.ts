@@ -52,24 +52,31 @@ export async function seedProductionDatabase() {
     console.log(`📦 Loading seed data from ${seedData.exportedAt}`);
 
     // Helper function to convert timestamp strings to Date objects
-    const convertDates = (obj: any) => {
-      if (!obj || typeof obj !== 'object') return obj;
+    const convertDates = (obj: any): any => {
+      if (obj === null || obj === undefined) return obj;
+      // Preserve existing Date instances
+      if (obj instanceof Date) return obj;
+      // Handle arrays
       if (Array.isArray(obj)) {
         return obj.map(convertDates);
       }
-      const result: any = {};
-      for (const key of Object.keys(obj)) {
-        const value = obj[key];
-        // Check if value looks like an ISO timestamp string
-        if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(value)) {
-          result[key] = new Date(value);
-        } else if (typeof value === 'object') {
-          result[key] = convertDates(value);
-        } else {
-          result[key] = value;
+      // Handle plain objects only
+      if (typeof obj === 'object') {
+        const result: any = {};
+        for (const key of Object.keys(obj)) {
+          const value = obj[key];
+          // Check if value looks like an ISO timestamp string
+          if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(value)) {
+            result[key] = new Date(value);
+          } else if (typeof value === 'object' && value !== null) {
+            result[key] = convertDates(value);
+          } else {
+            result[key] = value;
+          }
         }
+        return result;
       }
-      return result;
+      return obj;
     };
 
     // Convert all timestamp strings to Date objects
