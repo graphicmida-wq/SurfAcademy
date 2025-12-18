@@ -1045,6 +1045,11 @@ export class DatabaseStorage implements IStorage {
     return product;
   }
 
+  async getCourseProductByCourseId(courseId: string): Promise<CourseProduct | undefined> {
+    const [product] = await db.select().from(courseProducts).where(eq(courseProducts.courseId, courseId));
+    return product;
+  }
+
   async getCoursesByWooProductIds(wooProductIds: number[]): Promise<string[]> {
     if (wooProductIds.length === 0) return [];
     const products = await db.select().from(courseProducts).where(

@@ -47,6 +47,7 @@ export default function AdminCourses() {
   const { toast } = useToast();
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [wooProductId, setWooProductId] = useState<string>("");
 
   const { data: courses = [], isLoading: coursesLoading } = useQuery<Course[]>({
     queryKey: ["/api/admin/courses"],
@@ -152,7 +153,7 @@ export default function AdminCourses() {
     },
   });
 
-  const handleEdit = (course: Course) => {
+  const handleEdit = async (course: Course) => {
     setEditingCourse(course);
     form.reset({
       title: course.title,
@@ -172,11 +173,26 @@ export default function AdminCourses() {
       imageGallery: course.imageGallery || [],
       activationStatus: course.activationStatus || "active",
     });
+    
+    // Load WooCommerce product mapping
+    try {
+      const res = await fetch(`/api/admin/courses/${course.id}/woo-product`, { credentials: 'include' });
+      if (res.ok) {
+        const mapping = await res.json();
+        setWooProductId(mapping?.wooProductId?.toString() || "");
+      } else {
+        setWooProductId("");
+      }
+    } catch {
+      setWooProductId("");
+    }
+    
     setIsDialogOpen(true);
   };
 
   const handleNewCourse = () => {
     setEditingCourse(null);
+    setWooProductId("");
     form.reset({
       title: "",
       description: "",
@@ -198,11 +214,31 @@ export default function AdminCourses() {
     setIsDialogOpen(true);
   };
 
-  const handleSubmit = (data: InsertCourse) => {
+  const saveWooProductMapping = async (courseId: string) => {
+    try {
+      await apiRequest("PUT", `/api/admin/courses/${courseId}/woo-product`, {
+        wooProductId: wooProductId ? Number(wooProductId) : null,
+      });
+    } catch (error) {
+      console.error("Error saving WooCommerce product mapping:", error);
+    }
+  };
+
+  const handleSubmit = async (data: InsertCourse) => {
     if (editingCourse) {
-      updateMutation.mutate({ id: editingCourse.id, data });
+      updateMutation.mutate({ id: editingCourse.id, data }, {
+        onSuccess: () => {
+          saveWooProductMapping(editingCourse.id);
+        }
+      });
     } else {
-      createMutation.mutate(data);
+      createMutation.mutate(data, {
+        onSuccess: async (newCourse: Course) => {
+          if (wooProductId) {
+            await saveWooProductMapping(newCourse.id);
+          }
+        }
+      });
     }
   };
 
@@ -448,6 +484,23 @@ export default function AdminCourses() {
                       </FormItem>
                     )}
                   />
+
+                  <FormItem>
+                    <FormLabel>ID Prodotto WooCommerce</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number"
+                        value={wooProductId}
+                        onChange={(e) => setWooProductId(e.target.value)}
+                        placeholder="123"
+                        data-testid="input-woo-product-id"
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      ID numerico del prodotto (per iscrizione automatica via webhook). 
+                      Lo trovi in WooCommerce → Prodotti → passa il mouse sul prodotto → l'ID appare nell'URL (es. post=123)
+                    </FormDescription>
+                  </FormItem>
 
                   <FormField
                     control={form.control}

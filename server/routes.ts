@@ -1461,6 +1461,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get WooCommerce product mapping for a specific course
+  app.get('/api/admin/courses/:courseId/woo-product', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const mapping = await storage.getCourseProductByCourseId(req.params.courseId);
+      res.json(mapping || null);
+    } catch (error) {
+      console.error('Error fetching course product mapping:', error);
+      res.status(500).json({ message: 'Failed to fetch mapping' });
+    }
+  });
+
+  // Set/update WooCommerce product mapping for a course (upsert)
+  app.put('/api/admin/courses/:courseId/woo-product', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { wooProductId } = req.body;
+      const courseId = req.params.courseId;
+      
+      // If wooProductId is empty or null, delete existing mapping
+      if (!wooProductId) {
+        const existing = await storage.getCourseProductByCourseId(courseId);
+        if (existing) {
+          await storage.deleteCourseProduct(existing.id);
+        }
+        return res.json({ message: 'Mapping removed' });
+      }
+
+      const existing = await storage.getCourseProductByCourseId(courseId);
+      
+      if (existing) {
+        // Update existing mapping
+        const updated = await storage.updateCourseProduct(existing.id, {
+          wooProductId: Number(wooProductId),
+        });
+        res.json(updated);
+      } else {
+        // Create new mapping
+        const created = await storage.createCourseProduct({
+          wooProductId: Number(wooProductId),
+          courseId,
+        });
+        res.json(created);
+      }
+    } catch (error) {
+      console.error('Error updating course product mapping:', error);
+      res.status(500).json({ message: 'Failed to update mapping' });
+    }
+  });
+
   // ========== Newsletter Routes ==========
   registerNewsletterRoutes(app, isAuthenticated, isAdmin);
 
