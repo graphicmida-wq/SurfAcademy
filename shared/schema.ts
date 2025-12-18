@@ -203,6 +203,29 @@ export const referralEarnings = pgTable("referral_earnings", {
 });
 
 // ============================================================================
+// WOOCOMMERCE INTEGRATION TABLES
+// ============================================================================
+
+export const courseProducts = pgTable("course_products", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  wooProductId: integer("woo_product_id").notNull().unique(),
+  courseId: varchar("course_id").notNull().references(() => courses.id, { onDelete: 'cascade' }),
+  productName: varchar("product_name"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const woocommerceWebhookLogs = pgTable("woocommerce_webhook_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  orderId: integer("order_id").notNull(),
+  orderStatus: varchar("order_status"),
+  customerEmail: varchar("customer_email"),
+  productIds: text("product_ids").array(),
+  processed: boolean("processed").default(false),
+  error: text("error"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// ============================================================================
 // COMMUNITY TABLES
 // ============================================================================
 
@@ -817,3 +840,20 @@ export type InsertNewsletterCampaign = z.infer<typeof insertNewsletterCampaignSc
 
 export type NewsletterEvent = typeof newsletterEvents.$inferSelect;
 export type InsertNewsletterEvent = z.infer<typeof insertNewsletterEventSchema>;
+
+// WooCommerce integration schemas
+export const insertCourseProductSchema = createInsertSchema(courseProducts).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertWoocommerceWebhookLogSchema = createInsertSchema(woocommerceWebhookLogs).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type CourseProduct = typeof courseProducts.$inferSelect;
+export type InsertCourseProduct = z.infer<typeof insertCourseProductSchema>;
+
+export type WoocommerceWebhookLog = typeof woocommerceWebhookLogs.$inferSelect;
+export type InsertWoocommerceWebhookLog = z.infer<typeof insertWoocommerceWebhookLogSchema>;

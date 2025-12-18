@@ -47,7 +47,7 @@ export default function AuthPrompt({ onSuccess, title, description }: AuthPrompt
   });
 
   const loginMutation = useMutation({
-    mutationFn: (data: LoginForm) => apiRequest("POST", "/api/local-login", data),
+    mutationFn: (data: LoginForm) => apiRequest("POST", "/api/login", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
       toast({ title: "Login effettuato con successo!" });

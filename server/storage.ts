@@ -22,6 +22,8 @@ import {
   newsletterContacts,
   newsletterCampaigns,
   newsletterEvents,
+  courseProducts,
+  woocommerceWebhookLogs,
   type User,
   type UpsertUser,
   type Course,
@@ -62,6 +64,10 @@ import {
   type InsertNewsletterCampaign,
   type NewsletterEvent,
   type InsertNewsletterEvent,
+  type CourseProduct,
+  type InsertCourseProduct,
+  type WoocommerceWebhookLog,
+  type InsertWoocommerceWebhookLog,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql } from "drizzle-orm";
@@ -1027,6 +1033,47 @@ export class DatabaseStorage implements IStorage {
 
   async getEventsByContact(contactId: string): Promise<NewsletterEvent[]> {
     return await db.select().from(newsletterEvents).where(eq(newsletterEvents.contactId, contactId));
+  }
+
+  // ========== WooCommerce Integration Operations ==========
+  async getAllCourseProducts(): Promise<CourseProduct[]> {
+    return await db.select().from(courseProducts);
+  }
+
+  async getCourseProductByWooId(wooProductId: number): Promise<CourseProduct | undefined> {
+    const [product] = await db.select().from(courseProducts).where(eq(courseProducts.wooProductId, wooProductId));
+    return product;
+  }
+
+  async getCoursesByWooProductIds(wooProductIds: number[]): Promise<string[]> {
+    if (wooProductIds.length === 0) return [];
+    const products = await db.select().from(courseProducts).where(
+      sql`${courseProducts.wooProductId} = ANY(${wooProductIds})`
+    );
+    return products.map(p => p.courseId);
+  }
+
+  async createCourseProduct(product: InsertCourseProduct): Promise<CourseProduct> {
+    const [newProduct] = await db.insert(courseProducts).values(product).returning();
+    return newProduct;
+  }
+
+  async updateCourseProduct(id: string, product: Partial<InsertCourseProduct>): Promise<CourseProduct> {
+    const [updated] = await db.update(courseProducts).set(product).where(eq(courseProducts.id, id)).returning();
+    return updated;
+  }
+
+  async deleteCourseProduct(id: string): Promise<void> {
+    await db.delete(courseProducts).where(eq(courseProducts.id, id));
+  }
+
+  async createWoocommerceWebhookLog(log: InsertWoocommerceWebhookLog): Promise<WoocommerceWebhookLog> {
+    const [newLog] = await db.insert(woocommerceWebhookLogs).values(log).returning();
+    return newLog;
+  }
+
+  async getWoocommerceWebhookLogs(): Promise<WoocommerceWebhookLog[]> {
+    return await db.select().from(woocommerceWebhookLogs).orderBy(desc(woocommerceWebhookLogs.createdAt)).limit(100);
   }
 }
 

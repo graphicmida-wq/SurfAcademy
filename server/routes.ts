@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import bcrypt from "bcrypt";
+import { handleSSOLogin, loginWithWordPressCredentials } from "./wordpressAuth";
 import {
   insertCourseSchema,
   insertModuleSchema,
@@ -106,7 +107,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Local login endpoint
+  // SSO endpoint - receives JWT token from WordPress redirect
+  app.get('/sso', async (req, res) => {
+    try {
+      const token = req.query.token as string;
+      const redirect = req.query.redirect as string || '/dashboard';
+      
+      if (!token) {
+        return res.redirect('/login?error=Token mancante');
+      }
+
+      const result = await handleSSOLogin(token);
+      
+      if (!result.success || !result.user) {
+        return res.redirect(`/login?error=${encodeURIComponent(result.error || 'Errore SSO')}`);
+      }
+
+      // Create session for the user
+      (req as any).login({ id: result.user.id }, (err: any) => {
+        if (err) {
+          console.error("SSO session error:", err);
+          return res.redirect('/login?error=Errore sessione');
+        }
+        res.redirect(redirect);
+      });
+    } catch (error) {
+      console.error("SSO error:", error);
+      res.redirect('/login?error=Errore SSO');
+    }
+  });
+
+  // WordPress login endpoint - verifies credentials against WordPress API
+  app.post('/api/login', async (req, res) => {
+    try {
+      const { email, password } = req.body;
+      
+      if (!email || !password) {
+        return res.status(400).json({ message: "Email e password sono obbligatori" });
+      }
+
+      // Verify credentials against WordPress
+      const result = await loginWithWordPressCredentials(email, password);
+      
+      if (!result.success || !result.user) {
+        return res.status(401).json({ message: result.error || "Credenziali non valide" });
+      }
+
+      // Create session
+      (req as any).login({ id: result.user.id }, (err: any) => {
+        if (err) {
+          return res.status(500).json({ message: "Errore durante il login" });
+        }
+        res.json({ success: true, message: "Login effettuato", user: result.user });
+      });
+    } catch (error) {
+      console.error("Login error:", error);
+      res.status(500).json({ message: "Errore durante il login" });
+    }
+  });
+
+  // Legacy local login endpoint (kept for backward compatibility during transition)
   app.post('/api/local-login', async (req, res) => {
     try {
       const { email, password } = req.body;
@@ -115,19 +175,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Email e password sono obbligatori" });
       }
 
-      // Find user
+      // First try WordPress authentication
+      const wpResult = await loginWithWordPressCredentials(email, password);
+      if (wpResult.success && wpResult.user) {
+        (req as any).login({ id: wpResult.user.id }, (err: any) => {
+          if (err) {
+            return res.status(500).json({ message: "Errore durante il login" });
+          }
+          res.json({ success: true, message: "Login effettuato" });
+        });
+        return;
+      }
+
+      // Fallback to local auth for existing local users (temporary)
       const user = await storage.getUserByEmail(email);
       if (!user || !user.password) {
         return res.status(401).json({ message: "Credenziali non valide" });
       }
 
-      // Verify password
       const validPassword = await bcrypt.compare(password, user.password);
       if (!validPassword) {
         return res.status(401).json({ message: "Credenziali non valide" });
       }
 
-      // Create session
       (req as any).login({ id: user.id }, (err: any) => {
         if (err) {
           return res.status(500).json({ message: "Errore durante il login" });
@@ -1240,6 +1310,154 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       console.error("Error downloading object:", error);
       res.status(500).json({ message: "Failed to download object" });
+    }
+  });
+
+  // ========== WooCommerce Webhook ==========
+  const WOOCOMMERCE_WEBHOOK_SECRET = process.env.WOOCOMMERCE_WEBHOOK_SECRET;
+
+  app.post('/webhooks/woocommerce', async (req, res) => {
+    try {
+      const signature = req.headers['x-wc-webhook-signature'] as string;
+      
+      // Require signature verification when secret is configured
+      if (WOOCOMMERCE_WEBHOOK_SECRET) {
+        if (!signature) {
+          console.warn('WooCommerce webhook missing signature');
+          return res.status(401).json({ message: 'Missing signature' });
+        }
+        
+        const crypto = await import('crypto');
+        const body = JSON.stringify(req.body);
+        const expectedSignature = crypto
+          .createHmac('sha256', WOOCOMMERCE_WEBHOOK_SECRET)
+          .update(body, 'utf8')
+          .digest('base64');
+        
+        if (signature !== expectedSignature) {
+          console.warn('WooCommerce webhook signature mismatch');
+          return res.status(401).json({ message: 'Invalid signature' });
+        }
+      } else {
+        console.warn('WooCommerce webhook received without secret configured - accepting for development only');
+      }
+
+      const order = req.body;
+      const orderId = order.id;
+      const orderStatus = order.status;
+      const customerEmail = order.billing?.email;
+      const lineItems = order.line_items || [];
+      const productIds = lineItems.map((item: any) => item.product_id);
+
+      // Log the webhook
+      await storage.createWoocommerceWebhookLog({
+        orderId,
+        orderStatus,
+        customerEmail,
+        productIds: productIds.map(String),
+        processed: false,
+      });
+
+      // Only process completed orders
+      if (orderStatus !== 'completed') {
+        console.log(`WooCommerce webhook: Order ${orderId} status is ${orderStatus}, skipping enrollment`);
+        return res.json({ message: 'Order not completed, skipping' });
+      }
+
+      if (!customerEmail) {
+        console.error('WooCommerce webhook: No customer email in order');
+        return res.status(400).json({ message: 'No customer email' });
+      }
+
+      // Find or create user based on WordPress user ID or email
+      const wpUserId = order.customer_id;
+      const userId = wpUserId ? `wp_${wpUserId}` : `wp_${customerEmail.replace(/[^a-zA-Z0-9]/g, '_')}`;
+      
+      await storage.upsertUser({
+        id: userId,
+        email: customerEmail,
+        firstName: order.billing?.first_name || null,
+        lastName: order.billing?.last_name || null,
+      });
+
+      // Get course IDs for the purchased products
+      const courseIds = await storage.getCoursesByWooProductIds(productIds);
+
+      if (courseIds.length === 0) {
+        console.log(`WooCommerce webhook: No course mappings found for products ${productIds.join(', ')}`);
+        return res.json({ message: 'No course mappings found' });
+      }
+
+      // Create enrollments for each course
+      let enrollmentsCreated = 0;
+      for (const courseId of courseIds) {
+        const existingEnrollment = await storage.getEnrollmentByUserAndCourse(userId, courseId);
+        if (!existingEnrollment) {
+          await storage.createEnrollment({ userId, courseId });
+          enrollmentsCreated++;
+          console.log(`WooCommerce webhook: Created enrollment for user ${userId} in course ${courseId}`);
+        }
+      }
+
+      // Update log as processed
+      await storage.createWoocommerceWebhookLog({
+        orderId,
+        orderStatus,
+        customerEmail,
+        productIds: productIds.map(String),
+        processed: true,
+      });
+
+      res.json({ 
+        message: 'Webhook processed successfully',
+        enrollmentsCreated,
+        courses: courseIds 
+      });
+    } catch (error) {
+      console.error('WooCommerce webhook error:', error);
+      res.status(500).json({ message: 'Webhook processing failed' });
+    }
+  });
+
+  // Admin endpoint to manage course-product mappings
+  app.get('/api/admin/course-products', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const mappings = await storage.getAllCourseProducts();
+      res.json(mappings);
+    } catch (error) {
+      console.error('Error fetching course products:', error);
+      res.status(500).json({ message: 'Failed to fetch mappings' });
+    }
+  });
+
+  app.post('/api/admin/course-products', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { wooProductId, courseId, productName } = req.body;
+      
+      if (!wooProductId || !courseId) {
+        return res.status(400).json({ message: 'wooProductId and courseId are required' });
+      }
+
+      const mapping = await storage.createCourseProduct({
+        wooProductId: Number(wooProductId),
+        courseId,
+        productName: productName || null,
+      });
+
+      res.json(mapping);
+    } catch (error) {
+      console.error('Error creating course product:', error);
+      res.status(500).json({ message: 'Failed to create mapping' });
+    }
+  });
+
+  app.delete('/api/admin/course-products/:id', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      await storage.deleteCourseProduct(req.params.id);
+      res.json({ message: 'Mapping deleted' });
+    } catch (error) {
+      console.error('Error deleting course product:', error);
+      res.status(500).json({ message: 'Failed to delete mapping' });
     }
   });
 

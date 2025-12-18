@@ -40,3 +40,9 @@ waitForPort = 5000
 
 [agent]
 integrations = ["javascript_stripe:1.0.0", "javascript_log_in_with_replit:1.0.0", "javascript_database:1.0.0", "javascript_object_storage:1.0.0", "sendgrid:1.0.0"]
+
+[userenv]
+
+[userenv.shared]
+WORDPRESS_URL = "https://www.scuoladilongboard.it"
+JWT_SECRET = "yJr1QhF6OIY+8iLaHjS/08FQGl+32yJg2ihp+AnoXKw="

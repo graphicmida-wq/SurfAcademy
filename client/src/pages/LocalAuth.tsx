@@ -43,11 +43,11 @@ export default function LocalAuth() {
   });
 
   const loginMutation = useMutation({
-    mutationFn: (data: LoginForm) => apiRequest("POST", "/api/local-login", data),
+    mutationFn: (data: LoginForm) => apiRequest("POST", "/api/login", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
       toast({ title: "Login effettuato con successo!" });
-      navigate("/");
+      navigate("/dashboard");
     },
     onError: (error: any) => {
       toast({

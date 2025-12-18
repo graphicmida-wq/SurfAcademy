@@ -32,7 +32,17 @@ PostgreSQL, hosted on Neon, is the primary database, accessed via `@neondatabase
 
 ### Authentication & Authorization
 
-The platform supports dual authentication: Replit Auth (OpenID Connect) and local email/password, both using Passport.js strategies. Session management uses Express sessions stored in PostgreSQL with secure HTTP-only cookies. Authorization is handled via `userLevel` and `isAdmin` fields. Admin users have full access. Security includes `httpOnly` and `secure` cookie flags, bcrypt for password hashing, and CSRF protection.
+**WordPress SSO Integration**: The platform uses WordPress as the single source of truth for user authentication. Two login methods are supported:
+
+1. **SSO Redirect** (`/sso?token=XXX`): WordPress generates a JWT token and redirects users to Replit. The JWT contains user ID, email, name, and avatar.
+
+2. **Direct Login** (`/api/login`): Users can log in directly from the app using WordPress credentials. The app verifies credentials against WordPress REST API.
+
+**WooCommerce Integration**: When a customer completes a purchase, WooCommerce sends a webhook to `/webhooks/woocommerce`. The webhook creates the user (if new) and enrolls them in the purchased courses based on product-to-course mappings stored in `courseProducts` table.
+
+**User IDs**: All users are prefixed with `wp_` followed by their WordPress user ID (e.g., `wp_123`). This ensures consistency between WordPress and Replit.
+
+Session management uses Express sessions stored in PostgreSQL with secure HTTP-only cookies. Authorization is handled via `userLevel` and `isAdmin` fields. Admin users have full access. Security includes `httpOnly` and `secure` cookie flags and JWT verification with shared secret.
 
 ### UI/UX Decisions
 
