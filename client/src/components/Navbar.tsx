@@ -1,11 +1,23 @@
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/components/ThemeProvider";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Moon, Sun, Menu, X, User, LogOut } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Moon, Sun, Menu, X, User, LogOut, BookOpen, ChevronDown } from "lucide-react";
 import { useState, useEffect } from "react";
 import logoUrl from "@assets/web_logo_1760523001836.webp";
 import logoLightUrl from "@assets/chiaro1_1760538494784.webp";
+import type { Enrollment, Course } from "@shared/schema";
+
+type EnrollmentWithCourse = Enrollment & { course: Course };
+
+const WORDPRESS_URL = "https://scuoladilongboard.it";
 
 export function Navbar() {
   const { isAuthenticated, user } = useAuth();
@@ -13,12 +25,16 @@ export function Navbar() {
   const [location] = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  const [isOnHero, setIsOnHero] = useState(false);
+
+  // Fetch user's enrolled courses
+  const { data: enrollments } = useQuery<EnrollmentWithCourse[]>({
+    queryKey: ["/api/enrollments"],
+    enabled: isAuthenticated,
+  });
 
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 10);
-      setIsOnHero(window.scrollY < window.innerHeight - 100);
     };
     
     handleScroll();
@@ -26,20 +42,7 @@ export function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const isLandingPage = location === "/";
   const isAdminPage = location.startsWith("/admin");
-  const hasPageHeader = !isAdminPage; // All non-admin pages have headers now
-
-  const navLinks = [
-    { href: "/", label: "Home" },
-    { href: "/community", label: "Community" },
-    ...(isAuthenticated ? [{ href: "/dashboard", label: "Dashboard" }] : []),
-  ];
-
-  const transparentNav = hasPageHeader && isOnHero && !isScrolled;
-  const currentLogo = transparentNav ? logoLightUrl : logoUrl;
-  const textColor = transparentNav ? "text-white" : "text-foreground";
-  const textColorMuted = transparentNav ? "text-white/80" : "text-foreground/80";
 
   return (
     <>
@@ -56,38 +59,71 @@ export function Navbar() {
         </div>
       )}
       
-      <nav className={`fixed ${user?.isAdmin && !isAdminPage ? 'top-8' : 'top-0'} z-50 w-full transition-all duration-300 ${
-        transparentNav 
-          ? "border-b-0 bg-transparent" 
-          : "border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
-      }`}>
+      <nav className={`fixed ${user?.isAdmin && !isAdminPage ? 'top-8' : 'top-0'} z-50 w-full transition-all duration-300 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60`}>
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-28 items-center justify-between py-2">
-          {/* Logo */}
-          <Link 
-            href="/" 
+          {/* Logo - links to WordPress */}
+          <a 
+            href={WORDPRESS_URL}
             className="flex items-center space-x-2 hover-elevate active-elevate-2 rounded-lg px-2 py-1 -ml-2" 
             data-testid="link-home"
           >
-            <img src={currentLogo} alt="Scuola di Longboard" className="h-24 w-auto" />
-          </Link>
+            <img src={logoUrl} alt="Scuola di Longboard" className="h-24 w-auto" />
+          </a>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex md:items-center md:space-x-1">
-            {navLinks.map((link) => (
+            {/* Home - links to WordPress */}
+            <a 
+              href={WORDPRESS_URL}
+              className="px-3 py-2 text-sm font-medium rounded-md transition-colors hover-elevate active-elevate-2 text-foreground/80 hover:text-foreground"
+              data-testid="link-home-wp"
+            >
+              Home
+            </a>
+
+            {/* Dashboard */}
+            {isAuthenticated && (
               <Link 
-                key={link.href} 
-                href={link.href}
+                href="/dashboard"
                 className={`px-3 py-2 text-sm font-medium rounded-md transition-colors hover-elevate active-elevate-2 ${
-                  location === link.href
-                    ? transparentNav ? "text-white" : "text-primary"
-                    : transparentNav ? "text-white/90 hover:text-white" : "text-foreground/80 hover:text-foreground"
+                  location === "/dashboard" ? "text-primary" : "text-foreground/80 hover:text-foreground"
                 }`}
-                data-testid={`link-${link.label.toLowerCase()}`}
+                data-testid="link-dashboard"
               >
-                {link.label}
+                Dashboard
               </Link>
-            ))}
+            )}
+
+            {/* I Miei Corsi Dropdown */}
+            {isAuthenticated && enrollments && enrollments.length > 0 && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    className="px-3 py-2 text-sm font-medium text-foreground/80 hover:text-foreground"
+                    data-testid="dropdown-my-courses"
+                  >
+                    <BookOpen className="h-4 w-4 mr-2" />
+                    I Miei Corsi
+                    <ChevronDown className="h-4 w-4 ml-1" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start">
+                  {enrollments.map((enrollment) => (
+                    <DropdownMenuItem key={enrollment.id} asChild>
+                      <Link 
+                        href={`/corsi/${enrollment.course.id}/player`}
+                        className="cursor-pointer"
+                        data-testid={`link-course-${enrollment.course.id}`}
+                      >
+                        {enrollment.course.title}
+                      </Link>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
 
           {/* Desktop Actions */}
@@ -97,14 +133,13 @@ export function Navbar() {
               size="icon"
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
               data-testid="button-theme-toggle"
-              className={transparentNav ? "text-white hover:bg-white/10" : ""}
             >
               {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             </Button>
 
             {isAuthenticated ? (
               <>
-                <Button variant="ghost" size="sm" asChild className={transparentNav ? "text-white hover:bg-white/10" : ""}>
+                <Button variant="ghost" size="sm" asChild>
                   <Link href="/dashboard">
                     <span className="flex items-center gap-2" data-testid="button-profile">
                       {user?.profileImageUrl ? (
@@ -121,10 +156,9 @@ export function Navbar() {
                   </Link>
                 </Button>
                 <Button 
-                  variant={transparentNav ? "outline" : "outline"} 
+                  variant="outline" 
                   size="sm" 
                   asChild 
-                  className={transparentNav ? "text-white border-white/40 hover:bg-white/10" : ""}
                 >
                   <a href="/api/logout" data-testid="button-logout">
                     <LogOut className="h-4 w-4 mr-2" />
@@ -133,11 +167,7 @@ export function Navbar() {
                 </Button>
               </>
             ) : (
-              <Button 
-                size="sm" 
-                asChild 
-                className={transparentNav ? "bg-white text-primary hover:bg-white/90" : ""}
-              >
+              <Button size="sm" asChild>
                 <Link href="/login" data-testid="button-login">
                   Accedi
                 </Link>
@@ -152,7 +182,6 @@ export function Navbar() {
               size="icon"
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
               data-testid="button-theme-toggle-mobile"
-              className={transparentNav ? "text-white hover:bg-white/10" : ""}
             >
               {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             </Button>
@@ -161,7 +190,6 @@ export function Navbar() {
               size="icon"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               data-testid="button-mobile-menu"
-              className={transparentNav ? "text-white hover:bg-white/10" : ""}
             >
               {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </Button>
@@ -172,21 +200,50 @@ export function Navbar() {
         {mobileMenuOpen && (
           <div className="md:hidden border-t border-border py-4 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60" data-testid="mobile-menu">
             <div className="flex flex-col space-y-2">
-              {navLinks.map((link) => (
+              {/* Home - WordPress */}
+              <a 
+                href={WORDPRESS_URL}
+                className="px-3 py-2 text-base font-medium rounded-md transition-colors hover-elevate active-elevate-2 text-foreground/80"
+                data-testid="mobile-link-home"
+              >
+                Home
+              </a>
+
+              {/* Dashboard */}
+              {isAuthenticated && (
                 <Link 
-                  key={link.href} 
-                  href={link.href}
+                  href="/dashboard"
                   className={`px-3 py-2 text-base font-medium rounded-md transition-colors hover-elevate active-elevate-2 ${
-                    location === link.href
-                      ? "text-primary bg-primary/10"
-                      : "text-foreground/80"
+                    location === "/dashboard" ? "text-primary bg-primary/10" : "text-foreground/80"
                   }`}
                   onClick={() => setMobileMenuOpen(false)}
-                  data-testid={`mobile-link-${link.label.toLowerCase()}`}
+                  data-testid="mobile-link-dashboard"
                 >
-                  {link.label}
+                  Dashboard
                 </Link>
-              ))}
+              )}
+
+              {/* I Miei Corsi - Mobile */}
+              {isAuthenticated && enrollments && enrollments.length > 0 && (
+                <>
+                  <div className="px-3 py-2 text-sm font-semibold text-muted-foreground flex items-center gap-2">
+                    <BookOpen className="h-4 w-4" />
+                    I Miei Corsi
+                  </div>
+                  {enrollments.map((enrollment) => (
+                    <Link 
+                      key={enrollment.id}
+                      href={`/corsi/${enrollment.course.id}/player`}
+                      className="px-6 py-2 text-base font-medium rounded-md transition-colors hover-elevate active-elevate-2 text-foreground/80"
+                      onClick={() => setMobileMenuOpen(false)}
+                      data-testid={`mobile-link-course-${enrollment.course.id}`}
+                    >
+                      {enrollment.course.title}
+                    </Link>
+                  ))}
+                </>
+              )}
+
               {isAuthenticated ? (
                 <>
                   <Link 

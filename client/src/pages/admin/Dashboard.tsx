@@ -1,14 +1,13 @@
 import { Link } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Sliders, Waves, BookOpen, Mail, Calendar } from "lucide-react";
+import { BookOpen, Users, FileText, Image } from "lucide-react";
 
 export default function AdminDashboard() {
   const quickLinks = [
-    { title: "Hero Slider", icon: Sliders, href: "/admin/slider", description: "Gestisci le slide della homepage" },
-    { title: "Clinic", icon: Waves, href: "/admin/clinic", description: "Gestione Clinic" },
-    { title: "Corsi", icon: BookOpen, href: "/admin/corsi", description: "Gestione corsi" },
-    { title: "Newsletter", icon: Mail, href: "/admin/newsletter", description: "Gestione newsletter" },
-    { title: "Eventi", icon: Calendar, href: "/admin/eventi", description: "Gestione eventi" },
+    { title: "Corsi", icon: BookOpen, href: "/admin/corsi", description: "Gestione corsi e contenuti" },
+    { title: "Gestione Studenti", icon: Users, href: "/admin/iscrizioni", description: "Visualizza studenti e progressi" },
+    { title: "Pagine Custom", icon: FileText, href: "/admin/pages", description: "Gestione pagine personalizzate" },
+    { title: "Header Pagine", icon: Image, href: "/admin/page-headers", description: "Gestione immagini header" },
   ];
 
   return (

@@ -66,9 +66,9 @@ export default function Iscrizioni() {
   return (
     <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-display font-bold mb-2">Iscrizioni Utenti</h1>
+          <h1 className="text-3xl font-display font-bold mb-2">Gestione Studenti</h1>
           <p className="text-muted-foreground">
-            Monitora i progressi di tutti gli utenti iscritti ai corsi
+            Visualizza tutti gli studenti iscritti e monitora i loro progressi
           </p>
         </div>
 

@@ -9,10 +9,8 @@ import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 
 // Pages
-import Landing from "@/pages/Landing";
 import CoursePlayer from "@/pages/CoursePlayer";
 import Dashboard from "@/pages/Dashboard";
-import Community from "@/pages/Community";
 import DynamicPage from "@/pages/DynamicPage";
 import LocalAuth from "@/pages/LocalAuth";
 import AdminDashboard from "@/pages/admin/Dashboard";
@@ -98,25 +96,49 @@ function Router() {
     );
   }
 
+  // Loading state - show spinner first
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
+  // Non-authenticated users go to login
+  if (!isAuthenticated) {
+    return (
+      <div className="flex flex-col min-h-screen">
+        <main className="flex-1">
+          <Switch>
+            <Route path="/login" component={LocalAuth} />
+            <Route path="/sso" component={LocalAuth} />
+            <Route>
+              <LocalAuth />
+            </Route>
+          </Switch>
+        </main>
+      </div>
+    );
+  }
+
+  // Authenticated users
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
       <main className={`flex-1 ${hasAdminBar ? 'pt-8' : ''}`}>
         <Switch>
-          {/* Public routes */}
-          <Route path="/" component={Landing} />
-          <Route path="/community" component={Community} />
-          
-          {/* Auth routes */}
-          <Route path="/login" component={LocalAuth} />
-          <Route path="/register" component={LocalAuth} />
-          
-          {/* Protected routes */}
+          {/* Protected routes - more specific first */}
           <Route path="/dashboard" component={Dashboard} />
           <Route path="/corsi/:id/player" component={CoursePlayer} />
           
           {/* Dynamic custom pages */}
           <Route path="/p/:slug" component={DynamicPage} />
+          
+          {/* Root path redirects to dashboard for authenticated users */}
+          <Route path="/">
+            <Dashboard />
+          </Route>
           
           {/* Fallback to 404 */}
           <Route component={NotFound} />

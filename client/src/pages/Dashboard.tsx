@@ -6,53 +6,21 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Link } from "wouter";
-import { Play, Trophy, Target, Clock, Award, ArrowRight, User } from "lucide-react";
+import { Play, Trophy, Award, ArrowRight, User, ExternalLink, Camera } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { usePageHeader } from "@/hooks/usePageHeader";
 import { MediaUploadZone } from "@/components/MediaUploadZone";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
 import type { Enrollment, Course, Badge as BadgeType } from "@shared/schema";
 
-const profileSchema = z.object({
-  firstName: z.string().min(1, "Nome richiesto"),
-  lastName: z.string().min(1, "Cognome richiesto"),
-  email: z.string().email("Email non valida"),
-  profileImageUrl: z.string().optional(),
-});
+const WORDPRESS_URL = "https://scuoladilongboard.it";
 
 export default function Dashboard() {
   const { user, isAuthenticated, isLoading } = useAuth();
   const { toast } = useToast();
-  const [isEditingProfile, setIsEditingProfile] = useState(false);
-
-  const form = useForm<z.infer<typeof profileSchema>>({
-    resolver: zodResolver(profileSchema),
-    defaultValues: {
-      firstName: user?.firstName || "",
-      lastName: user?.lastName || "",
-      email: user?.email || "",
-      profileImageUrl: user?.profileImageUrl || "",
-    },
-  });
-
-  // Update form when user data loads
-  useEffect(() => {
-    if (user) {
-      form.reset({
-        firstName: user.firstName || "",
-        lastName: user.lastName || "",
-        email: user.email || "",
-        profileImageUrl: user.profileImageUrl || "",
-      });
-    }
-  }, [user, form]);
+  const [isEditingAvatar, setIsEditingAvatar] = useState(false);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -62,7 +30,7 @@ export default function Dashboard() {
         variant: "destructive",
       });
       setTimeout(() => {
-        window.location.href = "/api/login";
+        window.location.href = "/login";
       }, 500);
     }
   }, [isAuthenticated, isLoading, toast]);
@@ -77,11 +45,6 @@ export default function Dashboard() {
     enabled: isAuthenticated,
   });
 
-  const { data: exerciseProgress } = useQuery({
-    queryKey: ["/api/exercise-progress"],
-    enabled: isAuthenticated,
-  });
-
   const { data: pageHeader } = usePageHeader('dashboard');
 
   const { data: wavePointsData } = useQuery<{ balance: number }>({
@@ -91,28 +54,24 @@ export default function Dashboard() {
 
   const wavePointsBalance = wavePointsData?.balance || 0;
 
-  const updateProfileMutation = useMutation({
-    mutationFn: async (data: z.infer<typeof profileSchema>) => {
-      const res = await apiRequest("PUT", "/api/profile", data);
+  const updateAvatarMutation = useMutation({
+    mutationFn: async (profileImageUrl: string) => {
+      const res = await apiRequest("PUT", "/api/profile", { profileImageUrl });
       return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
-      toast({ title: "Profilo aggiornato con successo!" });
-      setIsEditingProfile(false);
+      toast({ title: "Avatar aggiornato con successo!" });
+      setIsEditingAvatar(false);
     },
     onError: () => {
       toast({
         title: "Errore",
-        description: "Impossibile aggiornare il profilo",
+        description: "Impossibile aggiornare l'avatar",
         variant: "destructive",
       });
     },
   });
-
-  const onSubmitProfile = (data: z.infer<typeof profileSchema>) => {
-    updateProfileMutation.mutate(data);
-  };
 
   if (isLoading || !isAuthenticated) {
     return (
@@ -183,15 +142,17 @@ export default function Dashboard() {
             {/* In Progress Courses */}
             <div>
               <div className="flex items-center justify-between mb-6">
-                <h2 className="font-display font-bold text-2xl">Corsi in Corso</h2>
-                <Link 
-                  href="/corsi"
+                <h2 className="font-display font-bold text-2xl">I Miei Corsi</h2>
+                <a 
+                  href={`${WORDPRESS_URL}/corsi`}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="text-primary hover:underline flex items-center gap-2" 
                   data-testid="link-browse-courses"
                 >
-                  Esplora
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
+                  Esplora altri corsi
+                  <ExternalLink className="h-4 w-4" />
+                </a>
               </div>
 
               {inProgressCourses && inProgressCourses.length > 0 ? (
@@ -211,6 +172,10 @@ export default function Dashboard() {
                                 </p>
                               </div>
                             </div>
+                            <Button size="sm" data-testid={`button-continue-${enrollment.course.id}`}>
+                              <Play className="h-4 w-4 mr-2" />
+                              Continua
+                            </Button>
                           </div>
                       </Link>
                     </Card>
@@ -221,13 +186,14 @@ export default function Dashboard() {
                   <Play className="h-16 w-16 text-muted-foreground/50 mx-auto mb-4" />
                   <h3 className="font-display font-semibold text-xl mb-2">Nessun corso attivo</h3>
                   <p className="text-muted-foreground mb-4">
-                    Inizia a imparare iscrivendoti a un corso
+                    Inizia a imparare iscrivendoti a un corso sul nostro sito
                   </p>
-                  <Link href="/corsi">
+                  <a href={`${WORDPRESS_URL}/corsi`} target="_blank" rel="noopener noreferrer">
                     <Button data-testid="button-explore-courses">
+                      <ExternalLink className="h-4 w-4 mr-2" />
                       Esplora i Corsi
                     </Button>
-                  </Link>
+                  </a>
                 </Card>
               )}
             </div>
@@ -258,7 +224,7 @@ export default function Dashboard() {
 
           {/* Sidebar */}
           <div className="space-y-6">
-            {/* Profile Card */}
+            {/* Profile Card - Read Only */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -267,128 +233,68 @@ export default function Dashboard() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {!isEditingProfile ? (
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-4">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-4">
+                    <div className="relative">
                       <Avatar className="h-16 w-16">
                         <AvatarImage src={user?.profileImageUrl || ""} />
                         <AvatarFallback className="bg-primary/10 text-primary font-semibold text-lg">
                           {user?.firstName?.[0]}{user?.lastName?.[0]}
                         </AvatarFallback>
                       </Avatar>
-                      <div className="flex-1">
-                        <h3 className="font-semibold" data-testid="text-user-fullname">
-                          {user?.firstName} {user?.lastName}
-                        </h3>
-                        <p className="text-sm text-muted-foreground" data-testid="text-user-email">
-                          {user?.email}
-                        </p>
-                      </div>
+                      <Button
+                        size="icon"
+                        variant="secondary"
+                        className="absolute -bottom-1 -right-1 h-6 w-6 rounded-full"
+                        onClick={() => setIsEditingAvatar(!isEditingAvatar)}
+                        data-testid="button-change-avatar"
+                      >
+                        <Camera className="h-3 w-3" />
+                      </Button>
                     </div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold" data-testid="text-user-fullname">
+                        {user?.firstName} {user?.lastName}
+                      </h3>
+                      <p className="text-sm text-muted-foreground" data-testid="text-user-email">
+                        {user?.email}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Avatar Upload Zone */}
+                  {isEditingAvatar && (
+                    <div className="pt-2 border-t">
+                      <p className="text-sm text-muted-foreground mb-2">
+                        Carica una nuova immagine profilo:
+                      </p>
+                      <MediaUploadZone
+                        currentUrl={user?.profileImageUrl || ""}
+                        onUploadComplete={(url) => {
+                          updateAvatarMutation.mutate(url);
+                        }}
+                        userId={user?.id}
+                      />
+                    </div>
+                  )}
+
+                  {/* Link to WordPress for profile editing */}
+                  <a 
+                    href={`${WORDPRESS_URL}/my-account`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block"
+                  >
                     <Button 
                       variant="outline" 
                       className="w-full" 
-                      onClick={() => setIsEditingProfile(true)}
-                      data-testid="button-edit-profile"
+                      data-testid="button-edit-profile-wp"
                     >
-                      Modifica Profilo
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      Modifica Profilo su WordPress
                     </Button>
-                  </div>
-                ) : (
-                  <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmitProfile)} className="space-y-4">
-                      <FormField
-                        control={form.control}
-                        name="profileImageUrl"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Immagine Profilo</FormLabel>
-                            <FormControl>
-                              <div className="flex flex-col items-center gap-3">
-                                <Avatar className="h-20 w-20">
-                                  <AvatarImage src={field.value || ""} />
-                                  <AvatarFallback className="bg-primary/10 text-primary font-semibold text-xl">
-                                    {form.watch("firstName")?.[0]}{form.watch("lastName")?.[0]}
-                                  </AvatarFallback>
-                                </Avatar>
-                                <MediaUploadZone
-                                  currentUrl={field.value || ""}
-                                  onUploadComplete={field.onChange}
-                                  userId={user?.id}
-                                />
-                              </div>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="firstName"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Nome</FormLabel>
-                            <FormControl>
-                              <Input {...field} placeholder="Mario" data-testid="input-firstname" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="lastName"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Cognome</FormLabel>
-                            <FormControl>
-                              <Input {...field} placeholder="Rossi" data-testid="input-lastname" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="email"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Email</FormLabel>
-                            <FormControl>
-                              <Input {...field} type="email" placeholder="mario@example.com" data-testid="input-email" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <div className="flex gap-2">
-                        <Button 
-                          type="submit" 
-                          className="flex-1" 
-                          disabled={updateProfileMutation.isPending}
-                          data-testid="button-save-profile"
-                        >
-                          {updateProfileMutation.isPending ? "Salvataggio..." : "Salva"}
-                        </Button>
-                        <Button 
-                          type="button" 
-                          variant="outline" 
-                          onClick={() => {
-                            setIsEditingProfile(false);
-                            form.reset();
-                          }}
-                          data-testid="button-cancel-edit"
-                        >
-                          Annulla
-                        </Button>
-                      </div>
-                    </form>
-                  </Form>
-                )}
+                  </a>
+                </div>
               </CardContent>
             </Card>
 
@@ -464,33 +370,6 @@ export default function Dashboard() {
                     </p>
                   </div>
                 )}
-              </CardContent>
-            </Card>
-
-            {/* Quick Actions */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Azioni Rapide</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <Link href="/corsi">
-                  <Button variant="outline" className="w-full justify-start" data-testid="button-browse-courses">
-                    <Play className="h-4 w-4 mr-2" />
-                    Sfoglia Corsi
-                  </Button>
-                </Link>
-                <Link href="/community">
-                  <Button variant="outline" className="w-full justify-start" data-testid="button-community">
-                    <Trophy className="h-4 w-4 mr-2" />
-                    Community
-                  </Button>
-                </Link>
-                <Link href="/clinic">
-                  <Button variant="outline" className="w-full justify-start" data-testid="button-clinic">
-                    <Target className="h-4 w-4 mr-2" />
-                    Clinic
-                  </Button>
-                </Link>
               </CardContent>
             </Card>
           </div>

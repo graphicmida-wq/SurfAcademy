@@ -130,7 +130,7 @@ export async function setupAuth(app: Express) {
         res.redirect(
           client.buildEndSessionUrl(config, {
             client_id: process.env.REPL_ID!,
-            post_logout_redirect_uri: `${req.protocol}://${req.hostname}`,
+            post_logout_redirect_uri: `${req.protocol}://${req.hostname}/login`,
           }).href
         );
       });
@@ -141,7 +141,7 @@ export async function setupAuth(app: Express) {
     // Simple logout for local auth
     app.get("/api/logout", (req, res) => {
       req.logout(() => {
-        res.redirect("/");
+        res.redirect("/login");
       });
     });
   }

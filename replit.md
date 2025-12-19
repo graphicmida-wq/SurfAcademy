@@ -20,7 +20,13 @@ Preferred communication style: Simple, everyday language.
 
 ### Frontend Architecture
 
-The frontend uses React 18, TypeScript, and Vite. Wouter manages client-side routing for the landing page (auto-redirect to `/dashboard` for authenticated users), `/dashboard`, `/corsi/:id/player` (course player), `/community`, and `/admin/*` pages. State management uses TanStack Query. UI components are built with Radix UI primitives and styled with Tailwind CSS, following a shadcn/ui pattern. The design uses HSL values, CSS custom properties for theming, and Montserrat/Inter fonts.
+The frontend uses React 18, TypeScript, and Vite. **No public-facing landing page** - unauthenticated users see only the login screen. Authenticated users are directed to `/dashboard`. Wouter manages client-side routing for `/dashboard`, `/corsi/:id/player` (course player), `/p/:slug` (custom pages), and `/admin/*` pages. State management uses TanStack Query. UI components are built with Radix UI primitives and styled with Tailwind CSS, following a shadcn/ui pattern. The design uses HSL values, CSS custom properties for theming, and Montserrat/Inter fonts.
+
+**Navbar Features**:
+- Logo and Home link redirect to WordPress (https://scuoladilongboard.it)
+- "I Miei Corsi" dropdown shows enrolled courses for quick access
+- Profile section with avatar and link to Dashboard
+- Logout redirects to /login
 
 ### Backend Architecture
 
@@ -50,7 +56,17 @@ The design reflects a surf-culture aesthetic with a turquoise and ocean-blue pal
 
 ### Technical Implementations
 
-The project is a full-stack TypeScript monorepo. It uses `zod` for schema validation and `date-fns` for date handling. Server-side image uploads are managed directly to Google Cloud Storage (GCS). A system exports development data to a `production-seed-data.json` file for seeding the production database. A SendGrid-based newsletter system includes contact management, campaign creation, double opt-in, email tracking, and GDPR compliance.
+The project is a full-stack TypeScript monorepo. It uses `zod` for schema validation and `date-fns` for date handling. Server-side image uploads are managed directly to Google Cloud Storage (GCS). A system exports development data to a `production-seed-data.json` file for seeding the production database.
+
+**Profile Management**: User profile is read-only (displays name, email from WordPress). Only the avatar can be changed from the app. A link directs users to WordPress for profile edits.
+
+**Admin Dashboard**: Simplified to core functions:
+- Corsi (Course management)
+- Gestione Studenti (Student management and progress tracking)
+- Pagine Custom (Custom page builder)
+- Header Pagine (Page header images)
+
+**Removed Features**: Newsletter, Events, Clinic, Community pages have been removed. These are handled by WordPress.
 
 ## External Dependencies
 

@@ -28,7 +28,7 @@ export default function AdminCustomPages() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      await apiRequest("DELETE", `/api/custom-pages/${id}`);
+      await apiRequest("DELETE", `/api/admin/custom-pages/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/custom-pages'] });
@@ -52,7 +52,7 @@ export default function AdminCustomPages() {
       const page = pages?.find(p => p.id === id);
       if (!page) throw new Error("Page not found");
       
-      await apiRequest("PUT", `/api/custom-pages/${id}`, {
+      await apiRequest("PUT", `/api/admin/custom-pages/${id}`, {
         ...page,
         published: !published
       });
