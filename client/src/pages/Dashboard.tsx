@@ -15,7 +15,7 @@ import { MediaUploadZone } from "@/components/MediaUploadZone";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Enrollment, Course, Badge as BadgeType } from "@shared/schema";
 
-const WORDPRESS_URL = "https://scuoladilongboard.it";
+const WORDPRESS_URL = "https://www.scuoladilongboard.it";
 
 export default function Dashboard() {
   const { user, isAuthenticated, isLoading } = useAuth();
@@ -280,7 +280,7 @@ export default function Dashboard() {
 
                   {/* Link to WordPress for profile editing */}
                   <a 
-                    href={`${WORDPRESS_URL}/my-account`}
+                    href={`${WORDPRESS_URL}/mio-account/`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="block"
