@@ -25,8 +25,10 @@ export function CourseCard({ course }: CourseCardProps) {
               <Play className="h-16 w-16 text-primary/40" />
             </div>
           )}
+          {/* Overlay semitrasparente #13a294 al 50% */}
+          <div className="absolute inset-0 bg-[#13a294]/50" />
           {course.isFree && (
-            <Badge className="absolute top-3 left-3 bg-chart-4 text-white border-0">
+            <Badge className="absolute top-3 left-3 bg-chart-4 text-white border-0 z-10">
               Gratis
             </Badge>
           )}

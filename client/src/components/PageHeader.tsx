@@ -19,10 +19,11 @@ export function PageHeader({ imageUrl, title, subtitle, paddingTop = 'py-16', pa
             alt={title}
             className="absolute inset-0 w-full h-full object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/60" />
+          {/* Overlay semitrasparente #13a294 al 50% */}
+          <div className="absolute inset-0 bg-[#13a294]/50" />
         </>
       ) : (
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/90 via-primary/70 to-primary/90" />
+        <div className="absolute inset-0 bg-[#13a294]" />
       )}
       <div className={`absolute inset-0 flex flex-col items-center justify-center px-4 text-center ${paddingClass}`}>
         <h1 
