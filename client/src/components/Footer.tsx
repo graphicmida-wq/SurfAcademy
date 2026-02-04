@@ -22,7 +22,7 @@ export function Footer() {
 
         <div className="mt-6 pt-6 border-t border-border">
           <p className="text-center text-sm text-muted-foreground">
-            &copy; {new Date().getFullYear()} Scuola di Longboard. Tutti i diritti riservati.
+            COPYRIGHT© 2025 – SCUOLA DI LONGBOARD – ASD CINGHIALE MARINO SURF CLUB – Via Aurelia 45 – 17051 – ANDORA (SV)
           </p>
         </div>
       </div>
