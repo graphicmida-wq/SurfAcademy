@@ -837,16 +837,26 @@ export default function AdminCourseContent() {
                     Aggiungi Video
                   </Button>
                 </div>
+                <p className="text-xs text-muted-foreground">
+                  Incolla URL da WordPress, Google Drive o Vimeo. Per Google Drive usa il formato: https://drive.google.com/file/d/ID_VIDEO/preview
+                </p>
                 {videoUrls.length === 0 && (
                   <p className="text-sm text-muted-foreground">Nessun video aggiunto. Clicca "Aggiungi Video" per iniziare.</p>
                 )}
                 {videoUrls.map((url, idx) => (
-                  <div key={idx} className="flex gap-2">
-                    <div className="flex-1">
-                      <MediaUploadZone
-                        currentUrl={url}
-                        onUploadComplete={(newUrl) => updateVideoUrl(idx, newUrl)}
+                  <div key={idx} className="flex gap-2 items-start">
+                    <div className="flex-1 space-y-2">
+                      <Input
+                        placeholder="Incolla URL video (WordPress, Google Drive, Vimeo...)"
+                        value={url}
+                        onChange={(e) => updateVideoUrl(idx, e.target.value)}
+                        className="w-full"
                       />
+                      {url && (
+                        <p className="text-xs text-muted-foreground truncate">
+                          {url}
+                        </p>
+                      )}
                     </div>
                     <Button
                       type="button"
