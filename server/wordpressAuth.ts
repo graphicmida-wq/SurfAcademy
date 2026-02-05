@@ -55,7 +55,10 @@ export async function loginWithWordPressCredentials(
   }
   
   try {
-    const response = await fetch(`${WORDPRESS_URL}/wp-json/jwt-auth/v1/token`, {
+    const wpUrl = `${WORDPRESS_URL}/wp-json/jwt-auth/v1/token`;
+    console.log(`[WP Login] Attempting login for ${email} via ${wpUrl}`);
+    
+    const response = await fetch(wpUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -66,16 +69,35 @@ export async function loginWithWordPressCredentials(
       }),
     });
 
+    const responseText = await response.text();
+    console.log(`[WP Login] Response status: ${response.status}, body preview: ${responseText.substring(0, 200)}`);
+
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      console.error("WordPress login failed:", errorData);
+      let errorData: any = {};
+      try {
+        errorData = JSON.parse(responseText);
+      } catch (e) {
+        console.error("[WP Login] Non-JSON error response:", responseText.substring(0, 500));
+        return { success: false, error: "WordPress ha restituito una risposta non valida" };
+      }
+      
+      const wpMessage = errorData.message || "";
+      if (wpMessage.includes("incorrect") || wpMessage.includes("Invalid") || wpMessage.includes("[jwt_auth]")) {
+        return { success: false, error: "Email o password non corretti" };
+      }
       return { 
         success: false, 
-        error: errorData.message || "Credenziali non valide" 
+        error: "Credenziali non valide" 
       };
     }
 
-    const wpData: WordPressLoginResponse = await response.json();
+    let wpData: WordPressLoginResponse;
+    try {
+      wpData = JSON.parse(responseText);
+    } catch (e) {
+      console.error("[WP Login] Failed to parse success response:", responseText.substring(0, 500));
+      return { success: false, error: "Risposta non valida da WordPress" };
+    }
     
     const wpUserResponse = await fetch(`${WORDPRESS_URL}/wp-json/wp/v2/users/me`, {
       headers: {
@@ -86,6 +108,8 @@ export async function loginWithWordPressCredentials(
     let wpUser: any = null;
     if (wpUserResponse.ok) {
       wpUser = await wpUserResponse.json();
+    } else {
+      console.warn(`[WP Login] Failed to fetch user profile: ${wpUserResponse.status}`);
     }
 
     const userId = `wp_${wpUser?.id || email.replace(/[^a-zA-Z0-9]/g, '_')}`;
@@ -100,9 +124,9 @@ export async function loginWithWordPressCredentials(
     });
 
     return { success: true, user };
-  } catch (error) {
-    console.error("WordPress authentication error:", error);
-    return { success: false, error: "Errore di connessione con WordPress" };
+  } catch (error: any) {
+    console.error("[WP Login] Connection error:", error?.message || error, "URL:", WORDPRESS_URL);
+    return { success: false, error: "Impossibile contattare WordPress. Riprova tra qualche istante." };
   }
 }
 
