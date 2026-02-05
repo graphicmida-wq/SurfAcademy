@@ -131,8 +131,23 @@ export async function loginWithWordPressCredentials(
 
     return { success: true, user };
   } catch (error: any) {
-    console.error("[WP Login] Connection error:", error?.message || error, "URL:", WORDPRESS_URL);
-    return { success: false, error: "Impossibile contattare WordPress. Riprova tra qualche istante." };
+    const errMsg = error?.message || String(error);
+    const errCode = error?.code || error?.cause?.code || "unknown";
+    console.error("[WP Login] Connection error:", errMsg, "code:", errCode, "URL:", WORDPRESS_URL);
+    
+    if (errMsg.includes("ENOTFOUND") || errMsg.includes("EAI_AGAIN")) {
+      return { success: false, error: "Impossibile risolvere il dominio WordPress. Controlla WORDPRESS_URL." };
+    }
+    if (errMsg.includes("ECONNREFUSED")) {
+      return { success: false, error: "Connessione rifiutata dal server WordPress." };
+    }
+    if (errMsg.includes("ETIMEDOUT") || errMsg.includes("timeout")) {
+      return { success: false, error: "Timeout nella connessione a WordPress. Riprova." };
+    }
+    if (errMsg.includes("certificate") || errMsg.includes("SSL") || errMsg.includes("TLS")) {
+      return { success: false, error: "Errore certificato SSL di WordPress." };
+    }
+    return { success: false, error: `Impossibile contattare WordPress (${errCode}). Riprova tra qualche istante.` };
   }
 }
 
