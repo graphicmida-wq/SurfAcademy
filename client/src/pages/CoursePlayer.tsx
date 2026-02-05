@@ -179,14 +179,16 @@ export default function CourseDetail() {
                 </Badge>
               )}
             </div>
+            {lesson.description && (
+              <p className="text-muted-foreground mt-1">{lesson.description}</p>
+            )}
           </CardHeader>
           <CardContent className="space-y-4">
             {/* Video URLs */}
             {lesson.videoUrls && lesson.videoUrls.length > 0 && (
               <div className="space-y-4">
-                <h4 className="font-semibold">Video</h4>
                 {lesson.videoUrls.map((videoUrl, idx) => (
-                  <div key={idx} className="aspect-video bg-muted rounded-lg overflow-hidden">
+                  <div key={idx} className="aspect-video bg-black rounded-lg overflow-hidden">
                     <video 
                       src={videoUrl} 
                       controls 
@@ -200,7 +202,7 @@ export default function CourseDetail() {
 
             {/* Single Video URL (backward compatibility) */}
             {lesson.videoUrl && !lesson.videoUrls && (
-              <div className="aspect-video bg-muted rounded-lg overflow-hidden">
+              <div className="aspect-video bg-black rounded-lg overflow-hidden">
                 <video 
                   src={lesson.videoUrl} 
                   controls 
@@ -391,16 +393,6 @@ export default function CourseDetail() {
 
           {/* Main Content Area */}
           <div className="lg:col-span-3">
-            <div className="mb-6">
-              <h1 className="text-3xl font-display font-bold mb-2" data-testid="text-content-title">
-                {selectedLesson ? selectedLesson.title : "Corso"}
-              </h1>
-              <p className="text-muted-foreground">
-                {canAccess 
-                  ? (selectedLesson ? "Contenuto della lezione" : "Seleziona una lezione per iniziare") 
-                  : "Iscriviti per accedere"}
-              </p>
-            </div>
             {renderContent()}
           </div>
         </div>

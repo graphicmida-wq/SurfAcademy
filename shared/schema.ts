@@ -86,6 +86,7 @@ export const lessons = pgTable("lessons", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   moduleId: varchar("module_id").notNull().references(() => modules.id, { onDelete: 'cascade' }),
   title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"), // Description shown under the title in the player
   contentType: varchar("content_type"), // presentazione, ebook, planning, esercizio, riscaldamento, settimana-1, settimana-2, settimana-3, settimana-4
   videoUrl: varchar("video_url"), // Kept for backward compatibility
   videoUrls: text("video_urls").array(), // Multiple videos for settimane content

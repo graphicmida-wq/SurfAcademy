@@ -102,6 +102,7 @@ export default function AdminCourseContent() {
     defaultValues: {
       moduleId: "",
       title: "",
+      description: "",
       contentType: "presentazione",
       videoUrl: "",
       videoUrls: [],
@@ -244,6 +245,7 @@ export default function AdminCourseContent() {
     lessonForm.reset({
       moduleId: lesson.moduleId,
       title: lesson.title,
+      description: lesson.description || "",
       contentType: lesson.contentType || "presentazione",
       videoUrl: lesson.videoUrl || "",
       pdfUrl: lesson.pdfUrl || "",
@@ -306,6 +308,7 @@ export default function AdminCourseContent() {
     lessonForm.reset({
       moduleId: moduleId,
       title: "",
+      description: "",
       contentType: contentType,
       videoUrl: "",
       videoUrls: [],
@@ -773,6 +776,21 @@ export default function AdminCourseContent() {
                     <FormControl>
                       <Input {...field} placeholder="Nome del contenuto" data-testid="input-lesson-title" />
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={lessonForm.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Descrizione</FormLabel>
+                    <FormControl>
+                      <Input {...field} value={field.value ?? ""} placeholder="Descrizione o istruzioni per lo studente" data-testid="input-lesson-description" />
+                    </FormControl>
+                    <FormDescription>Verrà mostrata sotto il titolo nel player</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
