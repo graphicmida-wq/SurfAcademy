@@ -17,6 +17,9 @@ import type { Enrollment, Course, Badge as BadgeType } from "@shared/schema";
 
 const WORDPRESS_URL = "https://www.scuoladilongboard.it";
 
+// Feature flag: WavePoints disabilitati temporaneamente - riattivare quando pronti
+const WAVEPOINTS_ENABLED = false;
+
 export default function Dashboard() {
   const { user, isAuthenticated, isLoading } = useAuth();
   const { toast } = useToast();
@@ -298,43 +301,45 @@ export default function Dashboard() {
               </CardContent>
             </Card>
 
-            {/* WavePoints Card */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <img 
-                    src={new URL("@assets/WAVEPOINT_1761759915658.png", import.meta.url).href}
-                    alt="WavePoint"
-                    className="h-5 w-5"
-                  />
-                  WavePoints
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-4">
-                  <div className="mb-4">
+            {/* WavePoints Card - Disabilitato temporaneamente, riattivare con WAVEPOINTS_ENABLED = true */}
+            {WAVEPOINTS_ENABLED && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
                     <img 
                       src={new URL("@assets/WAVEPOINT_1761759915658.png", import.meta.url).href}
                       alt="WavePoint"
-                      className="w-20 h-20 mx-auto"
+                      className="h-5 w-5"
                     />
+                    WavePoints
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-center py-4">
+                    <div className="mb-4">
+                      <img 
+                        src={new URL("@assets/WAVEPOINT_1761759915658.png", import.meta.url).href}
+                        alt="WavePoint"
+                        className="w-20 h-20 mx-auto"
+                      />
+                    </div>
+                    <div className="text-4xl font-display font-bold text-chart-2 mb-2" data-testid="text-wavepoints-balance">
+                      {wavePointsBalance}
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      {wavePointsBalance === 0 
+                        ? "Invita amici per guadagnare WavePoints!" 
+                        : "50 punti = 10% sconto!"}
+                    </p>
+                    {wavePointsBalance >= 50 && (
+                      <Badge className="bg-chart-2/10 text-chart-2 border-chart-2/20">
+                        Hai uno sconto disponibile!
+                      </Badge>
+                    )}
                   </div>
-                  <div className="text-4xl font-display font-bold text-chart-2 mb-2" data-testid="text-wavepoints-balance">
-                    {wavePointsBalance}
-                  </div>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    {wavePointsBalance === 0 
-                      ? "Invita amici per guadagnare WavePoints!" 
-                      : "50 punti = 10% sconto!"}
-                  </p>
-                  {wavePointsBalance >= 50 && (
-                    <Badge className="bg-chart-2/10 text-chart-2 border-chart-2/20">
-                      Hai uno sconto disponibile!
-                    </Badge>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Badges */}
             <Card>
