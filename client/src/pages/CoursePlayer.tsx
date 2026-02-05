@@ -34,13 +34,14 @@ import { PageHeader } from "@/components/PageHeader";
 import { usePageHeader } from "@/hooks/usePageHeader";
 import { cn } from "@/lib/utils";
 
-type ContentType = 'presentazione' | 'ebook' | 'planning' | 'esercizio' | 'riscaldamento' | 'settimana-1' | 'settimana-2' | 'settimana-3' | 'settimana-4';
+type ContentType = 'presentazione' | 'ebook' | 'planning' | 'esercizio' | 'stretching' | 'riscaldamento' | 'settimana-1' | 'settimana-2' | 'settimana-3' | 'settimana-4';
 
 const contentIcons: Record<ContentType, any> = {
   'presentazione': BookOpen,
   'ebook': FileText,
   'planning': Calendar,
   'esercizio': Dumbbell,
+  'stretching': Dumbbell,
   'riscaldamento': Flame,
   'settimana-1': Play,
   'settimana-2': Play,
@@ -53,6 +54,7 @@ const contentLabels: Record<ContentType, string> = {
   'ebook': 'E-Book Corso',
   'planning': 'Planning Allenamento',
   'esercizio': 'Esercizio',
+  'stretching': 'Stretching',
   'riscaldamento': 'Riscaldamento',
   'settimana-1': 'Settimana 1',
   'settimana-2': 'Settimana 2',
