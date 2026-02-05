@@ -443,15 +443,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.post("/api/admin/courses/:courseId/modules", isAdmin, async (req, res) => {
     try {
+      console.log("Creating module with data:", JSON.stringify({ ...req.body, courseId: req.params.courseId }));
       const validatedData = insertModuleSchema.parse({
         ...req.body,
         courseId: req.params.courseId,
       });
+      console.log("Validated data:", JSON.stringify(validatedData));
       const module = await storage.createModule(validatedData);
+      console.log("Module created successfully:", JSON.stringify(module));
       res.status(201).json(module);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating module:", error);
-      res.status(400).json({ message: "Failed to create module" });
+      console.error("Error message:", error?.message);
+      console.error("Error stack:", error?.stack);
+      res.status(400).json({ message: "Failed to create module", error: error?.message || String(error) });
     }
   });
 
