@@ -81,13 +81,19 @@ export async function loginWithWordPressCredentials(
         return { success: false, error: "WordPress ha restituito una risposta non valida" };
       }
       
-      const wpMessage = errorData.message || "";
-      if (wpMessage.includes("incorrect") || wpMessage.includes("Invalid") || wpMessage.includes("[jwt_auth]")) {
+      const wpMessage = (errorData.message || "").replace(/<[^>]*>/g, '').trim();
+      const wpCode = errorData.code || "";
+      console.error("[WP Login] Error code:", wpCode, "message:", wpMessage);
+      
+      if (wpCode.includes("llla")) {
+        return { success: false, error: "Troppi tentativi di login. Riprova tra qualche minuto." };
+      }
+      if (wpMessage.includes("incorrect") || wpMessage.includes("Invalid") || wpCode.includes("invalid")) {
         return { success: false, error: "Email o password non corretti" };
       }
       return { 
         success: false, 
-        error: "Credenziali non valide" 
+        error: wpMessage || "Credenziali non valide" 
       };
     }
 
