@@ -101,13 +101,11 @@ export default function Dashboard() {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-3 gap-2 md:gap-6 mb-8 md:mb-12">
+        <div className="grid grid-cols-3 gap-3 md:gap-6 mb-8 md:mb-12">
           <Card className="p-0">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1 md:p-6 md:pb-2">
-              <CardTitle className="text-xs md:text-sm font-medium">Corsi Attivi</CardTitle>
-              <Play className="h-3 w-3 md:h-4 md:w-4 text-primary" />
-            </CardHeader>
-            <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
+            <CardContent className="flex flex-col items-center text-center p-3 md:p-6">
+              <Play className="h-5 w-5 md:h-6 md:w-6 text-primary mb-1 md:mb-2" />
+              <span className="text-[10px] md:text-sm font-medium text-muted-foreground mb-1">Corsi Attivi</span>
               <div className="text-xl md:text-3xl font-display font-bold" data-testid="stat-active-courses">
                 {inProgressCourses.length}
               </div>
@@ -115,11 +113,9 @@ export default function Dashboard() {
           </Card>
 
           <Card className="p-0">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1 md:p-6 md:pb-2">
-              <CardTitle className="text-xs md:text-sm font-medium">Completati</CardTitle>
-              <Trophy className="h-3 w-3 md:h-4 md:w-4 text-chart-4" />
-            </CardHeader>
-            <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
+            <CardContent className="flex flex-col items-center text-center p-3 md:p-6">
+              <Trophy className="h-5 w-5 md:h-6 md:w-6 text-chart-4 mb-1 md:mb-2" />
+              <span className="text-[10px] md:text-sm font-medium text-muted-foreground mb-1">Completati</span>
               <div className="text-xl md:text-3xl font-display font-bold" data-testid="stat-completed-courses">
                 {completedCourses.length}
               </div>
@@ -127,11 +123,9 @@ export default function Dashboard() {
           </Card>
 
           <Card className="p-0">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1 md:p-6 md:pb-2">
-              <CardTitle className="text-xs md:text-sm font-medium">Badge Ottenuti</CardTitle>
-              <Award className="h-3 w-3 md:h-4 md:w-4 text-chart-3" />
-            </CardHeader>
-            <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
+            <CardContent className="flex flex-col items-center text-center p-3 md:p-6">
+              <Award className="h-5 w-5 md:h-6 md:w-6 text-chart-3 mb-1 md:mb-2" />
+              <span className="text-[10px] md:text-sm font-medium text-muted-foreground mb-1">Badge</span>
               <div className="text-xl md:text-3xl font-display font-bold" data-testid="stat-badges">
                 {badges?.length || 0}
               </div>
