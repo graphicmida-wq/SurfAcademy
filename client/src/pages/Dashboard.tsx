@@ -101,38 +101,38 @@ export default function Dashboard() {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Corsi Attivi</CardTitle>
-              <Play className="h-4 w-4 text-primary" />
+        <div className="grid grid-cols-3 gap-2 md:gap-6 mb-8 md:mb-12">
+          <Card className="p-0">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1 md:p-6 md:pb-2">
+              <CardTitle className="text-xs md:text-sm font-medium">Corsi Attivi</CardTitle>
+              <Play className="h-3 w-3 md:h-4 md:w-4 text-primary" />
             </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-display font-bold" data-testid="stat-active-courses">
+            <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
+              <div className="text-xl md:text-3xl font-display font-bold" data-testid="stat-active-courses">
                 {inProgressCourses.length}
               </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Completati</CardTitle>
-              <Trophy className="h-4 w-4 text-chart-4" />
+          <Card className="p-0">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1 md:p-6 md:pb-2">
+              <CardTitle className="text-xs md:text-sm font-medium">Completati</CardTitle>
+              <Trophy className="h-3 w-3 md:h-4 md:w-4 text-chart-4" />
             </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-display font-bold" data-testid="stat-completed-courses">
+            <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
+              <div className="text-xl md:text-3xl font-display font-bold" data-testid="stat-completed-courses">
                 {completedCourses.length}
               </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Badge Ottenuti</CardTitle>
-              <Award className="h-4 w-4 text-chart-3" />
+          <Card className="p-0">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1 md:p-6 md:pb-2">
+              <CardTitle className="text-xs md:text-sm font-medium">Badge Ottenuti</CardTitle>
+              <Award className="h-3 w-3 md:h-4 md:w-4 text-chart-3" />
             </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-display font-bold" data-testid="stat-badges">
+            <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
+              <div className="text-xl md:text-3xl font-display font-bold" data-testid="stat-badges">
                 {badges?.length || 0}
               </div>
             </CardContent>
