@@ -6,7 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MediaUploadZone } from "@/components/MediaUploadZone";
 import { useToast } from "@/hooks/use-toast";
@@ -63,12 +62,8 @@ export default function AdminCourses() {
     resolver: zodResolver(insertCourseSchema.extend({
       description: insertCourseSchema.shape.description.transform(v => v || ""),
       thumbnailUrl: insertCourseSchema.shape.thumbnailUrl.transform(v => v || ""),
-      trailerUrl: insertCourseSchema.shape.trailerUrl.transform(v => v || ""),
       instructorName: insertCourseSchema.shape.instructorName.transform(v => v || ""),
       instructorAvatar: insertCourseSchema.shape.instructorAvatar.transform(v => v || ""),
-      externalCheckoutUrl: insertCourseSchema.shape.externalCheckoutUrl.transform(v => v || ""),
-      fullDescription: insertCourseSchema.shape.fullDescription.transform(v => v || ""),
-      programContent: insertCourseSchema.shape.programContent.transform(v => v || ""),
     })),
     defaultValues: {
       title: "",
@@ -76,17 +71,9 @@ export default function AdminCourses() {
       courseCategory: "remata",
       level: "all",
       duration: 0,
-      price: 0,
-      isFree: false,
       thumbnailUrl: "",
-      trailerUrl: "",
       instructorName: "",
       instructorAvatar: "",
-      externalCheckoutUrl: "",
-      fullDescription: "",
-      programContent: "",
-      imageGallery: [],
-      activationStatus: "active",
     },
   });
 
@@ -161,17 +148,9 @@ export default function AdminCourses() {
       courseCategory: course.courseCategory || "remata",
       level: course.level || "all",
       duration: course.duration || 0,
-      price: course.price || 0,
-      isFree: course.isFree,
       thumbnailUrl: course.thumbnailUrl || "",
-      trailerUrl: course.trailerUrl || "",
       instructorName: course.instructorName || "",
       instructorAvatar: course.instructorAvatar || "",
-      externalCheckoutUrl: course.externalCheckoutUrl || "",
-      fullDescription: course.fullDescription || "",
-      programContent: course.programContent || "",
-      imageGallery: course.imageGallery || [],
-      activationStatus: course.activationStatus || "active",
     });
     
     // Load WooCommerce product mapping
@@ -199,17 +178,9 @@ export default function AdminCourses() {
       courseCategory: "remata",
       level: "all",
       duration: 0,
-      price: 0,
-      isFree: false,
       thumbnailUrl: "",
-      trailerUrl: "",
       instructorName: "",
       instructorAvatar: "",
-      externalCheckoutUrl: "",
-      fullDescription: "",
-      programContent: "",
-      imageGallery: [],
-      activationStatus: "active",
     });
     setIsDialogOpen(true);
   };
@@ -335,66 +306,22 @@ export default function AdminCourses() {
                   )}
                 />
 
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="duration"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Durata (minuti)</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="number" 
-                            {...field}
-                            value={field.value ?? 0}
-                            onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                            data-testid="input-course-duration"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="price"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Prezzo (centesimi)</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="number" 
-                            {...field}
-                            value={field.value ?? 0}
-                            onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                            placeholder="es. 9900 = €99.00"
-                            data-testid="input-course-price"
-                          />
-                        </FormControl>
-                        <FormDescription>Inserisci il prezzo in centesimi (9900 = €99.00)</FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
                 <FormField
                   control={form.control}
-                  name="isFree"
+                  name="duration"
                   render={({ field }) => (
-                    <FormItem className="flex items-center justify-between rounded-lg border p-3">
-                      <div>
-                        <FormLabel>Corso Gratuito</FormLabel>
-                        <FormDescription>Rendi il corso accessibile gratuitamente</FormDescription>
-                      </div>
+                    <FormItem>
+                      <FormLabel>Durata (minuti)</FormLabel>
                       <FormControl>
-                        <Switch
-                          checked={field.value ?? false}
-                          onCheckedChange={field.onChange}
-                          data-testid="switch-course-free"
+                        <Input 
+                          type="number" 
+                          {...field}
+                          value={field.value ?? 0}
+                          onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                          data-testid="input-course-duration"
                         />
                       </FormControl>
+                      <FormMessage />
                     </FormItem>
                   )}
                 />
@@ -411,24 +338,6 @@ export default function AdminCourses() {
                           onUploadComplete={(url) => field.onChange(url)}
                         />
                       </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="trailerUrl"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Video Trailer</FormLabel>
-                      <FormControl>
-                        <MediaUploadZone
-                          currentUrl={field.value || ""}
-                          onUploadComplete={(url) => field.onChange(url)}
-                        />
-                      </FormControl>
-                      <FormDescription>Video di presentazione del corso</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -470,21 +379,6 @@ export default function AdminCourses() {
                 <div className="border-t pt-4 space-y-4">
                   <h3 className="text-sm font-medium">Integrazione WooCommerce</h3>
 
-                  <FormField
-                    control={form.control}
-                    name="externalCheckoutUrl"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>URL Checkout WooCommerce</FormLabel>
-                        <FormControl>
-                          <Input {...field} value={field.value ?? ""} placeholder="https://yoursite.com/product/corso-remata" data-testid="input-external-checkout" />
-                        </FormControl>
-                        <FormDescription>Link al prodotto WooCommerce per l'acquisto</FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
                   <FormItem>
                     <FormLabel>ID Prodotto WooCommerce</FormLabel>
                     <FormControl>
@@ -497,97 +391,10 @@ export default function AdminCourses() {
                       />
                     </FormControl>
                     <FormDescription>
-                      ID numerico del prodotto (per iscrizione automatica via webhook). 
+                      ID numerico del prodotto per iscrizione automatica via webhook. 
                       Lo trovi in WooCommerce → Prodotti → passa il mouse sul prodotto → l'ID appare nell'URL (es. post=123)
                     </FormDescription>
                   </FormItem>
-
-                  <FormField
-                    control={form.control}
-                    name="activationStatus"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Stato Disponibilità</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value ?? "active"}>
-                          <FormControl>
-                            <SelectTrigger data-testid="select-activation-status">
-                              <SelectValue placeholder="Seleziona stato" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="active">Attivo (acquistabile)</SelectItem>
-                            <SelectItem value="waitlist">Lista d'Attesa (non acquistabile)</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormDescription>Controlla se il pulsante di acquisto è cliccabile</FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="fullDescription"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Descrizione Completa</FormLabel>
-                        <FormControl>
-                          <Textarea 
-                            {...field}
-                            value={field.value ?? ""}
-                            placeholder="Descrizione dettagliata del corso per la pagina info..."
-                            rows={5}
-                            data-testid="input-full-description"
-                          />
-                        </FormControl>
-                        <FormDescription>Mostrata nella pagina pubblica del corso</FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="programContent"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Programma del Corso</FormLabel>
-                        <FormControl>
-                          <Textarea 
-                            {...field}
-                            value={field.value ?? ""}
-                            placeholder="Contenuti e obiettivi del corso..."
-                            rows={5}
-                            data-testid="input-program-content"
-                          />
-                        </FormControl>
-                        <FormDescription>Dettagli sul programma mostrati nella pagina info</FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="imageGallery"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Galleria Immagini (URLs)</FormLabel>
-                        <FormControl>
-                          <Textarea 
-                            {...field}
-                            value={field.value?.join('\n') ?? ""}
-                            onChange={(e) => field.onChange(e.target.value.split('\n').filter(url => url.trim()))}
-                            placeholder="https://example.com/image1.jpg&#10;https://example.com/image2.jpg"
-                            rows={4}
-                            data-testid="input-image-gallery"
-                          />
-                        </FormControl>
-                        <FormDescription>Un URL per riga - mostrate nella galleria CourseInfo</FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
                 </div>
 
                 <div className="flex justify-end gap-2 pt-4">
@@ -639,9 +446,6 @@ export default function AdminCourses() {
                 <Badge variant="outline" data-testid={`badge-category-${course.id}`}>
                   {CATEGORY_LABELS[course.courseCategory || 'remata']}
                 </Badge>
-                {course.isFree && (
-                  <Badge className="bg-chart-4 text-white">Gratis</Badge>
-                )}
               </div>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -650,11 +454,6 @@ export default function AdminCourses() {
                   {course.description}
                 </p>
               )}
-              <div className="flex items-center justify-end text-sm">
-                <div className="font-semibold" data-testid={`text-price-${course.id}`}>
-                  {course.isFree ? "Gratis" : `€${((course.price || 0) / 100).toFixed(2)}`}
-                </div>
-              </div>
               <div className="flex flex-col gap-2 pt-2">
                 {/* Enrollment button */}
                 {myEnrollments.some(e => e.courseId === course.id) ? (
