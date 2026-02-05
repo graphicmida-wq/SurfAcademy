@@ -118,11 +118,22 @@ export async function loginWithWordPressCredentials(
       console.warn(`[WP Login] Failed to fetch user profile: ${wpUserResponse.status}`);
     }
 
-    const userId = `wp_${wpUser?.id || email.replace(/[^a-zA-Z0-9]/g, '_')}`;
+    const wpUserId = `wp_${wpUser?.id || email.replace(/[^a-zA-Z0-9]/g, '_')}`;
     const nameParts = wpData.user_display_name?.split(' ') || [];
     
+    const existingUser = await storage.getUserByEmail(wpData.user_email);
+    
+    if (existingUser) {
+      const updated = await storage.updateUserProfile(existingUser.id, {
+        firstName: wpUser?.first_name || nameParts[0] || existingUser.firstName,
+        lastName: wpUser?.last_name || nameParts.slice(1).join(' ') || existingUser.lastName,
+        profileImageUrl: wpUser?.avatar_urls?.['96'] || existingUser.profileImageUrl,
+      });
+      return { success: true, user: updated };
+    }
+    
     const user = await storage.upsertUser({
-      id: userId,
+      id: wpUserId,
       email: wpData.user_email,
       firstName: wpUser?.first_name || nameParts[0] || null,
       lastName: wpUser?.last_name || nameParts.slice(1).join(' ') || null,
