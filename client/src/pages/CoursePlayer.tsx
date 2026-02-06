@@ -35,8 +35,9 @@ import { usePageHeader } from "@/hooks/usePageHeader";
 import { cn } from "@/lib/utils";
 
 function naturalSort(a: string, b: string): number {
-  const aParts = a.split(/(\d+)/);
-  const bParts = b.split(/(\d+)/);
+  const re = /(\d+)/;
+  const aParts = a.toLowerCase().split(re);
+  const bParts = b.toLowerCase().split(re);
   for (let i = 0; i < Math.max(aParts.length, bParts.length); i++) {
     const ap = aParts[i] || '';
     const bp = bParts[i] || '';
@@ -45,8 +46,8 @@ function naturalSort(a: string, b: string): number {
     if (!isNaN(an) && !isNaN(bn)) {
       if (an !== bn) return an - bn;
     } else {
-      const cmp = ap.localeCompare(bp, 'it', { sensitivity: 'base' });
-      if (cmp !== 0) return cmp;
+      if (ap < bp) return -1;
+      if (ap > bp) return 1;
     }
   }
   return 0;
