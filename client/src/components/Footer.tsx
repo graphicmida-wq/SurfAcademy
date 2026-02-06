@@ -23,9 +23,9 @@ export function Footer() {
           </a>
 
           <div className="flex items-center justify-center gap-8 flex-wrap">
-            <img src={scuolaLogoUrl} alt="Scuola di Longboard" className="h-16 w-auto object-contain opacity-60" />
-            <img src={cinghialeLogoUrl} alt="Cinghiale Marino Surf Club" className="h-16 w-auto object-contain opacity-60" />
-            <img src={clinicLogoUrl} alt="Nose Riding Clinic" className="h-16 w-auto object-contain opacity-60" />
+            <img src={scuolaLogoUrl} alt="Scuola di Longboard" className="h-16 w-auto object-contain" />
+            <img src={cinghialeLogoUrl} alt="Cinghiale Marino Surf Club" className="h-16 w-auto object-contain" />
+            <img src={clinicLogoUrl} alt="Nose Riding Clinic" className="h-16 w-auto object-contain" />
           </div>
         </div>
 
