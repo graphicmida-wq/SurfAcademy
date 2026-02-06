@@ -7,42 +7,34 @@ import bgMobile from "@assets/Tavola_disegno_2_1770398994590.png";
 import logoWhite from "@assets/chiaro1_1760538494784.webp";
 import goodVibesImg from "@assets/Tavola_disegno_3_1770398994590.png";
 
-type AnimStep = "welcome" | "logo" | "vibes" | "button";
-
 export default function WelcomePage() {
   const [, setLocation] = useLocation();
   const { user } = useAuth();
-  const [step, setStep] = useState<AnimStep>("welcome");
-  const [fadeIn, setFadeIn] = useState(false);
+
+  const [showWelcome, setShowWelcome] = useState(false);
+  const [showLogo, setShowLogo] = useState(false);
+  const [showVibes, setShowVibes] = useState(false);
+  const [vibesFadedIn, setVibesFadedIn] = useState(false);
+  const [showButton, setShowButton] = useState(false);
+
+  const [hideWelcome, setHideWelcome] = useState(false);
+  const [hideLogo, setHideLogo] = useState(false);
 
   const firstName = user?.firstName || "Studente";
 
   useEffect(() => {
     const timers: ReturnType<typeof setTimeout>[] = [];
 
-    timers.push(setTimeout(() => setFadeIn(true), 200));
+    timers.push(setTimeout(() => setShowWelcome(true), 300));
+    timers.push(setTimeout(() => setHideWelcome(true), 3200));
 
-    timers.push(setTimeout(() => {
-      setFadeIn(false);
-    }, 2800));
+    timers.push(setTimeout(() => setShowLogo(true), 4500));
+    timers.push(setTimeout(() => setHideLogo(true), 7200));
 
-    timers.push(setTimeout(() => {
-      setStep("logo");
-      setFadeIn(true);
-    }, 3500));
+    timers.push(setTimeout(() => setShowVibes(true), 8500));
+    timers.push(setTimeout(() => setVibesFadedIn(true), 8600));
 
-    timers.push(setTimeout(() => {
-      setFadeIn(false);
-    }, 6000));
-
-    timers.push(setTimeout(() => {
-      setStep("vibes");
-      setFadeIn(true);
-    }, 6700));
-
-    timers.push(setTimeout(() => {
-      setStep("button");
-    }, 8200));
+    timers.push(setTimeout(() => setShowButton(true), 10500));
 
     return () => timers.forEach(clearTimeout);
   }, []);
@@ -61,52 +53,70 @@ export default function WelcomePage() {
       </picture>
 
       <div className="relative z-10 flex flex-col items-center justify-center h-full px-6">
-        {step === "welcome" && (
+        {!hideLogo && !showLogo && (
           <h1
-            className={`text-white text-3xl sm:text-4xl md:text-5xl font-display font-bold text-center drop-shadow-lg transition-opacity duration-700 ${fadeIn ? "opacity-100" : "opacity-0"}`}
+            className="text-white text-xl sm:text-2xl md:text-3xl font-display font-semibold text-center drop-shadow-lg"
+            style={{
+              opacity: showWelcome && !hideWelcome ? 1 : 0,
+              transition: "opacity 1.2s ease-in-out",
+            }}
             data-testid="text-welcome-name"
           >
             Benvenuto, {firstName}
           </h1>
         )}
 
-        {step === "logo" && (
+        {showLogo && !showVibes && (
           <img
             src={logoWhite}
             alt="Scuola di Longboard"
-            className={`h-28 sm:h-36 md:h-44 w-auto drop-shadow-2xl transition-opacity duration-700 ${fadeIn ? "opacity-100" : "opacity-0"}`}
+            className="w-auto drop-shadow-2xl"
+            style={{
+              height: "clamp(9rem, 20vw, 14.5rem)",
+              opacity: !hideLogo ? 1 : 0,
+              transition: "opacity 1.2s ease-in-out",
+            }}
             data-testid="img-welcome-logo"
           />
         )}
 
-        {step === "vibes" && (
-          <div className={`flex flex-col items-center gap-10 transition-opacity duration-700 ${fadeIn ? "opacity-100" : "opacity-0"}`}>
+        {showVibes && (
+          <div
+            className="flex flex-col items-center"
+            style={{
+              opacity: vibesFadedIn ? 1 : 0,
+              transition: "opacity 1.2s ease-in-out",
+            }}
+          >
             <img
               src={goodVibesImg}
               alt="Good Vibes"
-              className="h-24 sm:h-32 md:h-40 w-auto drop-shadow-2xl brightness-0 invert"
+              className="w-auto drop-shadow-2xl brightness-0 invert"
+              style={{
+                height: showButton ? "clamp(5.5rem, 11vw, 9rem)" : "clamp(8rem, 16vw, 13rem)",
+                transform: showButton ? "translateY(-2rem)" : "translateY(0)",
+                transition: "height 1s ease-in-out, transform 1s ease-in-out",
+              }}
               data-testid="img-good-vibes"
             />
-          </div>
-        )}
-
-        {step === "button" && (
-          <div className="flex flex-col items-center gap-10 animate-fade-in">
-            <img
-              src={goodVibesImg}
-              alt="Good Vibes"
-              className="h-24 sm:h-32 md:h-40 w-auto drop-shadow-2xl brightness-0 invert"
-              data-testid="img-good-vibes-final"
-            />
-            <Button
-              size="lg"
-              variant="outline"
-              onClick={() => setLocation("/dashboard")}
-              className="bg-white/20 backdrop-blur-sm text-white border-white/40"
-              data-testid="button-go-to-lessons"
+            <div
+              style={{
+                opacity: showButton ? 1 : 0,
+                transform: showButton ? "translateY(-1rem)" : "translateY(1rem)",
+                transition: "opacity 1s ease-in-out 0.4s, transform 1s ease-in-out 0.4s",
+                pointerEvents: showButton ? "auto" : "none",
+              }}
             >
-              Vai alle lezioni
-            </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                onClick={() => setLocation("/dashboard")}
+                className="bg-white/20 backdrop-blur-sm text-white border-white/40"
+                data-testid="button-go-to-lessons"
+              >
+                Vai alle lezioni
+              </Button>
+            </div>
           </div>
         )}
       </div>
