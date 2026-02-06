@@ -25,16 +25,16 @@ export default function WelcomePage() {
   useEffect(() => {
     const timers: ReturnType<typeof setTimeout>[] = [];
 
-    timers.push(setTimeout(() => setShowWelcome(true), 300));
-    timers.push(setTimeout(() => setHideWelcome(true), 3200));
+    timers.push(setTimeout(() => setShowWelcome(true), 400));
+    timers.push(setTimeout(() => setHideWelcome(true), 3600));
 
-    timers.push(setTimeout(() => setShowLogo(true), 4500));
-    timers.push(setTimeout(() => setHideLogo(true), 7200));
+    timers.push(setTimeout(() => setShowLogo(true), 5400));
+    timers.push(setTimeout(() => setHideLogo(true), 8400));
 
-    timers.push(setTimeout(() => setShowVibes(true), 8500));
-    timers.push(setTimeout(() => setVibesFadedIn(true), 8600));
+    timers.push(setTimeout(() => setShowVibes(true), 10200));
+    timers.push(setTimeout(() => setVibesFadedIn(true), 10300));
 
-    timers.push(setTimeout(() => setShowButton(true), 10500));
+    timers.push(setTimeout(() => setShowButton(true), 12800));
 
     return () => timers.forEach(clearTimeout);
   }, []);
@@ -58,7 +58,7 @@ export default function WelcomePage() {
             className="text-white text-xl sm:text-2xl md:text-3xl font-display font-semibold text-center drop-shadow-lg"
             style={{
               opacity: showWelcome && !hideWelcome ? 1 : 0,
-              transition: "opacity 1.2s ease-in-out",
+              transition: "opacity 1.8s ease-in-out",
             }}
             data-testid="text-welcome-name"
           >
@@ -72,9 +72,9 @@ export default function WelcomePage() {
             alt="Scuola di Longboard"
             className="w-auto drop-shadow-2xl"
             style={{
-              height: "clamp(9rem, 20vw, 14.5rem)",
+              height: "clamp(10rem, 22vw, 16rem)",
               opacity: !hideLogo ? 1 : 0,
-              transition: "opacity 1.2s ease-in-out",
+              transition: "opacity 1.8s ease-in-out",
             }}
             data-testid="img-welcome-logo"
           />
@@ -85,17 +85,17 @@ export default function WelcomePage() {
             className="flex flex-col items-center"
             style={{
               opacity: vibesFadedIn ? 1 : 0,
-              transition: "opacity 1.2s ease-in-out",
+              transition: "opacity 1.8s ease-in-out",
             }}
           >
             <img
               src={goodVibesImg}
               alt="Good Vibes"
-              className="w-auto drop-shadow-2xl brightness-0 invert"
+              className="w-auto drop-shadow-2xl"
               style={{
-                height: showButton ? "clamp(5.5rem, 11vw, 9rem)" : "clamp(8rem, 16vw, 13rem)",
+                height: showButton ? "clamp(6rem, 12vw, 10rem)" : "clamp(9rem, 18vw, 14.5rem)",
                 transform: showButton ? "translateY(-2rem)" : "translateY(0)",
-                transition: "height 1s ease-in-out, transform 1s ease-in-out",
+                transition: "height 1.4s ease-in-out, transform 1.4s ease-in-out",
               }}
               data-testid="img-good-vibes"
             />
@@ -103,7 +103,7 @@ export default function WelcomePage() {
               style={{
                 opacity: showButton ? 1 : 0,
                 transform: showButton ? "translateY(-1rem)" : "translateY(1rem)",
-                transition: "opacity 1s ease-in-out 0.4s, transform 1s ease-in-out 0.4s",
+                transition: "opacity 1.4s ease-in-out 0.5s, transform 1.4s ease-in-out 0.5s",
                 pointerEvents: showButton ? "auto" : "none",
               }}
             >
