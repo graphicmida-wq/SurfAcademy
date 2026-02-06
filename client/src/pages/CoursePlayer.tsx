@@ -89,6 +89,16 @@ export default function CourseDetail() {
   const isAdmin = user?.isAdmin === true;
   const [selectedLessonId, setSelectedLessonId] = useState<string | null>(null);
   const [expandedModules, setExpandedModules] = useState<string[]>([]);
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  const selectLesson = useCallback((lessonId: string) => {
+    setSelectedLessonId(lessonId);
+    if (window.innerWidth < 1024 && contentRef.current) {
+      setTimeout(() => {
+        contentRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    }
+  }, []);
   
   const { data: pageHeader } = usePageHeader(`course-${id}`);
 
@@ -426,7 +436,7 @@ export default function CourseDetail() {
                                     )}
                                   >
                                     <button
-                                      onClick={() => setSelectedLessonId(lesson.id)}
+                                      onClick={() => selectLesson(lesson.id)}
                                       className={cn(
                                         "flex-1 flex items-center gap-2 px-3 py-2 text-sm text-left",
                                         !isSelected && "hover-elevate active-elevate-2"
@@ -490,7 +500,7 @@ export default function CourseDetail() {
           </aside>
 
           {/* Main Content Area */}
-          <div className="lg:col-span-3">
+          <div ref={contentRef} className="lg:col-span-3">
             {renderContent()}
           </div>
         </div>
