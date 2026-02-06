@@ -92,19 +92,17 @@ export default function LocalAuth() {
                         {...field}
                         type={showPassword ? "text" : "password"}
                         placeholder="Password"
-                        className="bg-white/20 border-white/10 text-white placeholder:text-white/60 focus-visible:ring-white/40 pr-12"
+                        className="bg-white/20 border-white/10 text-white placeholder:text-white/60 focus-visible:ring-white/40 pr-10"
                         data-testid="input-login-password"
                       />
-                      <Button
+                      <button
                         type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="absolute right-1 top-1/2 -translate-y-1/2 text-white/60"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-white/60 hover:text-white/90 transition-colors"
                         onClick={() => setShowPassword(!showPassword)}
                         data-testid="button-toggle-password"
                       >
-                        {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                      </Button>
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
                     </div>
                   </FormControl>
                   <FormMessage className="text-orange-300" />
