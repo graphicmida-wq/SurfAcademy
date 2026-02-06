@@ -356,11 +356,7 @@ export class DatabaseStorage implements IStorage {
           .where(eq(lessons.moduleId, module.id))
           .orderBy(lessons.orderIndex);
         
-        moduleLessons.sort((a, b) => {
-          const orderDiff = (a.orderIndex || 0) - (b.orderIndex || 0);
-          if (orderDiff !== 0) return orderDiff;
-          return naturalSortStr(a.title, b.title);
-        });
+        moduleLessons.sort((a, b) => naturalSortStr(a.title, b.title));
 
         return {
           ...module,

@@ -105,11 +105,7 @@ export default function CourseDetail() {
     if (!rawModules) return rawModules;
     return rawModules.map(mod => ({
       ...mod,
-      lessons: [...(mod.lessons || [])].sort((a, b) => {
-        const orderDiff = (a.orderIndex || 0) - (b.orderIndex || 0);
-        if (orderDiff !== 0) return orderDiff;
-        return naturalSort(a.title, b.title);
-      }),
+      lessons: [...(mod.lessons || [])].sort((a, b) => naturalSort(a.title, b.title)),
     }));
   }, [rawModules]);
 
