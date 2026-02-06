@@ -72,6 +72,24 @@ import {
 import { db } from "./db";
 import { eq, and, desc, sql, inArray } from "drizzle-orm";
 
+function naturalSortStr(a: string, b: string): number {
+  const aParts = a.split(/(\d+)/);
+  const bParts = b.split(/(\d+)/);
+  for (let i = 0; i < Math.max(aParts.length, bParts.length); i++) {
+    const ap = aParts[i] || '';
+    const bp = bParts[i] || '';
+    const an = parseInt(ap, 10);
+    const bn = parseInt(bp, 10);
+    if (!isNaN(an) && !isNaN(bn)) {
+      if (an !== bn) return an - bn;
+    } else {
+      const cmp = ap.localeCompare(bp, 'it', { sensitivity: 'base' });
+      if (cmp !== 0) return cmp;
+    }
+  }
+  return 0;
+}
+
 export interface IStorage {
   // User operations (Required for Replit Auth + local auth)
   getUser(id: string): Promise<User | undefined>;
@@ -337,6 +355,12 @@ export class DatabaseStorage implements IStorage {
           .where(eq(lessons.moduleId, module.id))
           .orderBy(lessons.orderIndex);
         
+        moduleLessons.sort((a, b) => {
+          const orderDiff = (a.orderIndex || 0) - (b.orderIndex || 0);
+          if (orderDiff !== 0) return orderDiff;
+          return naturalSortStr(a.title, b.title);
+        });
+
         return {
           ...module,
           lessons: moduleLessons,
