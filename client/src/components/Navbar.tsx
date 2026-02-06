@@ -66,9 +66,9 @@ export function Navbar() {
       }`}>
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-28 items-center justify-between py-2">
-          {/* Logo - links to WordPress */}
+          {/* Logo - links to Welcome page */}
           <a 
-            href={WORDPRESS_URL}
+            href="/"
             className="flex items-center space-x-2 hover-elevate active-elevate-2 rounded-lg px-2 py-1 -ml-2" 
             data-testid="link-home"
           >
