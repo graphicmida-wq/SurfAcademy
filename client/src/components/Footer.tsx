@@ -2,10 +2,15 @@ import { Instagram } from "lucide-react";
 import scuolaLogoUrl from "@assets/scuola-monocol_1770391680234.png";
 import cinghialeLogoUrl from "@assets/cinghiale-monocol_1770391680234.png";
 import clinicLogoUrl from "@assets/clinic-monocol_1770391680234.png";
+import scuolaLightUrl from "@assets/chiaro1_1760538494784.webp";
+import { useTheme } from "@/components/ThemeProvider";
 
-const FOOTER_COLOR = '#3d636d';
+const FOOTER_COLOR_LIGHT = '#3d636d';
 
 export function Footer() {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
+
   return (
     <footer className="border-t border-border bg-card mt-auto">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -14,8 +19,8 @@ export function Footer() {
             href="https://www.instagram.com/scuoladilongboard/"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 rounded-lg hover-elevate active-elevate-2 transition-opacity"
-            style={{ color: FOOTER_COLOR }}
+            className={`inline-flex items-center gap-2 rounded-lg hover-elevate active-elevate-2 transition-opacity ${isDark ? 'text-white' : ''}`}
+            style={isDark ? undefined : { color: FOOTER_COLOR_LIGHT }}
             data-testid="social-instagram"
           >
             <span className="font-display font-semibold text-lg">Seguici</span>
@@ -23,14 +28,14 @@ export function Footer() {
           </a>
 
           <div className="flex items-center justify-center gap-8 flex-wrap">
-            <img src={scuolaLogoUrl} alt="Scuola di Longboard" className="h-16 w-auto object-contain" />
-            <img src={cinghialeLogoUrl} alt="Cinghiale Marino Surf Club" className="h-16 w-auto object-contain" />
-            <img src={clinicLogoUrl} alt="Nose Riding Clinic" className="h-16 w-auto object-contain" />
+            <img src={scuolaLogoUrl} alt="Scuola di Longboard" className={`h-16 w-auto object-contain ${isDark ? 'brightness-0 invert' : ''}`} />
+            <img src={cinghialeLogoUrl} alt="Cinghiale Marino Surf Club" className={`h-16 w-auto object-contain ${isDark ? 'brightness-0 invert' : ''}`} />
+            <img src={clinicLogoUrl} alt="Nose Riding Clinic" className={`h-16 w-auto object-contain ${isDark ? 'brightness-0 invert' : ''}`} />
           </div>
         </div>
 
         <div className="mt-6 pt-6 border-t border-border">
-          <p className="text-center text-sm" style={{ color: FOOTER_COLOR }}>
+          <p className={`text-center text-sm ${isDark ? 'text-white/80' : ''}`} style={isDark ? undefined : { color: FOOTER_COLOR_LIGHT }}>
             COPYRIGHT© 2025 – SCUOLA DI LONGBOARD – ASD CINGHIALE MARINO SURF CLUB – Via Aurelia 45 – 17051 – ANDORA (SV)
           </p>
         </div>

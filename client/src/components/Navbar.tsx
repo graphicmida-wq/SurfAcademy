@@ -72,7 +72,7 @@ export function Navbar() {
             className="flex items-center space-x-2 hover-elevate active-elevate-2 rounded-lg px-2 py-1 -ml-2" 
             data-testid="link-home"
           >
-            <img src={isScrolled ? logoUrl : logoLightUrl} alt="Scuola di Longboard" className="h-24 w-auto transition-opacity duration-300" />
+            <img src={(!isScrolled || theme === 'dark') ? logoLightUrl : logoUrl} alt="Scuola di Longboard" className="h-24 w-auto transition-opacity duration-300" />
           </a>
 
           {/* Desktop Navigation */}
