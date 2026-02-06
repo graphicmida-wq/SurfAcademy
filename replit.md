@@ -20,7 +20,7 @@ Preferred communication style: Simple, everyday language.
 
 ### Frontend Architecture
 
-The frontend uses React 18, TypeScript, and Vite. **No public-facing landing page** - unauthenticated users see only the login screen. Authenticated users are directed to `/dashboard`. Wouter manages client-side routing for `/dashboard`, `/corsi/:id/player` (course player), `/p/:slug` (custom pages), and `/admin/*` pages. State management uses TanStack Query. UI components are built with Radix UI primitives and styled with Tailwind CSS, following a shadcn/ui pattern. The design uses HSL values, CSS custom properties for theming, and Montserrat/Inter fonts.
+The frontend uses React 18, TypeScript, and Vite. **No public-facing landing page** - unauthenticated users see only the login screen. Authenticated users land on a **Welcome Page** (`/`) with full-screen background images (desktop/mobile), a 3-step fade animation ("Benvenuto, Nome" → white logo → "Good Vibes" image), and a "Vai alle lezioni" button that navigates to `/dashboard`. The welcome page has no navbar or footer. Wouter manages client-side routing for `/dashboard`, `/corsi/:id/player` (course player), `/p/:slug` (custom pages), and `/admin/*` pages. State management uses TanStack Query. UI components are built with Radix UI primitives and styled with Tailwind CSS, following a shadcn/ui pattern. The design uses HSL values, CSS custom properties for theming, and Montserrat/Inter fonts.
 
 **Navbar Features**:
 - Logo and Home link redirect to WordPress (https://scuoladilongboard.it)

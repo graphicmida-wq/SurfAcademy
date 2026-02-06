@@ -21,6 +21,7 @@ import AdminCourses from "@/pages/admin/Courses";
 import AdminCourseContent from "@/pages/admin/CourseContent";
 import AdminIscrizioni from "@/pages/admin/Iscrizioni";
 import NotFound from "@/pages/not-found";
+import WelcomePage from "@/pages/WelcomePage";
 import { AdminLayout } from "@/components/AdminLayout";
 
 function Router() {
@@ -122,6 +123,11 @@ function Router() {
     );
   }
 
+  // Welcome page - full screen, no navbar/footer
+  if (location === "/") {
+    return <WelcomePage />;
+  }
+
   // Authenticated users
   return (
     <div className="flex flex-col min-h-screen">
@@ -134,11 +140,6 @@ function Router() {
           
           {/* Dynamic custom pages */}
           <Route path="/p/:slug" component={DynamicPage} />
-          
-          {/* Root path redirects to dashboard for authenticated users */}
-          <Route path="/">
-            <Dashboard />
-          </Route>
           
           {/* Fallback to 404 */}
           <Route component={NotFound} />
