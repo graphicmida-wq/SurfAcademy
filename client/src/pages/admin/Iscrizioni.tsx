@@ -58,7 +58,19 @@ export default function Iscrizioni() {
       setNewUserLastName("");
     },
     onError: (error: any) => {
-      toast({ title: error.message || "Errore nella creazione", variant: "destructive" });
+      const msg = error.message || "Errore nella creazione";
+      if (msg.includes("già registrata")) {
+        toast({ 
+          title: "Utente già presente nel sistema", 
+          description: "Cerca l'utente nella lista qui sotto e iscrivilo al corso con il pulsante 'Iscrivi a Corso'.",
+        });
+        setShowAddUserDialog(false);
+        setNewUserEmail("");
+        setNewUserFirstName("");
+        setNewUserLastName("");
+      } else {
+        toast({ title: msg, variant: "destructive" });
+      }
     },
   });
 
@@ -102,23 +114,26 @@ export default function Iscrizioni() {
     },
   });
 
-  const userEnrollments = enrollments?.reduce((acc, enrollment) => {
+  const enrollmentsByUser = enrollments?.reduce((acc, enrollment) => {
     const userId = enrollment.user.id;
     if (!acc[userId]) {
-      acc[userId] = {
-        user: enrollment.user,
-        enrollments: [],
-      };
+      acc[userId] = [];
     }
-    acc[userId].enrollments.push(enrollment);
+    acc[userId].push(enrollment);
     return acc;
-  }, {} as Record<string, { user: User; enrollments: EnrollmentWithDetails[] }>);
+  }, {} as Record<string, EnrollmentWithDetails[]>) || {};
 
-  const filteredUsers = Object.values(userEnrollments || {}).filter((item) => {
-    const matchesSearch =
-      item.user.firstName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.user.lastName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.user.email?.toLowerCase().includes(searchQuery.toLowerCase());
+  const allUserItems = (allUsers || []).map(user => ({
+    user,
+    enrollments: enrollmentsByUser[user.id] || [],
+  }));
+
+  const filteredUsers = allUserItems.filter((item) => {
+    const q = searchQuery.toLowerCase();
+    const matchesSearch = !q ||
+      item.user.firstName?.toLowerCase().includes(q) ||
+      item.user.lastName?.toLowerCase().includes(q) ||
+      item.user.email?.toLowerCase().includes(q);
 
     const matchesCourse =
       courseFilter === "all" || item.enrollments.some((e) => e.course.id === courseFilter);
@@ -420,6 +435,9 @@ export default function Iscrizioni() {
                           Corsi Iscritti ({userEnrolls.length})
                         </p>
                         <div className="flex flex-wrap gap-2">
+                          {userEnrolls.length === 0 && (
+                            <p className="text-xs text-muted-foreground">Nessuna iscrizione</p>
+                          )}
                           {userEnrolls.map((enrollment) => (
                             <Badge
                               key={enrollment.id}
