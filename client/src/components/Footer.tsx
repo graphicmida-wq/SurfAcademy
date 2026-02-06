@@ -1,7 +1,7 @@
 import { Instagram } from "lucide-react";
-import cinghialeLogoUrl from "@assets/cinghiale-marino-logo-_1770386698975.png";
-import longboardLogoUrl from "@assets/logo_longboard2_1770386728175.png";
-import clinicLogoUrl from "@assets/Tavola_disegno_6_1770386741977.png";
+import scuolaLogoUrl from "@assets/scuola-monocol_1770391680234.png";
+import cinghialeLogoUrl from "@assets/cinghiale-monocol_1770391680234.png";
+import clinicLogoUrl from "@assets/clinic-monocol_1770391680234.png";
 
 export function Footer() {
   return (
@@ -20,9 +20,9 @@ export function Footer() {
           </a>
 
           <div className="flex items-center justify-center gap-8 flex-wrap">
-            <img src={longboardLogoUrl} alt="Scuola di Longboard" className="h-14 w-auto object-contain grayscale opacity-60" />
-            <img src={cinghialeLogoUrl} alt="Cinghiale Marino Surf Club" className="h-14 w-auto object-contain grayscale opacity-60" />
-            <img src={clinicLogoUrl} alt="Clinic" className="h-14 w-auto object-contain grayscale opacity-60" />
+            <img src={scuolaLogoUrl} alt="Scuola di Longboard" className="h-16 w-auto object-contain opacity-60" />
+            <img src={cinghialeLogoUrl} alt="Cinghiale Marino Surf Club" className="h-16 w-auto object-contain opacity-60" />
+            <img src={clinicLogoUrl} alt="Nose Riding Clinic" className="h-16 w-auto object-contain opacity-60" />
           </div>
         </div>
 
