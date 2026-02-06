@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import RichTextEditor from "@/components/ui/rich-text-editor";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MediaUploadZone } from "@/components/MediaUploadZone";
 import { useToast } from "@/hooks/use-toast";
@@ -763,7 +764,7 @@ export default function AdminCourseContent() {
 
       {/* Lesson Dialog */}
       <Dialog open={isLessonDialogOpen} onOpenChange={setIsLessonDialogOpen}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editingLesson ? "Modifica Contenuto" : "Crea Nuovo Contenuto"}</DialogTitle>
           </DialogHeader>
@@ -913,17 +914,14 @@ export default function AdminCourseContent() {
                 name="htmlContent"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Contenuto HTML</FormLabel>
+                    <FormLabel>Contenuto</FormLabel>
                     <FormControl>
-                      <Textarea
-                        {...field}
-                        value={field.value ?? ""}
-                        placeholder="Inserisci contenuto HTML..."
-                        rows={8}
-                        data-testid="textarea-html-content"
+                      <RichTextEditor
+                        content={field.value ?? ""}
+                        onChange={(html) => field.onChange(html)}
+                        placeholder="Scrivi il contenuto della lezione..."
                       />
                     </FormControl>
-                    <FormDescription>Puoi inserire HTML per testi formattati</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
