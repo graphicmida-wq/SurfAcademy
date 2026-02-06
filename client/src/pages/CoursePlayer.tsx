@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { isUnauthorizedError } from "@/lib/authUtils";
@@ -97,8 +98,45 @@ export default function CourseDetail() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/lesson-progress/course/${id}`] });
+      queryClient.invalidateQueries({ queryKey: ['/api/enrollments'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/enrollments/course/${id}`] });
     },
   });
+
+  const watchedVideosRef = useRef<Set<string>>(new Set());
+  const autoCompleteTriggeredRef = useRef<Set<string>>(new Set());
+
+  const checkAndAutoComplete = useCallback((lessonId: string, videoIndex: number, totalVideos: number) => {
+    const videoKey = `${lessonId}-${videoIndex}`;
+    watchedVideosRef.current.add(videoKey);
+    
+    const allWatched = Array.from({ length: totalVideos }, (_, i) => `${lessonId}-${i}`)
+      .every(key => watchedVideosRef.current.has(key));
+    
+    if (allWatched && !autoCompleteTriggeredRef.current.has(lessonId)) {
+      autoCompleteTriggeredRef.current.add(lessonId);
+      const alreadyCompleted = lessonProgress.some(p => p.lessonId === lessonId && p.completed);
+      if (!alreadyCompleted) {
+        toggleLessonCompleteMutation.mutate({ lessonId, completed: true });
+      }
+    }
+  }, [lessonProgress, toggleLessonCompleteMutation]);
+
+  const handleVideoTimeUpdate = useCallback((lessonId: string, videoIndex: number, totalVideos: number, event: React.SyntheticEvent<HTMLVideoElement>) => {
+    const video = event.currentTarget;
+    if (video.duration > 0 && !isNaN(video.duration) && video.currentTime / video.duration >= 0.9) {
+      checkAndAutoComplete(lessonId, videoIndex, totalVideos);
+    }
+  }, [checkAndAutoComplete]);
+
+  const handleVideoEnded = useCallback((lessonId: string, videoIndex: number, totalVideos: number) => {
+    checkAndAutoComplete(lessonId, videoIndex, totalVideos);
+  }, [checkAndAutoComplete]);
+
+  useEffect(() => {
+    watchedVideosRef.current.clear();
+    autoCompleteTriggeredRef.current.clear();
+  }, [selectedLessonId]);
 
   // Initialize expanded modules based on defaultExpanded field
   useEffect(() => {
@@ -195,6 +233,8 @@ export default function CourseDetail() {
                       src={videoUrl} 
                       controls 
                       className="w-full h-full"
+                      onTimeUpdate={(e) => handleVideoTimeUpdate(lesson.id, idx, lesson.videoUrls!.length, e)}
+                      onEnded={() => handleVideoEnded(lesson.id, idx, lesson.videoUrls!.length)}
                       data-testid={`video-${lesson.id}-${idx}`}
                     />
                   </div>
@@ -209,6 +249,8 @@ export default function CourseDetail() {
                   src={lesson.videoUrl} 
                   controls 
                   className="w-full h-full"
+                  onTimeUpdate={(e) => handleVideoTimeUpdate(lesson.id, 0, 1, e)}
+                  onEnded={() => handleVideoEnded(lesson.id, 0, 1)}
                   data-testid={`video-${lesson.id}`}
                 />
               </div>
@@ -288,7 +330,19 @@ export default function CourseDetail() {
           {/* Sidebar Navigation */}
           <aside className="lg:sticky lg:top-20 h-fit">
             <Card className="p-4">
-              <h2 className="font-display font-semibold text-lg mb-4 px-2">Contenuti del Corso</h2>
+              <h2 className="font-display font-semibold text-lg mb-2 px-2">Contenuti del Corso</h2>
+              {modules && modules.length > 0 && (() => {
+                const totalLessons = modules.reduce((sum, m) => sum + (m.lessons?.length || 0), 0);
+                const completedLessons = modules.reduce((sum, m) => 
+                  sum + (m.lessons?.filter(l => lessonProgress.some(p => p.lessonId === l.id && p.completed)).length || 0), 0);
+                const progressPercent = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
+                return (
+                  <div className="px-2 mb-4" data-testid="course-progress">
+                    <Progress value={progressPercent} className="h-2 mb-1" />
+                    <p className="text-xs text-muted-foreground">{completedLessons}/{totalLessons} completate ({progressPercent}%)</p>
+                  </div>
+                );
+              })()}
               {!modules || modules.length === 0 ? (
                 <p className="text-sm text-muted-foreground px-2">Nessun modulo disponibile</p>
               ) : (
@@ -298,12 +352,27 @@ export default function CourseDetail() {
                   onValueChange={setExpandedModules}
                   className="w-full"
                 >
-                  {modules.map((module) => (
+                  {modules.map((module) => {
+                    const moduleLessonCount = module.lessons?.length || 0;
+                    const moduleCompletedCount = module.lessons?.filter(l => 
+                      lessonProgress.some(p => p.lessonId === l.id && p.completed)
+                    ).length || 0;
+                    const moduleAllComplete = moduleLessonCount > 0 && moduleCompletedCount === moduleLessonCount;
+                    return (
                     <AccordionItem key={module.id} value={module.id} data-testid={`module-${module.id}`}>
                       <AccordionTrigger className="px-2 hover:no-underline">
-                        <div className="flex items-center gap-2">
-                          <Folder className="h-4 w-4 text-primary" />
-                          <span className="font-medium text-sm">{module.title}</span>
+                        <div className="flex items-center gap-2 flex-1">
+                          {moduleAllComplete ? (
+                            <CheckCircle2 className="h-4 w-4 text-chart-4 flex-shrink-0" />
+                          ) : (
+                            <Folder className="h-4 w-4 text-primary flex-shrink-0" />
+                          )}
+                          <span className="font-medium text-sm flex-1 text-left">{module.title}</span>
+                          {moduleLessonCount > 0 && (
+                            <span className="text-xs text-muted-foreground flex-shrink-0">
+                              {moduleCompletedCount}/{moduleLessonCount}
+                            </span>
+                          )}
                         </div>
                       </AccordionTrigger>
                       <AccordionContent>
@@ -356,7 +425,7 @@ export default function CourseDetail() {
                         </div>
                       </AccordionContent>
                     </AccordionItem>
-                  ))}
+                  )})}
                 </Accordion>
               )}
 

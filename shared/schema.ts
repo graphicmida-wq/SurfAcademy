@@ -9,6 +9,7 @@ import {
   text,
   integer,
   boolean,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -129,7 +130,9 @@ export const lessonProgress = pgTable("lesson_progress", {
   lessonId: varchar("lesson_id").notNull().references(() => lessons.id, { onDelete: 'cascade' }),
   completed: boolean("completed").default(false),
   completedAt: timestamp("completed_at"),
-});
+}, (table) => [
+  uniqueIndex("lesson_progress_user_lesson_idx").on(table.userId, table.lessonId),
+]);
 
 export const exerciseProgress = pgTable("exercise_progress", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),

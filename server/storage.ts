@@ -70,7 +70,7 @@ import {
   type InsertWoocommerceWebhookLog,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, desc, sql } from "drizzle-orm";
+import { eq, and, desc, sql, inArray } from "drizzle-orm";
 
 export interface IStorage {
   // User operations (Required for Replit Auth + local auth)
@@ -92,7 +92,11 @@ export interface IStorage {
   updateModule(id: string, module: Partial<InsertModule>): Promise<Module>;
   deleteModule(id: string): Promise<void>;
   
+  // Module single fetch
+  getModule(id: string): Promise<Module | undefined>;
+  
   // Lesson operations
+  getLesson(id: string): Promise<Lesson | undefined>;
   getLessonsByModule(moduleId: string): Promise<Lesson[]>;
   createLesson(lesson: InsertLesson): Promise<Lesson>;
   updateLesson(id: string, lesson: Partial<InsertLesson>): Promise<Lesson>;
@@ -116,6 +120,8 @@ export interface IStorage {
   
   // Lesson progress operations
   getLessonProgressByUser(userId: string, lessonId: string): Promise<any>;
+  getLessonProgressByCourse(userId: string, courseId: string): Promise<{ lessonId: string; completed: boolean }[]>;
+  toggleLessonComplete(userId: string, lessonId: string, completed: boolean): Promise<void>;
   markLessonComplete(userId: string, lessonId: string): Promise<void>;
   
   // Exercise progress operations
@@ -340,7 +346,17 @@ export class DatabaseStorage implements IStorage {
     await db.delete(modules).where(eq(modules.id, id));
   }
 
+  async getModule(id: string): Promise<Module | undefined> {
+    const [module] = await db.select().from(modules).where(eq(modules.id, id));
+    return module;
+  }
+
   // ========== Lesson Operations ==========
+  async getLesson(id: string): Promise<Lesson | undefined> {
+    const [lesson] = await db.select().from(lessons).where(eq(lessons.id, id));
+    return lesson;
+  }
+
   async getLessonsByModule(moduleId: string): Promise<Lesson[]> {
     return await db
       .select()
@@ -474,6 +490,55 @@ export class DatabaseStorage implements IStorage {
       .from(lessonProgress)
       .where(and(eq(lessonProgress.userId, userId), eq(lessonProgress.lessonId, lessonId)));
     return progress;
+  }
+
+  async getLessonProgressByCourse(userId: string, courseId: string): Promise<{ lessonId: string; completed: boolean }[]> {
+    const courseModules = await db
+      .select({ id: modules.id })
+      .from(modules)
+      .where(eq(modules.courseId, courseId));
+    
+    if (courseModules.length === 0) return [];
+    
+    const moduleIds = courseModules.map(m => m.id);
+    const courseLessons = await db
+      .select({ id: lessons.id })
+      .from(lessons)
+      .where(inArray(lessons.moduleId, moduleIds));
+    
+    if (courseLessons.length === 0) return [];
+    
+    const lessonIds = courseLessons.map(l => l.id);
+    const progress = await db
+      .select({
+        lessonId: lessonProgress.lessonId,
+        completed: lessonProgress.completed,
+      })
+      .from(lessonProgress)
+      .where(and(
+        eq(lessonProgress.userId, userId),
+        inArray(lessonProgress.lessonId, lessonIds)
+      ));
+    
+    return progress.map(p => ({
+      lessonId: p.lessonId,
+      completed: p.completed ?? false,
+    }));
+  }
+
+  async toggleLessonComplete(userId: string, lessonId: string, completed: boolean): Promise<void> {
+    await db.insert(lessonProgress).values({
+      userId,
+      lessonId,
+      completed,
+      completedAt: completed ? new Date() : null,
+    }).onConflictDoUpdate({
+      target: [lessonProgress.userId, lessonProgress.lessonId],
+      set: {
+        completed,
+        completedAt: completed ? new Date() : null,
+      },
+    });
   }
 
   async markLessonComplete(userId: string, lessonId: string): Promise<void> {

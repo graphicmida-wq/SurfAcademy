@@ -692,15 +692,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // ========== Lesson Progress Routes ==========
+  app.get("/api/lesson-progress/course/:courseId", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.claims?.sub || req.user?.id;
+      const { courseId } = req.params;
+      const progress = await storage.getLessonProgressByCourse(userId, courseId);
+      res.json(progress);
+    } catch (error) {
+      console.error("Error fetching lesson progress:", error);
+      res.status(500).json({ message: "Failed to fetch lesson progress" });
+    }
+  });
+
   app.post("/api/lesson-progress", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user?.claims?.sub || req.user?.id;
-      const { lessonId } = req.body;
-      await storage.markLessonComplete(userId, lessonId);
-      res.status(201).json({ message: "Lesson marked as complete" });
+      const { lessonId, completed } = req.body;
+      const shouldComplete = completed !== undefined ? completed : true;
+      await storage.toggleLessonComplete(userId, lessonId, shouldComplete);
+      
+      // Auto-update enrollment progress
+      const lesson = await storage.getLesson(lessonId);
+      if (lesson) {
+        const module = await storage.getModule(lesson.moduleId);
+        if (module) {
+          const courseId = module.courseId;
+          const allProgress = await storage.getLessonProgressByCourse(userId, courseId);
+          const courseModules = await storage.getModulesByCourse(courseId);
+          const totalLessons = courseModules.reduce((sum, m) => sum + (m.lessons?.length || 0), 0);
+          const completedLessons = allProgress.filter(p => p.completed).length;
+          const progressPercent = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
+          
+          const enrollment = await storage.getEnrollmentByUserAndCourse(userId, courseId);
+          if (enrollment) {
+            await storage.updateEnrollmentProgress(enrollment.id, progressPercent);
+          }
+        }
+      }
+      
+      res.status(200).json({ message: shouldComplete ? "Lesson marked as complete" : "Lesson marked as incomplete" });
     } catch (error) {
-      console.error("Error marking lesson complete:", error);
-      res.status(500).json({ message: "Failed to mark lesson complete" });
+      console.error("Error updating lesson progress:", error);
+      res.status(500).json({ message: "Failed to update lesson progress" });
     }
   });
 
