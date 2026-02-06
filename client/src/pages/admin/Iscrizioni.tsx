@@ -22,7 +22,6 @@ export default function Iscrizioni() {
   const [showEnrollDialog, setShowEnrollDialog] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string>("");
   const [selectedCourseId, setSelectedCourseId] = useState<string>("");
-  const [newUserWpId, setNewUserWpId] = useState("");
   const [newUserEmail, setNewUserEmail] = useState("");
   const [newUserFirstName, setNewUserFirstName] = useState("");
   const [newUserLastName, setNewUserLastName] = useState("");
@@ -41,7 +40,7 @@ export default function Iscrizioni() {
   });
 
   const createUserMutation = useMutation({
-    mutationFn: async (data: { wpId: string; email: string; firstName: string; lastName: string }) => {
+    mutationFn: async (data: { email: string; firstName: string; lastName: string }) => {
       const res = await apiRequest("POST", "/api/admin/users", data);
       if (!res.ok) {
         const err = await res.json();
@@ -54,7 +53,6 @@ export default function Iscrizioni() {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/enrollments"] });
       toast({ title: `Utente ${user.firstName} ${user.lastName} creato` });
       setShowAddUserDialog(false);
-      setNewUserWpId("");
       setNewUserEmail("");
       setNewUserFirstName("");
       setNewUserLastName("");
@@ -170,25 +168,12 @@ export default function Iscrizioni() {
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Aggiungi Utente da WordPress</DialogTitle>
+                <DialogTitle>Aggiungi Studente</DialogTitle>
                 <DialogDescription>
-                  Inserisci i dati dell'utente come appaiono su WordPress per crearlo nell'app.
+                  Inserisci i dati dello studente. Usa la stessa email che ha su WordPress: quando farà login, tutto verrà collegato automaticamente.
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 pt-4">
-                <div className="space-y-2">
-                  <Label htmlFor="wpId">ID WordPress *</Label>
-                  <Input
-                    id="wpId"
-                    placeholder="Es: 123"
-                    value={newUserWpId}
-                    onChange={(e) => setNewUserWpId(e.target.value)}
-                    data-testid="input-wp-id"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Lo trovi nel pannello WordPress: Utenti &gt; clicca sull'utente &gt; guarda il numero nell'URL
-                  </p>
-                </div>
                 <div className="space-y-2">
                   <Label htmlFor="email">Email *</Label>
                   <Input
@@ -199,6 +184,9 @@ export default function Iscrizioni() {
                     onChange={(e) => setNewUserEmail(e.target.value)}
                     data-testid="input-user-email"
                   />
+                  <p className="text-xs text-muted-foreground">
+                    Deve essere la stessa email usata su WordPress
+                  </p>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -225,15 +213,14 @@ export default function Iscrizioni() {
                 <Button
                   className="w-full"
                   onClick={() => createUserMutation.mutate({
-                    wpId: newUserWpId,
                     email: newUserEmail,
                     firstName: newUserFirstName,
                     lastName: newUserLastName,
                   })}
-                  disabled={!newUserWpId || !newUserEmail || createUserMutation.isPending}
+                  disabled={!newUserEmail || createUserMutation.isPending}
                   data-testid="button-create-user"
                 >
-                  {createUserMutation.isPending ? "Creazione..." : "Crea Utente"}
+                  {createUserMutation.isPending ? "Creazione..." : "Crea Studente"}
                 </Button>
               </div>
             </DialogContent>

@@ -124,6 +124,19 @@ export async function loginWithWordPressCredentials(
     const existingUser = await storage.getUserByEmail(wpData.user_email);
     
     if (existingUser) {
+      if (existingUser.id !== wpUserId && existingUser.id.startsWith('manual_')) {
+        await storage.mergeUserById(existingUser.id, wpUserId);
+        console.log(`[WP Login] Merged manual user ${existingUser.id} -> ${wpUserId}`);
+        const user = await storage.upsertUser({
+          id: wpUserId,
+          email: wpData.user_email,
+          firstName: wpUser?.first_name || nameParts[0] || existingUser.firstName,
+          lastName: wpUser?.last_name || nameParts.slice(1).join(' ') || existingUser.lastName,
+          profileImageUrl: wpUser?.avatar_urls?.['96'] || existingUser.profileImageUrl,
+        });
+        return { success: true, user };
+      }
+
       const updated = await storage.updateUserProfile(existingUser.id, {
         firstName: wpUser?.first_name || nameParts[0] || existingUser.firstName,
         lastName: wpUser?.last_name || nameParts.slice(1).join(' ') || existingUser.lastName,
@@ -171,6 +184,13 @@ export async function handleSSOLogin(token: string): Promise<{ success: boolean;
 
   try {
     const userId = `wp_${payload.sub}`;
+    
+    const existingByEmail = await storage.getUserByEmail(payload.email);
+    if (existingByEmail && existingByEmail.id !== userId && existingByEmail.id.startsWith('manual_')) {
+      await storage.mergeUserById(existingByEmail.id, userId);
+      console.log(`[SSO] Merged manual user ${existingByEmail.id} -> ${userId}`);
+    }
+
     const user = await storage.upsertUser({
       id: userId,
       email: payload.email,

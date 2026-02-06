@@ -389,16 +389,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Admin: manually create a user (from WordPress data) and optionally enroll in a course
   app.post("/api/admin/users", isAdmin, async (req: any, res) => {
     try {
-      const { wpId, email, firstName, lastName } = req.body;
+      const { email, firstName, lastName } = req.body;
 
-      if (!wpId || !email) {
-        return res.status(400).json({ message: "ID WordPress e email sono obbligatori" });
-      }
-
-      const userId = `wp_${wpId}`;
-      const existingUser = await storage.getUser(userId);
-      if (existingUser) {
-        return res.status(400).json({ message: "Utente già esistente nell'app", user: existingUser });
+      if (!email) {
+        return res.status(400).json({ message: "L'email è obbligatoria" });
       }
 
       const existingByEmail = await storage.getUserByEmail(email);
@@ -406,8 +400,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Email già registrata nell'app", user: existingByEmail });
       }
 
+      const tempId = `manual_${email.replace(/[^a-zA-Z0-9]/g, '_')}`;
+
       const user = await storage.upsertUser({
-        id: userId,
+        id: tempId,
         email,
         firstName: firstName || null,
         lastName: lastName || null,

@@ -78,6 +78,7 @@ export interface IStorage {
   getUserByEmail(email: string): Promise<User | undefined>;
   getAllUsers(): Promise<User[]>;
   upsertUser(user: UpsertUser): Promise<User>;
+  mergeUserById(oldId: string, newId: string): Promise<void>;
   updateUserProfile(id: string, profile: Partial<Pick<User, 'firstName' | 'lastName' | 'email' | 'profileImageUrl'>>): Promise<User>;
 
   // Course operations
@@ -242,6 +243,13 @@ export class DatabaseStorage implements IStorage {
 
   async getAllUsers(): Promise<User[]> {
     return await db.select().from(users).orderBy(users.firstName);
+  }
+
+  async mergeUserById(oldId: string, newId: string): Promise<void> {
+    await db.update(enrollments).set({ userId: newId }).where(eq(enrollments.userId, oldId));
+    await db.update(lessonProgress).set({ userId: newId }).where(eq(lessonProgress.userId, oldId));
+    await db.update(exerciseProgress).set({ userId: newId }).where(eq(exerciseProgress.userId, oldId));
+    await db.delete(users).where(eq(users.id, oldId));
   }
 
   async upsertUser(userData: UpsertUser): Promise<User> {
