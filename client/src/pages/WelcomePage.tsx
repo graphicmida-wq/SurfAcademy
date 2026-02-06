@@ -13,6 +13,7 @@ export default function WelcomePage() {
 
   const [showWelcome, setShowWelcome] = useState(false);
   const [showLogo, setShowLogo] = useState(false);
+  const [logoFadedIn, setLogoFadedIn] = useState(false);
   const [showVibes, setShowVibes] = useState(false);
   const [vibesFadedIn, setVibesFadedIn] = useState(false);
   const [showButton, setShowButton] = useState(false);
@@ -29,6 +30,7 @@ export default function WelcomePage() {
     timers.push(setTimeout(() => setHideWelcome(true), 3600));
 
     timers.push(setTimeout(() => setShowLogo(true), 5400));
+    timers.push(setTimeout(() => setLogoFadedIn(true), 5500));
     timers.push(setTimeout(() => setHideLogo(true), 8400));
 
     timers.push(setTimeout(() => setShowVibes(true), 10200));
@@ -72,8 +74,8 @@ export default function WelcomePage() {
             alt="Scuola di Longboard"
             className="w-auto drop-shadow-2xl"
             style={{
-              height: "clamp(10rem, 22vw, 16rem)",
-              opacity: !hideLogo ? 1 : 0,
+              height: "clamp(11rem, 24vw, 17.5rem)",
+              opacity: logoFadedIn && !hideLogo ? 1 : 0,
               transition: "opacity 1.8s ease-in-out",
             }}
             data-testid="img-welcome-logo"
@@ -93,7 +95,7 @@ export default function WelcomePage() {
               alt="Good Vibes"
               className="w-auto drop-shadow-2xl"
               style={{
-                height: showButton ? "clamp(6rem, 12vw, 10rem)" : "clamp(9rem, 18vw, 14.5rem)",
+                height: showButton ? "clamp(6.5rem, 13vw, 11rem)" : "clamp(10rem, 20vw, 16rem)",
                 transform: showButton ? "translateY(-2rem)" : "translateY(0)",
                 transition: "height 1.4s ease-in-out, transform 1.4s ease-in-out",
               }}
