@@ -307,7 +307,7 @@ export default function CourseDetail() {
             {/* HTML Content */}
             {lesson.htmlContent && (
               <div 
-                className="prose prose-sm max-w-none"
+                className="prose prose-sm max-w-none dark:prose-invert"
                 dangerouslySetInnerHTML={{ __html: lesson.htmlContent }}
                 data-testid={`html-content-${lesson.id}`}
               />
