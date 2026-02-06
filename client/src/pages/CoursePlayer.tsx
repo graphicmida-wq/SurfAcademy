@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
@@ -96,10 +96,22 @@ export default function CourseDetail() {
     queryKey: [`/api/courses/${id}`],
   });
 
-  const { data: modules } = useQuery<(Module & { lessons: Lesson[] })[]>({
+  const { data: rawModules } = useQuery<(Module & { lessons: Lesson[] })[]>({
     queryKey: [`/api/courses/${id}/modules`],
     enabled: !!id,
   });
+
+  const modules = useMemo(() => {
+    if (!rawModules) return rawModules;
+    return rawModules.map(mod => ({
+      ...mod,
+      lessons: [...(mod.lessons || [])].sort((a, b) => {
+        const orderDiff = (a.orderIndex || 0) - (b.orderIndex || 0);
+        if (orderDiff !== 0) return orderDiff;
+        return naturalSort(a.title, b.title);
+      }),
+    }));
+  }, [rawModules]);
 
   const { data: enrollment } = useQuery({
     queryKey: [`/api/enrollments/course/${id}`],
@@ -173,12 +185,7 @@ export default function CourseDetail() {
     if (modules && modules.length > 0 && !selectedLessonId) {
       const firstModule = modules.find(m => m.lessons && m.lessons.length > 0);
       if (firstModule && firstModule.lessons && firstModule.lessons.length > 0) {
-        const sortedLessons = [...firstModule.lessons].sort((a, b) => {
-          const orderDiff = (a.orderIndex || 0) - (b.orderIndex || 0);
-          if (orderDiff !== 0) return orderDiff;
-          return naturalSort(a.title, b.title);
-        });
-        setSelectedLessonId(sortedLessons[0].id);
+        setSelectedLessonId(firstModule.lessons[0].id);
       }
     }
   }, [modules, selectedLessonId]);
@@ -406,13 +413,7 @@ export default function CourseDetail() {
                           {(!module.lessons || module.lessons.length === 0) ? (
                             <p className="text-xs text-muted-foreground px-2 py-1">Nessuna lezione</p>
                           ) : (
-                            [...module.lessons]
-                              .sort((a, b) => {
-                                const orderDiff = (a.orderIndex || 0) - (b.orderIndex || 0);
-                                if (orderDiff !== 0) return orderDiff;
-                                return naturalSort(a.title, b.title);
-                              })
-                              .map((lesson, lessonIdx, sortedLessons) => {
+                            module.lessons.map((lesson, lessonIdx) => {
                                 const Icon = lesson.contentType && contentIcons[lesson.contentType as ContentType] 
                                   ? contentIcons[lesson.contentType as ContentType] 
                                   : FileText;
