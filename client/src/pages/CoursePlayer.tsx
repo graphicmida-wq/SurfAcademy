@@ -25,8 +25,6 @@ import {
   Dumbbell, 
   Flame,
   ChevronRight,
-  ChevronDown,
-  ChevronUp,
   Download,
   Lock,
   Folder
@@ -35,6 +33,24 @@ import type { Course, Module, Lesson } from "@shared/schema";
 import { PageHeader } from "@/components/PageHeader";
 import { usePageHeader } from "@/hooks/usePageHeader";
 import { cn } from "@/lib/utils";
+
+function naturalSort(a: string, b: string): number {
+  const aParts = a.split(/(\d+)/);
+  const bParts = b.split(/(\d+)/);
+  for (let i = 0; i < Math.max(aParts.length, bParts.length); i++) {
+    const ap = aParts[i] || '';
+    const bp = bParts[i] || '';
+    const an = parseInt(ap, 10);
+    const bn = parseInt(bp, 10);
+    if (!isNaN(an) && !isNaN(bn)) {
+      if (an !== bn) return an - bn;
+    } else {
+      const cmp = ap.localeCompare(bp, 'it', { sensitivity: 'base' });
+      if (cmp !== 0) return cmp;
+    }
+  }
+  return 0;
+}
 
 type ContentType = 'presentazione' | 'ebook' | 'planning' | 'esercizio' | 'stretching' | 'riscaldamento' | 'settimana-1' | 'settimana-2' | 'settimana-3' | 'settimana-4';
 
@@ -105,57 +121,6 @@ export default function CourseDetail() {
     },
   });
 
-  const reorderLessonsMutation = useMutation({
-    mutationFn: async (items: { id: string; orderIndex: number }[]) => {
-      await apiRequest("PUT", "/api/admin/lessons/reorder", { items });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/courses/${id}/modules`] });
-    },
-  });
-
-  const reorderModulesMutation = useMutation({
-    mutationFn: async (items: { id: string; orderIndex: number }[]) => {
-      await apiRequest("PUT", "/api/admin/modules/reorder", { items });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/courses/${id}/modules`] });
-    },
-  });
-
-  const handleMoveLessonInModule = useCallback((moduleId: string, lessonId: string, direction: 'up' | 'down') => {
-    if (!modules) return;
-    const mod = modules.find(m => m.id === moduleId);
-    if (!mod || !mod.lessons) return;
-    const sorted = [...mod.lessons].sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0));
-    const idx = sorted.findIndex(l => l.id === lessonId);
-    if (idx < 0) return;
-    if (direction === 'up' && idx === 0) return;
-    if (direction === 'down' && idx === sorted.length - 1) return;
-    const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
-    const items = sorted.map((l, i) => {
-      if (i === idx) return { id: l.id, orderIndex: sorted[swapIdx].orderIndex || swapIdx };
-      if (i === swapIdx) return { id: l.id, orderIndex: sorted[idx].orderIndex || idx };
-      return { id: l.id, orderIndex: l.orderIndex || i };
-    });
-    reorderLessonsMutation.mutate(items);
-  }, [modules, reorderLessonsMutation]);
-
-  const handleMoveModule = useCallback((moduleId: string, direction: 'up' | 'down') => {
-    if (!modules) return;
-    const sorted = [...modules].sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0));
-    const idx = sorted.findIndex(m => m.id === moduleId);
-    if (idx < 0) return;
-    if (direction === 'up' && idx === 0) return;
-    if (direction === 'down' && idx === sorted.length - 1) return;
-    const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
-    const items = sorted.map((m, i) => {
-      if (i === idx) return { id: m.id, orderIndex: sorted[swapIdx].orderIndex || swapIdx };
-      if (i === swapIdx) return { id: m.id, orderIndex: sorted[idx].orderIndex || idx };
-      return { id: m.id, orderIndex: m.orderIndex || i };
-    });
-    reorderModulesMutation.mutate(items);
-  }, [modules, reorderModulesMutation]);
 
   const watchedVideosRef = useRef<Set<string>>(new Set());
   const autoCompleteTriggeredRef = useRef<Set<string>>(new Set());
@@ -207,7 +172,11 @@ export default function CourseDetail() {
     if (modules && modules.length > 0 && !selectedLessonId) {
       const firstModule = modules.find(m => m.lessons && m.lessons.length > 0);
       if (firstModule && firstModule.lessons && firstModule.lessons.length > 0) {
-        const sortedLessons = [...firstModule.lessons].sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0));
+        const sortedLessons = [...firstModule.lessons].sort((a, b) => {
+          const orderDiff = (a.orderIndex || 0) - (b.orderIndex || 0);
+          if (orderDiff !== 0) return orderDiff;
+          return naturalSort(a.title, b.title);
+        });
         setSelectedLessonId(sortedLessons[0].id);
       }
     }
@@ -406,7 +375,7 @@ export default function CourseDetail() {
                   onValueChange={setExpandedModules}
                   className="w-full"
                 >
-                  {modules.map((module, moduleIdx) => {
+                  {modules.map((module) => {
                     const moduleLessonCount = module.lessons?.length || 0;
                     const moduleCompletedCount = module.lessons?.filter(l => 
                       lessonProgress.some(p => p.lessonId === l.id && p.completed)
@@ -415,26 +384,6 @@ export default function CourseDetail() {
                     return (
                     <AccordionItem key={module.id} value={module.id} data-testid={`module-${module.id}`}>
                       <div className="flex items-center">
-                        {isAdmin && (
-                          <div className="flex flex-col mr-1">
-                            <button
-                              onClick={(e) => { e.stopPropagation(); handleMoveModule(module.id, 'up'); }}
-                              disabled={moduleIdx === 0 || reorderModulesMutation.isPending}
-                              className={cn("p-0.5 rounded", moduleIdx === 0 ? "opacity-20" : "opacity-50 hover:opacity-100")}
-                              data-testid={`button-move-module-up-${module.id}`}
-                            >
-                              <ChevronUp className="h-3 w-3" />
-                            </button>
-                            <button
-                              onClick={(e) => { e.stopPropagation(); handleMoveModule(module.id, 'down'); }}
-                              disabled={moduleIdx === modules.length - 1 || reorderModulesMutation.isPending}
-                              className={cn("p-0.5 rounded", moduleIdx === modules.length - 1 ? "opacity-20" : "opacity-50 hover:opacity-100")}
-                              data-testid={`button-move-module-down-${module.id}`}
-                            >
-                              <ChevronDown className="h-3 w-3" />
-                            </button>
-                          </div>
-                        )}
                         <AccordionTrigger className="px-2 hover:no-underline flex-1">
                           <div className="flex items-center gap-2 flex-1">
                             {moduleAllComplete ? (
@@ -456,8 +405,12 @@ export default function CourseDetail() {
                           {(!module.lessons || module.lessons.length === 0) ? (
                             <p className="text-xs text-muted-foreground px-2 py-1">Nessuna lezione</p>
                           ) : (
-                            module.lessons
-                              .sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0))
+                            [...module.lessons]
+                              .sort((a, b) => {
+                                const orderDiff = (a.orderIndex || 0) - (b.orderIndex || 0);
+                                if (orderDiff !== 0) return orderDiff;
+                                return naturalSort(a.title, b.title);
+                              })
                               .map((lesson, lessonIdx, sortedLessons) => {
                                 const Icon = lesson.contentType && contentIcons[lesson.contentType as ContentType] 
                                   ? contentIcons[lesson.contentType as ContentType] 
@@ -474,26 +427,6 @@ export default function CourseDetail() {
                                         : ""
                                     )}
                                   >
-                                    {isAdmin && (
-                                      <div className="flex flex-col flex-shrink-0">
-                                        <button
-                                          onClick={(e) => { e.stopPropagation(); handleMoveLessonInModule(module.id, lesson.id, 'up'); }}
-                                          disabled={lessonIdx === 0 || reorderLessonsMutation.isPending}
-                                          className={cn("p-0.5", lessonIdx === 0 ? "opacity-20" : "opacity-50 hover:opacity-100")}
-                                          data-testid={`button-move-lesson-up-${lesson.id}`}
-                                        >
-                                          <ChevronUp className="h-3 w-3" />
-                                        </button>
-                                        <button
-                                          onClick={(e) => { e.stopPropagation(); handleMoveLessonInModule(module.id, lesson.id, 'down'); }}
-                                          disabled={lessonIdx === sortedLessons.length - 1 || reorderLessonsMutation.isPending}
-                                          className={cn("p-0.5", lessonIdx === sortedLessons.length - 1 ? "opacity-20" : "opacity-50 hover:opacity-100")}
-                                          data-testid={`button-move-lesson-down-${lesson.id}`}
-                                        >
-                                          <ChevronDown className="h-3 w-3" />
-                                        </button>
-                                      </div>
-                                    )}
                                     <button
                                       onClick={() => setSelectedLessonId(lesson.id)}
                                       className={cn(
