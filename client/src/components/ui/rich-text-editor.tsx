@@ -192,6 +192,7 @@ const LetterSpacing = Extension.create({
 interface RichTextEditorProps {
   content: string;
   onChange: (html: string) => void;
+  onBlur?: () => void;
   placeholder?: string;
 }
 
@@ -245,7 +246,7 @@ function ToolbarButton({
   onClick: () => void;
   isActive?: boolean;
   title: string;
-  children: React.ReactNode;
+  children: JSX.Element;
   disabled?: boolean;
 }) {
   return (
@@ -266,10 +267,10 @@ function ToolbarButton({
   );
 }
 
-export default function RichTextEditor({ content, onChange, placeholder }: RichTextEditorProps) {
+export default function RichTextEditor({ content, onChange, onBlur, placeholder }: RichTextEditorProps) {
   const [imageUrl, setImageUrl] = useState("");
   const [linkUrl, setLinkUrl] = useState("");
-  const prevContentRef = useRef(content);
+  const isInternalUpdate = useRef(false);
 
   const editor = useEditor({
     extensions: [
@@ -291,8 +292,11 @@ export default function RichTextEditor({ content, onChange, placeholder }: RichT
     ],
     content: content || "",
     onUpdate: ({ editor }) => {
-      const html = editor.getHTML();
-      onChange(html);
+      isInternalUpdate.current = true;
+      onChange(editor.getHTML());
+    },
+    onBlur: () => {
+      onBlur?.();
     },
     editorProps: {
       attributes: {
@@ -303,12 +307,14 @@ export default function RichTextEditor({ content, onChange, placeholder }: RichT
   });
 
   useEffect(() => {
-    if (editor && content !== prevContentRef.current) {
-      const currentEditorContent = editor.getHTML();
-      if (content !== currentEditorContent) {
-        editor.commands.setContent(content || "");
-      }
-      prevContentRef.current = content;
+    if (!editor) return;
+    if (isInternalUpdate.current) {
+      isInternalUpdate.current = false;
+      return;
+    }
+    const currentHtml = editor.getHTML();
+    if (content !== currentHtml) {
+      editor.commands.setContent(content || "");
     }
   }, [content, editor]);
 
@@ -332,7 +338,13 @@ export default function RichTextEditor({ content, onChange, placeholder }: RichT
     }
   }, [editor]);
 
-  if (!editor) return null;
+  if (!editor) {
+    return (
+      <div className="border rounded-md bg-background p-4 min-h-[200px] flex items-center justify-center text-muted-foreground text-sm">
+        Caricamento editor...
+      </div>
+    );
+  }
 
   const setFontSize = (size: string) => {
     editor.chain().focus().setMark("textStyle", { fontSize: size }).run();

@@ -919,6 +919,7 @@ export default function AdminCourseContent() {
                       <RichTextEditor
                         content={field.value ?? ""}
                         onChange={(html) => field.onChange(html)}
+                        onBlur={field.onBlur}
                         placeholder="Scrivi il contenuto della lezione..."
                       />
                     </FormControl>
