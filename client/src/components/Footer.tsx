@@ -3,6 +3,8 @@ import scuolaLogoUrl from "@assets/scuola-monocol_1770391680234.png";
 import cinghialeLogoUrl from "@assets/cinghiale-monocol_1770391680234.png";
 import clinicLogoUrl from "@assets/clinic-monocol_1770391680234.png";
 
+const FOOTER_COLOR = '#3d636d';
+
 export function Footer() {
   return (
     <footer className="border-t border-border bg-card mt-auto">
@@ -12,7 +14,8 @@ export function Footer() {
             href="https://www.instagram.com/scuoladilongboard/"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 rounded-lg hover-elevate active-elevate-2 text-muted-foreground hover:text-primary transition-colors"
+            className="inline-flex items-center gap-2 rounded-lg hover-elevate active-elevate-2 transition-opacity"
+            style={{ color: FOOTER_COLOR }}
             data-testid="social-instagram"
           >
             <span className="font-display font-semibold text-lg">Seguici</span>
@@ -27,7 +30,7 @@ export function Footer() {
         </div>
 
         <div className="mt-6 pt-6 border-t border-border">
-          <p className="text-center text-sm text-muted-foreground">
+          <p className="text-center text-sm" style={{ color: FOOTER_COLOR }}>
             COPYRIGHT© 2025 – SCUOLA DI LONGBOARD – ASD CINGHIALE MARINO SURF CLUB – Via Aurelia 45 – 17051 – ANDORA (SV)
           </p>
         </div>
