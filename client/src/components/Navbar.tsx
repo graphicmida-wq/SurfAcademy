@@ -73,15 +73,6 @@ export function Navbar() {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex md:items-center md:space-x-1">
-            {/* Home - links to WordPress */}
-            <a 
-              href={WORDPRESS_URL}
-              className="px-3 py-2 text-sm font-medium rounded-md transition-colors hover-elevate active-elevate-2 text-foreground/80 hover:text-foreground"
-              data-testid="link-home-wp"
-            >
-              Home
-            </a>
-
             {/* Dashboard */}
             {isAuthenticated && (
               <Link 
@@ -140,7 +131,7 @@ export function Navbar() {
             {isAuthenticated ? (
               <>
                 <Button variant="ghost" size="sm" asChild>
-                  <Link href="/dashboard">
+                  <a href={`${WORDPRESS_URL}/my-account`} target="_blank" rel="noopener noreferrer">
                     <span className="flex items-center gap-2" data-testid="button-profile">
                       {user?.profileImageUrl ? (
                         <img 
@@ -151,9 +142,9 @@ export function Navbar() {
                       ) : (
                         <User className="h-4 w-4" />
                       )}
-                      <span>{user?.firstName || "Profilo"}</span>
+                      <span>Ciao {user?.firstName || "Utente"}</span>
                     </span>
-                  </Link>
+                  </a>
                 </Button>
                 <Button 
                   variant="outline" 
@@ -176,7 +167,18 @@ export function Navbar() {
           </div>
 
           {/* Mobile Menu Button */}
-          <div className="flex md:hidden items-center space-x-2">
+          <div className="flex md:hidden items-center gap-2">
+            {isAuthenticated && user && (
+              <a 
+                href={`${WORDPRESS_URL}/my-account`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm font-medium text-foreground/80 truncate max-w-[140px]"
+                data-testid="mobile-greeting"
+              >
+                Ciao {user.firstName || "Utente"}
+              </a>
+            )}
             <Button
               variant="ghost"
               size="icon"
@@ -200,15 +202,6 @@ export function Navbar() {
         {mobileMenuOpen && (
           <div className="md:hidden border-t border-border py-4 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60" data-testid="mobile-menu">
             <div className="flex flex-col space-y-2">
-              {/* Home - WordPress */}
-              <a 
-                href={WORDPRESS_URL}
-                className="px-3 py-2 text-base font-medium rounded-md transition-colors hover-elevate active-elevate-2 text-foreground/80"
-                data-testid="mobile-link-home"
-              >
-                Home
-              </a>
-
               {/* Dashboard */}
               {isAuthenticated && (
                 <Link 
@@ -246,15 +239,16 @@ export function Navbar() {
 
               {isAuthenticated ? (
                 <>
-                  <Link 
-                    href="/dashboard"
+                  <a 
+                    href={`${WORDPRESS_URL}/my-account`}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="px-3 py-2 text-base font-medium rounded-md text-foreground/80 hover-elevate active-elevate-2 flex items-center gap-2"
-                    onClick={() => setMobileMenuOpen(false)}
                     data-testid="mobile-button-profile"
                   >
                     <User className="h-4 w-4" />
                     <span>Profilo</span>
-                  </Link>
+                  </a>
                   <a
                     href="/api/logout"
                     className="px-3 py-2 text-base font-medium rounded-md text-foreground/80 hover-elevate active-elevate-2 flex items-center gap-2"

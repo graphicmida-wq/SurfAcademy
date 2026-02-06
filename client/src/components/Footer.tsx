@@ -1,11 +1,19 @@
 import { Instagram } from "lucide-react";
+import cinghialeLogoUrl from "@assets/cinghiale-marino-logo-_1770386698975.png";
+import longboardLogoUrl from "@assets/logo_longboard2_1770386728175.png";
+import clinicLogoUrl from "@assets/Tavola_disegno_6_1770386741977.png";
 
 export function Footer() {
   return (
     <footer className="border-t border-border bg-card mt-auto">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex flex-col items-center justify-center gap-4">
-          {/* Seguici */}
+        <div className="flex flex-col items-center justify-center gap-6">
+          <div className="flex items-center justify-center gap-8 flex-wrap">
+            <img src={longboardLogoUrl} alt="Scuola di Longboard" className="h-16 w-auto object-contain" />
+            <img src={cinghialeLogoUrl} alt="Cinghiale Marino Surf Club" className="h-16 w-auto object-contain" />
+            <img src={clinicLogoUrl} alt="Clinic" className="h-16 w-auto object-contain" />
+          </div>
+
           <div className="text-center">
             <h3 className="font-display font-semibold text-lg mb-3">Seguici</h3>
             <a
