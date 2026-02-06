@@ -96,6 +96,25 @@ export default function Iscrizioni() {
     },
   });
 
+  const deleteUserMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      const res = await apiRequest("DELETE", `/api/admin/users/${userId}`);
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message);
+      }
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/enrollments"] });
+      toast({ title: "Utente cancellato con successo" });
+    },
+    onError: (error: any) => {
+      toast({ title: error.message || "Errore nella cancellazione", variant: "destructive" });
+    },
+  });
+
   const removeEnrollmentMutation = useMutation({
     mutationFn: async (enrollmentId: string) => {
       const res = await apiRequest("DELETE", `/api/admin/enroll/${enrollmentId}`);
@@ -422,11 +441,26 @@ export default function Iscrizioni() {
                             ID: {user.id}
                           </p>
                         </div>
-                        <div className="text-right">
-                          <div className="text-2xl font-display font-bold text-primary">
-                            {getAverageProgress(userEnrolls)}%
+                        <div className="flex items-center gap-3">
+                          <div className="text-right">
+                            <div className="text-2xl font-display font-bold text-primary">
+                              {getAverageProgress(userEnrolls)}%
+                            </div>
+                            <p className="text-xs text-muted-foreground">Progresso Medio</p>
                           </div>
-                          <p className="text-xs text-muted-foreground">Progresso Medio</p>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-destructive"
+                            data-testid={`button-delete-user-${user.id}`}
+                            onClick={() => {
+                              if (confirm(`Sei sicuro di voler cancellare ${user.firstName || user.email}? Verranno eliminate anche tutte le iscrizioni e il progresso.`)) {
+                                deleteUserMutation.mutate(user.id);
+                              }
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
                       </div>
 

@@ -417,6 +417,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin: delete a user and all their data
+  app.delete("/api/admin/users/:id", isAdmin, async (req: any, res) => {
+    try {
+      const userId = req.params.id;
+      if (userId === req.user?.id) {
+        return res.status(400).json({ message: "Non puoi cancellare te stesso" });
+      }
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "Utente non trovato" });
+      }
+      await storage.deleteUser(userId);
+      res.json({ message: "Utente cancellato con successo" });
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      res.status(500).json({ message: "Errore nella cancellazione utente" });
+    }
+  });
+
   // Admin: enroll any user in a course
   app.post("/api/admin/enroll", isAdmin, async (req: any, res) => {
     try {

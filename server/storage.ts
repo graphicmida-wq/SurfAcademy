@@ -80,6 +80,7 @@ export interface IStorage {
   upsertUser(user: UpsertUser): Promise<User>;
   mergeUserById(oldId: string, newId: string): Promise<void>;
   updateUserProfile(id: string, profile: Partial<Pick<User, 'firstName' | 'lastName' | 'email' | 'profileImageUrl'>>): Promise<User>;
+  deleteUser(id: string): Promise<void>;
 
   // Course operations
   getAllCourses(): Promise<Course[]>;
@@ -274,6 +275,10 @@ export class DatabaseStorage implements IStorage {
       .where(eq(users.id, id))
       .returning();
     return updatedUser;
+  }
+
+  async deleteUser(id: string): Promise<void> {
+    await db.delete(users).where(eq(users.id, id));
   }
 
   // ========== Course Operations ==========
