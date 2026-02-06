@@ -72,7 +72,7 @@ export default function LocalAuth() {
                       {...field}
                       type="email"
                       placeholder="Email"
-                      className="h-12 bg-white/20 border-0 text-white placeholder:text-white/60 focus-visible:ring-white/40 rounded-sm text-base"
+                      className="bg-white/20 border-white/10 text-white placeholder:text-white/60 focus-visible:ring-white/40"
                       data-testid="input-login-email"
                     />
                   </FormControl>
@@ -92,17 +92,19 @@ export default function LocalAuth() {
                         {...field}
                         type={showPassword ? "text" : "password"}
                         placeholder="Password"
-                        className="h-12 bg-white/20 border-0 text-white placeholder:text-white/60 focus-visible:ring-white/40 rounded-sm text-base pr-12"
+                        className="bg-white/20 border-white/10 text-white placeholder:text-white/60 focus-visible:ring-white/40 pr-12"
                         data-testid="input-login-password"
                       />
-                      <button
+                      <Button
                         type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-1 top-1/2 -translate-y-1/2 text-white/60"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-white transition-colors"
                         data-testid="button-toggle-password"
                       >
                         {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                      </button>
+                      </Button>
                     </div>
                   </FormControl>
                   <FormMessage className="text-orange-300" />
@@ -112,8 +114,8 @@ export default function LocalAuth() {
 
             <Button
               type="submit"
-              className="w-full h-12 text-lg font-bold rounded-sm border-0"
-              style={{ backgroundColor: '#f0a030', color: 'white' }}
+              size="lg"
+              className="w-full text-lg font-bold bg-amber-500 border-amber-600 text-white"
               disabled={loginMutation.isPending}
               data-testid="button-login-submit"
             >
@@ -128,7 +130,7 @@ export default function LocalAuth() {
             href="https://scuoladilongboard.it"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-white/90 hover:text-white underline"
+            className="text-white/90 underline"
             data-testid="link-register-wp"
           >
             Registrati su scuoladilongboard.it
