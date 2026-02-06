@@ -34,7 +34,7 @@ export default function LocalAuth() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
       toast({ title: "Login effettuato con successo!" });
-      navigate("/dashboard");
+      navigate("/");
     },
     onError: (error: any) => {
       toast({

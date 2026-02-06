@@ -111,7 +111,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/sso', async (req, res) => {
     try {
       const token = req.query.token as string;
-      const redirect = req.query.redirect as string || '/dashboard';
+      const redirect = req.query.redirect as string || '/';
       
       if (!token) {
         return res.redirect('/login?error=Token mancante');
