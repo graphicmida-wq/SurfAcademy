@@ -59,7 +59,11 @@ export function Navbar() {
         </div>
       )}
       
-      <nav className={`fixed ${user?.isAdmin && !isAdminPage ? 'top-8' : 'top-0'} z-50 w-full transition-all duration-300 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60`}>
+      <nav className={`fixed ${user?.isAdmin && !isAdminPage ? 'top-8' : 'top-0'} z-50 w-full transition-all duration-300 ${
+        isScrolled 
+          ? 'border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60' 
+          : 'bg-transparent border-b border-transparent'
+      }`}>
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-28 items-center justify-between py-2">
           {/* Logo - links to WordPress */}
@@ -68,7 +72,7 @@ export function Navbar() {
             className="flex items-center space-x-2 hover-elevate active-elevate-2 rounded-lg px-2 py-1 -ml-2" 
             data-testid="link-home"
           >
-            <img src={logoUrl} alt="Scuola di Longboard" className="h-24 w-auto" />
+            <img src={isScrolled ? logoUrl : logoLightUrl} alt="Scuola di Longboard" className="h-24 w-auto transition-opacity duration-300" />
           </a>
 
           {/* Desktop Navigation */}
@@ -78,7 +82,7 @@ export function Navbar() {
               <Link 
                 href="/dashboard"
                 className={`px-3 py-2 text-sm font-medium rounded-md transition-colors hover-elevate active-elevate-2 ${
-                  location === "/dashboard" ? "text-primary" : "text-foreground/80 hover:text-foreground"
+                  !isScrolled ? "text-white/90 hover:text-white" : location === "/dashboard" ? "text-primary" : "text-foreground/80 hover:text-foreground"
                 }`}
                 data-testid="link-dashboard"
               >
@@ -92,7 +96,7 @@ export function Navbar() {
                 <DropdownMenuTrigger asChild>
                   <Button 
                     variant="ghost" 
-                    className="px-3 py-2 text-sm font-medium text-foreground/80 hover:text-foreground"
+                    className={`px-3 py-2 text-sm font-medium ${isScrolled ? 'text-foreground/80 hover:text-foreground' : 'text-white/90 hover:text-white'}`}
                     data-testid="dropdown-my-courses"
                   >
                     <BookOpen className="h-4 w-4 mr-2" />
@@ -118,10 +122,11 @@ export function Navbar() {
           </div>
 
           {/* Desktop Actions */}
-          <div className="hidden md:flex md:items-center md:space-x-2">
+          <div className={`hidden md:flex md:items-center md:space-x-2 ${!isScrolled ? 'text-white' : ''}`}>
             <Button
               variant="ghost"
               size="icon"
+              className={!isScrolled ? 'text-white/90 hover:text-white' : ''}
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
               data-testid="button-theme-toggle"
             >
@@ -130,7 +135,7 @@ export function Navbar() {
 
             {isAuthenticated ? (
               <>
-                <Button variant="ghost" size="sm" asChild>
+                <Button variant="ghost" size="sm" className={!isScrolled ? 'text-white/90 hover:text-white' : ''} asChild>
                   <a href={`${WORDPRESS_URL}/my-account`} target="_blank" rel="noopener noreferrer">
                     <span className="flex items-center gap-2" data-testid="button-profile">
                       {user?.profileImageUrl ? (
@@ -149,6 +154,7 @@ export function Navbar() {
                 <Button 
                   variant="outline" 
                   size="sm" 
+                  className={!isScrolled ? 'border-white/50 text-white hover:text-white' : ''}
                   asChild 
                 >
                   <a href="/api/logout" data-testid="button-logout">
@@ -173,7 +179,7 @@ export function Navbar() {
                 href={`${WORDPRESS_URL}/my-account`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-sm font-medium text-foreground/80 truncate max-w-[140px]"
+                className={`text-sm font-medium truncate max-w-[140px] ${isScrolled ? 'text-foreground/80' : 'text-white/90'}`}
                 data-testid="mobile-greeting"
               >
                 Ciao {user.firstName || "Utente"}
@@ -182,6 +188,7 @@ export function Navbar() {
             <Button
               variant="ghost"
               size="icon"
+              className={!isScrolled ? 'text-white/90 hover:text-white' : ''}
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
               data-testid="button-theme-toggle-mobile"
             >
@@ -190,6 +197,7 @@ export function Navbar() {
             <Button
               variant="ghost"
               size="icon"
+              className={!isScrolled ? 'text-white/90 hover:text-white' : ''}
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               data-testid="button-mobile-menu"
             >
