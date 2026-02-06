@@ -9,7 +9,7 @@ import RichTextEditor from "@/components/ui/rich-text-editor";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MediaUploadZone } from "@/components/MediaUploadZone";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Plus, BookOpen, FileVideo, FileText, Edit, Trash2, PlayCircle, Book, Calendar, Dumbbell, Flame } from "lucide-react";
+import { Loader2, Plus, BookOpen, FileVideo, FileText, Edit, Trash2, PlayCircle, Book, Calendar, Dumbbell, Flame, ChevronUp, ChevronDown } from "lucide-react";
 import type { Course, Module, Lesson, InsertLesson, InsertModule } from "@shared/schema";
 import { insertLessonSchema, insertModuleSchema } from "@shared/schema";
 import {
@@ -228,6 +228,30 @@ export default function AdminCourseContent() {
     },
   });
 
+  const reorderLessonsMutation = useMutation({
+    mutationFn: async (items: { id: string; orderIndex: number }[]) => {
+      await apiRequest("PUT", "/api/admin/lessons/reorder", { items });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/courses/${selectedCourseId}/modules`] });
+    },
+    onError: () => {
+      toast({ title: "Errore durante il riordinamento", variant: "destructive" });
+    },
+  });
+
+  const reorderModulesMutation = useMutation({
+    mutationFn: async (items: { id: string; orderIndex: number }[]) => {
+      await apiRequest("PUT", "/api/admin/modules/reorder", { items });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/courses/${selectedCourseId}/modules`] });
+    },
+    onError: () => {
+      toast({ title: "Errore durante il riordinamento moduli", variant: "destructive" });
+    },
+  });
+
   const handleSubmitLesson = (data: InsertLesson) => {
     if (!data.moduleId) {
       toast({ title: "Seleziona un modulo", variant: "destructive" });
@@ -393,6 +417,26 @@ export default function AdminCourseContent() {
     }
   };
 
+  const handleMoveLessonInSection = (sectionLessons: Lesson[], index: number, direction: "up" | "down") => {
+    if (direction === "up" && index === 0) return;
+    if (direction === "down" && index === sectionLessons.length - 1) return;
+    const newIndex = direction === "up" ? index - 1 : index + 1;
+    const reordered = [...sectionLessons];
+    [reordered[index], reordered[newIndex]] = [reordered[newIndex], reordered[index]];
+    const items = reordered.map((lesson, i) => ({ id: lesson.id, orderIndex: i }));
+    reorderLessonsMutation.mutate(items);
+  };
+
+  const handleMoveModule = (index: number, direction: "up" | "down") => {
+    if (direction === "up" && index === 0) return;
+    if (direction === "down" && index === modules.length - 1) return;
+    const newIndex = direction === "up" ? index - 1 : index + 1;
+    const reordered = [...modules];
+    [reordered[index], reordered[newIndex]] = [reordered[newIndex], reordered[index]];
+    const items = reordered.map((mod, i) => ({ id: mod.id, orderIndex: i }));
+    reorderModulesMutation.mutate(items);
+  };
+
   // Group lessons by content type
   const allLessons = modules.flatMap(m => m.lessons || []);
   
@@ -409,7 +453,9 @@ export default function AdminCourseContent() {
   
   const lessonsByType = allContentTypes.map(type => ({
     ...type,
-    lessons: allLessons.filter(l => l.contentType === type.value),
+    lessons: allLessons
+      .filter(l => l.contentType === type.value)
+      .sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0)),
   }));
 
   if (coursesLoading) {
@@ -586,13 +632,35 @@ export default function AdminCourseContent() {
               </div>
             ) : (
               <div className="space-y-2">
-                {modules.map((module) => (
+                {modules.map((module, moduleIndex) => (
                   <div
                     key={module.id}
                     className="flex items-center justify-between p-3 rounded-md border hover-elevate"
                     data-testid={`module-item-${module.id}`}
                   >
                     <div className="flex items-center gap-3 flex-1">
+                      <div className="flex flex-col gap-0.5">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-5 w-5"
+                          disabled={moduleIndex === 0 || reorderModulesMutation.isPending}
+                          onClick={() => handleMoveModule(moduleIndex, "up")}
+                          data-testid={`button-move-up-module-${module.id}`}
+                        >
+                          <ChevronUp className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-5 w-5"
+                          disabled={moduleIndex === modules.length - 1 || reorderModulesMutation.isPending}
+                          onClick={() => handleMoveModule(moduleIndex, "down")}
+                          data-testid={`button-move-down-module-${module.id}`}
+                        >
+                          <ChevronDown className="h-3 w-3" />
+                        </Button>
+                      </div>
                       <BookOpen className="h-4 w-4 text-primary" />
                       <div className="flex-1">
                         <p className="font-medium text-sm">{module.title}</p>
@@ -675,7 +743,7 @@ export default function AdminCourseContent() {
                           {/* Lessons List */}
                           {section.lessons.length > 0 ? (
                             <div className="space-y-2">
-                              {section.lessons.map((lesson) => {
+                              {section.lessons.map((lesson, lessonIndex) => {
                                 const lessonModule = modules.find(m => m.id === lesson.moduleId);
                                 return (
                                   <div
@@ -684,13 +752,35 @@ export default function AdminCourseContent() {
                                     data-testid={`lesson-item-${lesson.id}`}
                                   >
                                     <div className="flex items-center gap-3 flex-1">
-                                      <PlayCircle className="h-4 w-4 text-muted-foreground" />
+                                      <div className="flex flex-col gap-0.5">
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          className="h-5 w-5"
+                                          disabled={lessonIndex === 0 || reorderLessonsMutation.isPending}
+                                          onClick={() => handleMoveLessonInSection(section.lessons, lessonIndex, "up")}
+                                          data-testid={`button-move-up-${lesson.id}`}
+                                        >
+                                          <ChevronUp className="h-3 w-3" />
+                                        </Button>
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          className="h-5 w-5"
+                                          disabled={lessonIndex === section.lessons.length - 1 || reorderLessonsMutation.isPending}
+                                          onClick={() => handleMoveLessonInSection(section.lessons, lessonIndex, "down")}
+                                          data-testid={`button-move-down-${lesson.id}`}
+                                        >
+                                          <ChevronDown className="h-3 w-3" />
+                                        </Button>
+                                      </div>
                                       <div className="flex-1">
                                         <p className="font-medium text-sm">{lesson.title}</p>
                                         <div className="flex gap-2 mt-1 flex-wrap">
                                           {lessonModule && (
                                             <Badge variant="outline" className="text-xs">
-                                              📚 {lessonModule.title}
+                                              <BookOpen className="h-3 w-3 mr-1" />
+                                              {lessonModule.title}
                                             </Badge>
                                           )}
                                           {lesson.videoUrls && lesson.videoUrls.length > 0 && (

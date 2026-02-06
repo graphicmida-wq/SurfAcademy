@@ -535,6 +535,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put("/api/admin/lessons/reorder", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const reorderSchema = z.object({
+        items: z.array(z.object({
+          id: z.string(),
+          orderIndex: z.number(),
+        })),
+      });
+      const { items } = reorderSchema.parse(req.body);
+      await storage.reorderLessons(items);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error reordering lessons:", error);
+      res.status(400).json({ message: "Failed to reorder lessons" });
+    }
+  });
+
+  app.put("/api/admin/modules/reorder", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const reorderSchema = z.object({
+        items: z.array(z.object({
+          id: z.string(),
+          orderIndex: z.number(),
+        })),
+      });
+      const { items } = reorderSchema.parse(req.body);
+      await storage.reorderModules(items);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error reordering modules:", error);
+      res.status(400).json({ message: "Failed to reorder modules" });
+    }
+  });
+
   // ========== Exercise Routes ==========
   app.get("/api/exercises", async (req, res) => {
     try {

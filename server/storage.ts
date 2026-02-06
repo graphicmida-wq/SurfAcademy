@@ -97,6 +97,8 @@ export interface IStorage {
   createLesson(lesson: InsertLesson): Promise<Lesson>;
   updateLesson(id: string, lesson: Partial<InsertLesson>): Promise<Lesson>;
   deleteLesson(id: string): Promise<void>;
+  reorderLessons(items: { id: string; orderIndex: number }[]): Promise<void>;
+  reorderModules(items: { id: string; orderIndex: number }[]): Promise<void>;
   
   // Exercise operations
   getAllExercises(): Promise<Exercise[]>;
@@ -362,6 +364,22 @@ export class DatabaseStorage implements IStorage {
 
   async deleteLesson(id: string): Promise<void> {
     await db.delete(lessons).where(eq(lessons.id, id));
+  }
+
+  async reorderLessons(items: { id: string; orderIndex: number }[]): Promise<void> {
+    await Promise.all(
+      items.map(({ id, orderIndex }) =>
+        db.update(lessons).set({ orderIndex }).where(eq(lessons.id, id))
+      )
+    );
+  }
+
+  async reorderModules(items: { id: string; orderIndex: number }[]): Promise<void> {
+    await Promise.all(
+      items.map(({ id, orderIndex }) =>
+        db.update(modules).set({ orderIndex }).where(eq(modules.id, id))
+      )
+    );
   }
 
   // ========== Exercise Operations ==========
