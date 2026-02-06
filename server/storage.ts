@@ -76,6 +76,7 @@ export interface IStorage {
   // User operations (Required for Replit Auth + local auth)
   getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
+  getAllUsers(): Promise<User[]>;
   upsertUser(user: UpsertUser): Promise<User>;
   updateUserProfile(id: string, profile: Partial<Pick<User, 'firstName' | 'lastName' | 'email' | 'profileImageUrl'>>): Promise<User>;
 
@@ -116,6 +117,7 @@ export interface IStorage {
   getEnrollmentByUserAndCourse(userId: string, courseId: string): Promise<Enrollment | undefined>;
   createEnrollment(enrollment: InsertEnrollment): Promise<Enrollment>;
   updateEnrollmentProgress(id: string, progress: number): Promise<void>;
+  deleteEnrollment(id: string): Promise<void>;
   getAllEnrollmentsWithDetails(): Promise<(Enrollment & { user: User; course: Course })[]>;
   
   // Lesson progress operations
@@ -236,6 +238,10 @@ export class DatabaseStorage implements IStorage {
   async getUserByEmail(email: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.email, email));
     return user;
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return await db.select().from(users).orderBy(users.firstName);
   }
 
   async upsertUser(userData: UpsertUser): Promise<User> {
@@ -462,6 +468,10 @@ export class DatabaseStorage implements IStorage {
       .update(enrollments)
       .set({ progress, completedAt: progress === 100 ? new Date() : null })
       .where(eq(enrollments.id, id));
+  }
+
+  async deleteEnrollment(id: string): Promise<void> {
+    await db.delete(enrollments).where(eq(enrollments.id, id));
   }
 
   async getAllEnrollmentsWithDetails(): Promise<(Enrollment & { user: User; course: Course })[]> {

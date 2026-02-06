@@ -375,25 +375,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Admin auto-enrollment endpoint
-  app.post("/api/admin/enroll/:courseId", isAdmin, async (req: any, res) => {
+  // Admin: get all users
+  app.get("/api/admin/users", isAdmin, async (req: any, res) => {
     try {
-      const userId = req.user?.claims?.sub || req.user?.id;
-      const { courseId } = req.params;
+      const allUsers = await storage.getAllUsers();
+      res.json(allUsers);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      res.status(500).json({ message: "Errore nel recupero utenti" });
+    }
+  });
 
-      // Check if course exists
+  // Admin: manually create a user (from WordPress data) and optionally enroll in a course
+  app.post("/api/admin/users", isAdmin, async (req: any, res) => {
+    try {
+      const { wpId, email, firstName, lastName } = req.body;
+
+      if (!wpId || !email) {
+        return res.status(400).json({ message: "ID WordPress e email sono obbligatori" });
+      }
+
+      const userId = `wp_${wpId}`;
+      const existingUser = await storage.getUser(userId);
+      if (existingUser) {
+        return res.status(400).json({ message: "Utente già esistente nell'app", user: existingUser });
+      }
+
+      const existingByEmail = await storage.getUserByEmail(email);
+      if (existingByEmail) {
+        return res.status(400).json({ message: "Email già registrata nell'app", user: existingByEmail });
+      }
+
+      const user = await storage.upsertUser({
+        id: userId,
+        email,
+        firstName: firstName || null,
+        lastName: lastName || null,
+        profileImageUrl: null,
+      });
+
+      res.status(201).json(user);
+    } catch (error) {
+      console.error("Error creating user:", error);
+      res.status(500).json({ message: "Errore nella creazione utente" });
+    }
+  });
+
+  // Admin: enroll any user in a course
+  app.post("/api/admin/enroll", isAdmin, async (req: any, res) => {
+    try {
+      const { userId, courseId } = req.body;
+
+      if (!userId || !courseId) {
+        return res.status(400).json({ message: "userId e courseId sono obbligatori" });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "Utente non trovato" });
+      }
+
       const course = await storage.getCourse(courseId);
       if (!course) {
         return res.status(404).json({ message: "Corso non trovato" });
       }
 
-      // Check if already enrolled
       const existingEnrollment = await storage.getEnrollmentByUserAndCourse(userId, courseId);
       if (existingEnrollment) {
-        return res.status(400).json({ message: "Già iscritto a questo corso" });
+        return res.status(400).json({ message: "Utente già iscritto a questo corso" });
       }
 
-      // Create enrollment
       const enrollment = await storage.createEnrollment({
         userId,
         courseId,
@@ -402,8 +453,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.status(201).json(enrollment);
     } catch (error) {
-      console.error("Error enrolling admin:", error);
+      console.error("Error enrolling user:", error);
       res.status(500).json({ message: "Errore durante l'iscrizione" });
+    }
+  });
+
+  // Admin: remove enrollment
+  app.delete("/api/admin/enroll/:enrollmentId", isAdmin, async (req: any, res) => {
+    try {
+      const { enrollmentId } = req.params;
+      await storage.deleteEnrollment(enrollmentId);
+      res.json({ message: "Iscrizione rimossa" });
+    } catch (error) {
+      console.error("Error removing enrollment:", error);
+      res.status(500).json({ message: "Errore nella rimozione dell'iscrizione" });
     }
   });
 
