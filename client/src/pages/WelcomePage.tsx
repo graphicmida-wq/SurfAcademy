@@ -54,7 +54,7 @@ export default function WelcomePage() {
         />
       </picture>
 
-      <div className="relative z-10 flex flex-col items-center justify-center h-full px-6">
+      <div className="relative z-10 flex flex-col items-center justify-center px-6" style={{ height: '100dvh', paddingTop: 'env(safe-area-inset-top, 0px)', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
         {!hideLogo && !showLogo && (
           <h1
             className="text-white text-xl sm:text-2xl md:text-3xl font-display font-semibold text-center drop-shadow-lg"
