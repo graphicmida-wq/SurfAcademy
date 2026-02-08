@@ -30,6 +30,15 @@ function Router() {
   const isAdminPage = location.startsWith("/admin");
   const hasAdminBar = user?.isAdmin && !isAdminPage;
 
+  // Loading state - show spinner first (must be before admin/auth checks)
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
   // Admin pages have their own layout, don't render navbar/footer
   if (isAdminPage) {
     return (
@@ -93,15 +102,6 @@ function Router() {
           </Route>
           <Route component={NotFound} />
         </Switch>
-      </div>
-    );
-  }
-
-  // Loading state - show spinner first
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
       </div>
     );
   }

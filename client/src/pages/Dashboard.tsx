@@ -48,7 +48,7 @@ export default function Dashboard() {
     enabled: isAuthenticated,
   });
 
-  const { data: pageHeader } = usePageHeader('dashboard');
+  const { data: pageHeader, isLoading: headerLoading } = usePageHeader('dashboard');
 
   const { data: wavePointsData } = useQuery<{ balance: number }>({
     queryKey: ["/api/wavepoints"],
@@ -96,6 +96,7 @@ export default function Dashboard() {
         paddingTop={pageHeader?.paddingTop || undefined}
         paddingBottom={pageHeader?.paddingBottom || undefined}
         minHeight={pageHeader?.minHeight || undefined}
+        isLoading={headerLoading}
       />
       
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
