@@ -48,7 +48,7 @@ export function Navbar() {
     <>
       {/* WordPress-style Admin Bar */}
       {user?.isAdmin && !isAdminPage && (
-        <div className="fixed top-0 left-0 right-0 z-[60] bg-gray-900 text-white h-8 flex items-center px-4 text-sm">
+        <div className="fixed top-0 left-0 right-0 z-[60] bg-gray-900 text-white flex items-center px-4 text-sm" style={{ paddingTop: 'env(safe-area-inset-top, 0px)', height: 'calc(2rem + env(safe-area-inset-top, 0px))' }}>
           <a 
             href="/admin" 
             className="hover:bg-gray-800 px-3 py-1 rounded transition-colors"
@@ -59,11 +59,14 @@ export function Navbar() {
         </div>
       )}
       
-      <nav className={`fixed ${user?.isAdmin && !isAdminPage ? 'top-8' : 'top-0'} z-50 w-full transition-all duration-300 ${
+      <nav className={`fixed ${user?.isAdmin && !isAdminPage ? '' : 'top-0'} z-50 w-full transition-all duration-300 ${
         isScrolled 
           ? 'border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60' 
           : 'bg-transparent border-b border-transparent'
-      }`}>
+      }`} style={{ 
+        paddingTop: user?.isAdmin && !isAdminPage ? undefined : 'env(safe-area-inset-top, 0px)',
+        top: user?.isAdmin && !isAdminPage ? 'calc(2rem + env(safe-area-inset-top, 0px))' : undefined,
+      }}>
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-28 items-center justify-between py-2">
           {/* Logo - links to Welcome page */}

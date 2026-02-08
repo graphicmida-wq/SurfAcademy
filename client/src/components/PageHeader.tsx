@@ -11,7 +11,7 @@ export function PageHeader({ imageUrl, title, subtitle, paddingTop = 'py-16', pa
   const paddingClass = `${paddingTop.replace('py-', 'pt-')} ${paddingBottom.replace('py-', 'pb-')}`;
   
   return (
-    <div className={`relative w-full overflow-hidden ${minHeight}`}>
+    <div className={`relative w-full overflow-hidden ${minHeight}`} style={{ marginTop: 'calc(-1 * env(safe-area-inset-top, 0px))' }}>
       {imageUrl ? (
         <>
           <img
@@ -25,7 +25,7 @@ export function PageHeader({ imageUrl, title, subtitle, paddingTop = 'py-16', pa
       ) : (
         <div className="absolute inset-0 bg-[#13a294]" />
       )}
-      <div className={`absolute inset-0 flex flex-col items-center justify-center px-4 text-center ${paddingClass}`}>
+      <div className={`absolute inset-0 flex flex-col items-center justify-center px-4 text-center ${paddingClass}`} style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
         <h1 
           className="text-4xl md:text-5xl lg:text-6xl font-bold text-white pt-[-16px] pb-[-16px] mt-[6px] mb-[6px] uppercase"
           data-testid="page-header-title"
