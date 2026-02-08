@@ -242,6 +242,8 @@ export default function CourseDetail() {
 
     const lesson = selectedLesson;
     const isCompleted = lessonProgress.some(p => p.lessonId === lesson.id && p.completed);
+    const hasVideo = (lesson.videoUrls && lesson.videoUrls.length > 0) || lesson.videoUrl;
+    const isPdfOnly = lesson.pdfUrl && !hasVideo;
 
     return (
       <div className="space-y-6">
@@ -302,7 +304,18 @@ export default function CourseDetail() {
                   <p className="text-sm text-muted-foreground">Scarica o visualizza il documento</p>
                 </div>
                 <Button variant="outline" size="sm" asChild>
-                  <a href={lesson.pdfUrl} download target="_blank" rel="noopener noreferrer" data-testid={`download-pdf-${lesson.id}`}>
+                  <a 
+                    href={lesson.pdfUrl} 
+                    download 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    data-testid={`download-pdf-${lesson.id}`}
+                    onClick={() => {
+                      if (isPdfOnly && isAuthenticated && !isCompleted) {
+                        toggleLessonCompleteMutation.mutate({ lessonId: lesson.id, completed: true });
+                      }
+                    }}
+                  >
                     <Download className="h-4 w-4 mr-2" />
                     Scarica
                   </a>
@@ -319,8 +332,8 @@ export default function CourseDetail() {
               />
             )}
 
-            {/* Completion Toggle */}
-            {isAuthenticated && canAccess && (
+            {/* Completion Toggle - hidden for PDF-only lessons (auto-completed on download) */}
+            {isAuthenticated && canAccess && !isPdfOnly && (
               <div className="pt-4 border-t">
                 <Button
                   variant={isCompleted ? "outline" : "default"}
