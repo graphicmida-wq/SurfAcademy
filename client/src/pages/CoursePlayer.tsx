@@ -34,25 +34,6 @@ import { PageHeader } from "@/components/PageHeader";
 import { usePageHeader } from "@/hooks/usePageHeader";
 import { cn } from "@/lib/utils";
 
-function naturalSort(a: string, b: string): number {
-  const re = /(\d+)/;
-  const aParts = a.toLowerCase().split(re);
-  const bParts = b.toLowerCase().split(re);
-  for (let i = 0; i < Math.max(aParts.length, bParts.length); i++) {
-    const ap = aParts[i] || '';
-    const bp = bParts[i] || '';
-    const an = parseInt(ap, 10);
-    const bn = parseInt(bp, 10);
-    if (!isNaN(an) && !isNaN(bn)) {
-      if (an !== bn) return an - bn;
-    } else {
-      if (ap < bp) return -1;
-      if (ap > bp) return 1;
-    }
-  }
-  return 0;
-}
-
 type ContentType = 'presentazione' | 'ebook' | 'planning' | 'esercizio' | 'stretching' | 'riscaldamento' | 'settimana-1' | 'settimana-2' | 'settimana-3' | 'settimana-4';
 
 const contentIcons: Record<ContentType, any> = {
@@ -115,7 +96,7 @@ export default function CourseDetail() {
     if (!rawModules) return rawModules;
     return rawModules.map(mod => ({
       ...mod,
-      lessons: [...(mod.lessons || [])].sort((a, b) => naturalSort(a.title, b.title)),
+      lessons: [...(mod.lessons || [])].sort((a, b) => (a.orderIndex ?? 0) - (b.orderIndex ?? 0)),
     }));
   }, [rawModules]);
 
