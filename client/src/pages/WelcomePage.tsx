@@ -42,19 +42,28 @@ export default function WelcomePage() {
   }, []);
 
   return (
-    <div className="fixed inset-0 w-full h-full overflow-hidden" data-testid="welcome-page">
-      <picture>
-        <source media="(max-width: 768px)" srcSet={bgMobile} />
-        <source media="(min-width: 769px)" srcSet={bgDesktop} />
-        <img
-          src={bgDesktop}
-          alt="Sfondo"
-          className="absolute inset-0 w-full h-full object-cover"
-          data-testid="img-welcome-bg"
-        />
-      </picture>
+    <div data-testid="welcome-page">
+      <div
+        className="fixed left-0 right-0"
+        style={{
+          top: 'calc(-1 * env(safe-area-inset-top, 0px))',
+          bottom: 'calc(-1 * env(safe-area-inset-bottom, 0px))',
+          zIndex: 0,
+        }}
+      >
+        <picture className="block w-full h-full">
+          <source media="(max-width: 768px)" srcSet={bgMobile} />
+          <source media="(min-width: 769px)" srcSet={bgDesktop} />
+          <img
+            src={bgDesktop}
+            alt="Sfondo"
+            className="block w-full h-full object-cover"
+            data-testid="img-welcome-bg"
+          />
+        </picture>
+      </div>
 
-      <div className="relative z-10 flex flex-col items-center justify-center px-6" style={{ height: '100dvh', paddingTop: 'env(safe-area-inset-top, 0px)', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+      <div className="fixed inset-0 z-10 flex flex-col items-center justify-center px-6" style={{ paddingTop: 'env(safe-area-inset-top, 0px)', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
         {!hideLogo && !showLogo && (
           <h1
             className="text-white text-xl sm:text-2xl md:text-3xl font-display font-semibold text-center drop-shadow-lg"
