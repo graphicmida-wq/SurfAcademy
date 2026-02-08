@@ -21,6 +21,9 @@ export default function WelcomePage() {
   const [hideWelcome, setHideWelcome] = useState(false);
   const [hideLogo, setHideLogo] = useState(false);
 
+  const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768;
+  const bgImage = isMobile ? bgMobile : bgDesktop;
+
   const firstName = user?.firstName || "Studente";
 
   useEffect(() => {
@@ -48,21 +51,13 @@ export default function WelcomePage() {
         style={{
           top: 'calc(-1 * env(safe-area-inset-top, 0px))',
           bottom: 'calc(-1 * env(safe-area-inset-bottom, 0px))',
+          backgroundImage: `url(${bgImage})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
           zIndex: 0,
         }}
-      >
-        <picture className="block w-full h-full">
-          <source media="(max-width: 768px)" srcSet={bgMobile} />
-          <source media="(min-width: 769px)" srcSet={bgDesktop} />
-          <img
-            src={bgDesktop}
-            alt="Sfondo"
-            className="block w-full h-full object-cover"
-            data-testid="img-welcome-bg"
-          />
-        </picture>
-      </div>
-
+      />
       <div className="fixed inset-0 z-10 flex flex-col items-center justify-center px-6" style={{ paddingTop: 'env(safe-area-inset-top, 0px)', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
         {!hideLogo && !showLogo && (
           <h1
