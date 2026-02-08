@@ -988,12 +988,14 @@ export default function AdminCourseContent() {
                   <FormItem>
                     <FormLabel>PDF (per E-Book/Planning)</FormLabel>
                     <FormControl>
-                      <MediaUploadZone
-                        currentUrl={field.value || ""}
-                        onUploadComplete={(url) => field.onChange(url)}
+                      <Input
+                        {...field}
+                        value={field.value || ""}
+                        placeholder="https://tuohosting.com/file.pdf"
+                        data-testid="input-lesson-pdf-url"
                       />
                     </FormControl>
-                    <FormDescription>Carica un file PDF per questa lezione</FormDescription>
+                    <FormDescription>Incolla l'URL del file PDF dal tuo hosting</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
