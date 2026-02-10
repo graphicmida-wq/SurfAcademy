@@ -48,7 +48,9 @@ PostgreSQL, hosted on Neon, is the primary database, accessed via `@neondatabase
 
 **Deployment**: User deploys via git push to Railway (NOT Replit publishing). Railway connects to Neon production database. The Replit "production" database is separate from Railway's.
 
-**Admin Webhook Tools**: GET `/api/admin/webhook-status` shows config and mappings. POST `/api/admin/webhook-test` simulates webhook lookup.
+**Admin Webhook Tools**: GET `/api/admin/webhook-status` shows config and mappings. POST `/api/admin/webhook-test` simulates webhook lookup. POST `/api/admin/force-seed` triggers production database seeding at runtime (creates courses, modules, lessons, exercises if missing). GET `/api/admin/webhook-diagnostic` runs full pipeline test.
+
+**Production Seeding**: `server/seed.ts` seeds courses, modules, lessons, exercises, and course_products on production startup. Data comes from `scripts/production-seed-data.json` (exported via `scripts/export-data.ts`). If seed file is missing, hardcoded fallback creates the 3 courses with correct UUIDs. Seeding checks each content type independently and uses `onConflictDoNothing()` for safe re-runs. Multiple file paths are tried for Railway compatibility.
 
 **User IDs**: All users are prefixed with `wp_` followed by their WordPress user ID (e.g., `wp_123`). This ensures consistency between WordPress and Replit.
 
