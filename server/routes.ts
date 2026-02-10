@@ -1466,10 +1466,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ========== WooCommerce Webhook ==========
   const WOOCOMMERCE_WEBHOOK_SECRET = process.env.WOOCOMMERCE_WEBHOOK_SECRET;
 
-  if (process.env.WOOCOMMERCE_SKIP_SIGNATURE === 'true') {
-    console.warn('⚠️  WARNING: WOOCOMMERCE_SKIP_SIGNATURE=true — webhook signature verification is BYPASSED. Remove this env var in production after debugging!');
-  }
-
   const HARDCODED_PRODUCT_COURSE_MAP: Record<number, string> = {
     1216: 'REMATA',
     1231: 'TAKEOFF',
@@ -1482,7 +1478,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       message: 'WooCommerce webhook endpoint is active',
       timestamp: new Date().toISOString(),
       signatureVerification: !!WOOCOMMERCE_WEBHOOK_SECRET,
-      signatureBypass: process.env.WOOCOMMERCE_SKIP_SIGNATURE === 'true',
     });
   });
 
@@ -1586,7 +1581,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       let signatureValid = false;
       const signature = req.headers['x-wc-webhook-signature'] as string;
-      const skipSignature = process.env.WOOCOMMERCE_SKIP_SIGNATURE === 'true';
       
       if (WOOCOMMERCE_WEBHOOK_SECRET && signature) {
         const crypto = await import('crypto');
@@ -1602,24 +1596,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           addLog('Signature: VERIFIED OK');
         } else {
           addLog(`Signature: MISMATCH (got=${signature.substring(0, 20)}..., expected=${expectedSignature.substring(0, 20)}..., usedRawBody=${!!rawBody})`);
-          if (!skipSignature) {
-            addLog('REJECTED: Signature mismatch. Set WOOCOMMERCE_SKIP_SIGNATURE=true in Railway env to bypass temporarily for debugging.');
-            await saveLog(orderId, orderStatus, customerEmail || '', uniqueProductIds.map(String), false);
-            return res.status(401).json({ message: 'Invalid signature' });
-          }
-          addLog('BYPASS: WOOCOMMERCE_SKIP_SIGNATURE=true - processing despite mismatch');
         }
-      } else if (WOOCOMMERCE_WEBHOOK_SECRET && !signature) {
-        addLog('Signature: MISSING header x-wc-webhook-signature');
-        if (!skipSignature) {
-          addLog('REJECTED: Missing signature. Set WOOCOMMERCE_SKIP_SIGNATURE=true in Railway env to bypass temporarily for debugging.');
-          await saveLog(orderId, orderStatus, customerEmail || '', uniqueProductIds.map(String), false);
-          return res.status(401).json({ message: 'Missing signature' });
-        }
-        addLog('BYPASS: WOOCOMMERCE_SKIP_SIGNATURE=true - processing despite missing signature');
+      } else if (!signature) {
+        addLog('Signature: no x-wc-webhook-signature header present');
       } else {
-        addLog('Signature: No WOOCOMMERCE_WEBHOOK_SECRET configured - skipping verification');
-        signatureValid = true;
+        addLog('Signature: no WOOCOMMERCE_WEBHOOK_SECRET configured');
       }
 
       if (orderStatus !== 'completed' && orderStatus !== 'processing') {
