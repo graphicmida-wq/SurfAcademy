@@ -1466,18 +1466,73 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ========== WooCommerce Webhook ==========
   const WOOCOMMERCE_WEBHOOK_SECRET = process.env.WOOCOMMERCE_WEBHOOK_SECRET;
 
+  const HARDCODED_PRODUCT_COURSE_MAP: Record<number, string> = {
+    1216: 'REMATA',
+    1231: 'TAKEOFF',
+    1243: 'NOSERIDE',
+  };
+
+  async function resolveCoursesForProducts(numericProductIds: number[]): Promise<string[]> {
+    let courseIds = await storage.getCoursesByWooProductIds(numericProductIds);
+    
+    if (courseIds.length > 0) {
+      return courseIds;
+    }
+
+    console.log('WooCommerce webhook: No mappings in course_products table, using hardcoded fallback');
+    const allCourses = await storage.getAllCourses();
+    const resolved: string[] = [];
+    
+    for (const pid of numericProductIds) {
+      const courseName = HARDCODED_PRODUCT_COURSE_MAP[pid];
+      if (courseName) {
+        const course = allCourses.find(c => 
+          c.title.toUpperCase().includes(courseName)
+        );
+        if (course) {
+          resolved.push(course.id);
+          console.log(`WooCommerce webhook: Fallback matched product ${pid} -> course "${course.title}" (${course.id})`);
+          
+          try {
+            await storage.createCourseProduct({
+              wooProductId: pid,
+              courseId: course.id,
+              productName: courseName,
+            });
+            console.log(`WooCommerce webhook: Auto-created course_products mapping for product ${pid}`);
+          } catch (e) {
+            console.warn(`WooCommerce webhook: Could not auto-create mapping (may already exist)`, e);
+          }
+        }
+      }
+    }
+    
+    return resolved;
+  }
+
   app.post('/webhooks/woocommerce', async (req, res) => {
+    const isProduction = process.env.NODE_ENV === 'production';
+    const debugLog: string[] = [];
+    const addLog = (msg: string) => { debugLog.push(msg); console.log(`WooCommerce webhook: ${msg}`); };
+    const safeDebug = () => isProduction ? undefined : debugLog;
+    
     try {
       const order = req.body;
+      
+      if (!order || !order.id) {
+        addLog(`Received non-order payload or ping. Body keys: ${JSON.stringify(Object.keys(order || {}))}`);
+        return res.json({ message: 'Not an order payload, ignored' });
+      }
+
       const orderId = order.id;
       const orderStatus = order.status;
       const customerEmail = order.billing?.email;
+      const customerWpId = order.customer_id;
       const lineItems = order.line_items || [];
       const productIds = lineItems.map((item: any) => item.product_id);
 
-      console.log(`WooCommerce webhook received: orderId=${orderId}, status=${orderStatus}, email=${customerEmail}, products=${JSON.stringify(productIds)}`);
+      addLog(`Received: orderId=${orderId}, status=${orderStatus}, email=${customerEmail}, wpCustomerId=${customerWpId}, products=${JSON.stringify(productIds)}`);
 
-      // Log the webhook immediately (before any verification)
       try {
         await storage.createWoocommerceWebhookLog({
           orderId,
@@ -1486,97 +1541,223 @@ export async function registerRoutes(app: Express): Promise<Server> {
           productIds: productIds.map(String),
           processed: false,
         });
-      } catch (logErr) {
-        console.error('WooCommerce webhook: Failed to write log', logErr);
+        addLog('Log entry written');
+      } catch (logErr: any) {
+        addLog(`Failed to write log: ${logErr.message}`);
       }
 
       const signature = req.headers['x-wc-webhook-signature'] as string;
       
-      // Verify signature when secret is configured
       if (WOOCOMMERCE_WEBHOOK_SECRET) {
         if (!signature) {
-          console.warn('WooCommerce webhook missing signature');
-          return res.status(401).json({ message: 'Missing signature' });
+          addLog('REJECTED: Missing signature header');
+          return res.status(401).json({ message: 'Missing signature', debug: safeDebug() });
         }
         
         const crypto = await import('crypto');
-        const rawBody = (req as any).rawBody || JSON.stringify(req.body);
+        const rawBody = (req as any).rawBody;
+        
+        if (!rawBody) {
+          addLog('WARNING: rawBody not captured! Falling back to JSON.stringify');
+        }
+        
+        const bodyToVerify = rawBody || JSON.stringify(req.body);
         const expectedSignature = crypto
           .createHmac('sha256', WOOCOMMERCE_WEBHOOK_SECRET)
-          .update(rawBody, 'utf8')
+          .update(bodyToVerify, 'utf8')
           .digest('base64');
         
         if (signature !== expectedSignature) {
-          console.warn(`WooCommerce webhook signature mismatch. Received: ${signature}, Expected: ${expectedSignature}`);
-          return res.status(401).json({ message: 'Invalid signature' });
+          addLog(`REJECTED: Signature mismatch. Got: ${signature}, Expected: ${expectedSignature}, rawBody captured: ${!!rawBody}`);
+          return res.status(401).json({ message: 'Invalid signature', debug: safeDebug() });
         }
-        console.log('WooCommerce webhook: Signature verified OK');
+        addLog('Signature verified OK');
       } else {
-        console.warn('WooCommerce webhook received without secret configured - accepting for development only');
+        addLog('No WOOCOMMERCE_WEBHOOK_SECRET configured - skipping signature verification');
       }
 
-      // Process both completed and processing orders
       if (orderStatus !== 'completed' && orderStatus !== 'processing') {
-        console.log(`WooCommerce webhook: Order ${orderId} status is ${orderStatus}, skipping enrollment`);
-        return res.json({ message: 'Order not completed/processing, skipping' });
+        addLog(`Order status "${orderStatus}" is not completed/processing - skipping`);
+        return res.json({ message: 'Order not completed/processing, skipping', debug: safeDebug() });
       }
 
       if (!customerEmail) {
-        console.error('WooCommerce webhook: No customer email in order');
-        return res.status(400).json({ message: 'No customer email' });
+        addLog('REJECTED: No billing email in order');
+        return res.status(400).json({ message: 'No customer email', debug: safeDebug() });
       }
 
-      // Find or create user based on WordPress user ID or email
-      const wpUserId = order.customer_id;
-      const userId = wpUserId ? `wp_${wpUserId}` : `wp_${customerEmail.replace(/[^a-zA-Z0-9]/g, '_')}`;
+      const userId = customerWpId ? `wp_${customerWpId}` : `wp_${customerEmail.replace(/[^a-zA-Z0-9]/g, '_')}`;
+      addLog(`User ID resolved: ${userId}`);
       
-      await storage.upsertUser({
-        id: userId,
-        email: customerEmail,
-        firstName: order.billing?.first_name || null,
-        lastName: order.billing?.last_name || null,
-      });
+      try {
+        await storage.upsertUser({
+          id: userId,
+          email: customerEmail,
+          firstName: order.billing?.first_name || null,
+          lastName: order.billing?.last_name || null,
+        });
+        addLog(`User upserted: ${userId}`);
+      } catch (userErr: any) {
+        addLog(`ERROR creating/updating user: ${userErr.message}`);
+        return res.status(500).json({ message: 'Failed to create user', debug: safeDebug() });
+      }
 
-      // Get course IDs for the purchased products (ensure integer type)
-      const numericProductIds = productIds.map((id: any) => typeof id === 'string' ? parseInt(id, 10) : Number(id)).filter((id: number) => !isNaN(id));
-      console.log(`WooCommerce webhook: Looking up courses for product IDs: ${JSON.stringify(numericProductIds)}`);
-      
-      const courseIds = await storage.getCoursesByWooProductIds(numericProductIds);
+      const numericProductIds = productIds
+        .map((id: any) => typeof id === 'string' ? parseInt(id, 10) : Number(id))
+        .filter((id: number) => !isNaN(id));
+      addLog(`Numeric product IDs: ${JSON.stringify(numericProductIds)}`);
+
+      let courseIds: string[];
+      try {
+        courseIds = await resolveCoursesForProducts(numericProductIds);
+        addLog(`Resolved course IDs: ${JSON.stringify(courseIds)}`);
+      } catch (lookupErr: any) {
+        addLog(`ERROR looking up courses: ${lookupErr.message}`);
+        
+        addLog('Attempting direct course lookup as last resort...');
+        const allCourses = await storage.getAllCourses();
+        courseIds = [];
+        for (const pid of numericProductIds) {
+          const courseName = HARDCODED_PRODUCT_COURSE_MAP[pid];
+          if (courseName) {
+            const c = allCourses.find(cc => cc.title.toUpperCase().includes(courseName));
+            if (c) courseIds.push(c.id);
+          }
+        }
+        addLog(`Last resort found: ${JSON.stringify(courseIds)}`);
+      }
 
       if (courseIds.length === 0) {
-        console.log(`WooCommerce webhook: No course mappings found for products ${numericProductIds.join(', ')}`);
-        return res.json({ message: 'No course mappings found' });
+        addLog(`No courses found for products ${JSON.stringify(numericProductIds)}`);
+        const allMappings = await storage.getAllCourseProducts().catch(() => []);
+        const allCourses = await storage.getAllCourses().catch(() => []);
+        return res.json({ 
+          message: 'No course mappings found', 
+          debug: safeDebug(),
+        });
       }
-      console.log(`WooCommerce webhook: Found course mappings: ${JSON.stringify(courseIds)}`);
 
-      // Create enrollments for each course
       let enrollmentsCreated = 0;
       for (const courseId of courseIds) {
-        const existingEnrollment = await storage.getEnrollmentByUserAndCourse(userId, courseId);
-        if (!existingEnrollment) {
-          await storage.createEnrollment({ userId, courseId });
-          enrollmentsCreated++;
-          console.log(`WooCommerce webhook: Created enrollment for user ${userId} in course ${courseId}`);
+        try {
+          const existingEnrollment = await storage.getEnrollmentByUserAndCourse(userId, courseId);
+          if (!existingEnrollment) {
+            await storage.createEnrollment({ userId, courseId });
+            enrollmentsCreated++;
+            addLog(`Enrollment CREATED: user=${userId}, course=${courseId}`);
+          } else {
+            addLog(`Enrollment already exists: user=${userId}, course=${courseId}`);
+          }
+        } catch (enrollErr: any) {
+          addLog(`ERROR creating enrollment for course ${courseId}: ${enrollErr.message}`);
         }
       }
 
-      // Update log as processed
-      await storage.createWoocommerceWebhookLog({
-        orderId,
-        orderStatus,
-        customerEmail,
-        productIds: productIds.map(String),
-        processed: true,
-      });
+      try {
+        await storage.createWoocommerceWebhookLog({
+          orderId,
+          orderStatus,
+          customerEmail,
+          productIds: productIds.map(String),
+          processed: true,
+        });
+      } catch (e) {}
 
+      addLog(`Done. Enrollments created: ${enrollmentsCreated}`);
       res.json({ 
         message: 'Webhook processed successfully',
         enrollmentsCreated,
-        courses: courseIds 
+        courses: courseIds,
+        debug: safeDebug(),
       });
-    } catch (error) {
-      console.error('WooCommerce webhook error:', error);
-      res.status(500).json({ message: 'Webhook processing failed' });
+    } catch (error: any) {
+      addLog(`FATAL ERROR: ${error.message}`);
+      console.error('WooCommerce webhook fatal error:', error);
+      res.status(500).json({ message: 'Webhook processing failed', debug: safeDebug(), error: error.message });
+    }
+  });
+
+  // ========== Admin Manual Enrollment ==========
+  app.post('/api/admin/enroll-user', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { userId, courseId } = req.body;
+      if (!userId || !courseId) {
+        return res.status(400).json({ message: 'userId and courseId are required' });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: `User ${userId} not found` });
+      }
+
+      const course = await storage.getCourse(courseId);
+      if (!course) {
+        return res.status(404).json({ message: `Course ${courseId} not found` });
+      }
+
+      const existing = await storage.getEnrollmentByUserAndCourse(userId, courseId);
+      if (existing) {
+        return res.json({ message: 'User is already enrolled', enrollment: existing });
+      }
+
+      const enrollment = await storage.createEnrollment({ userId, courseId });
+      console.log(`Admin manual enrollment: user=${userId}, course=${courseId} (${course.title})`);
+      res.json({ message: 'User enrolled successfully', enrollment });
+    } catch (error: any) {
+      console.error('Admin enrollment error:', error);
+      res.status(500).json({ message: 'Failed to enroll user', error: error.message });
+    }
+  });
+
+  // ========== Admin Full Webhook Diagnostic ==========
+  app.get('/api/admin/webhook-diagnostic', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const diagnostic: any = {
+        timestamp: new Date().toISOString(),
+        environment: process.env.NODE_ENV,
+        webhookSecretConfigured: !!WOOCOMMERCE_WEBHOOK_SECRET,
+        steps: [],
+      };
+
+      diagnostic.steps.push({ step: 'Check courses table', status: 'checking' });
+      const allCourses = await storage.getAllCourses();
+      diagnostic.steps[0] = { step: 'Check courses table', status: 'ok', count: allCourses.length, courses: allCourses.map(c => ({ id: c.id, title: c.title })) };
+
+      diagnostic.steps.push({ step: 'Check course_products table', status: 'checking' });
+      try {
+        const mappings = await storage.getAllCourseProducts();
+        diagnostic.steps[1] = { step: 'Check course_products table', status: 'ok', count: mappings.length, mappings };
+      } catch (e: any) {
+        diagnostic.steps[1] = { step: 'Check course_products table', status: 'ERROR', error: e.message };
+      }
+
+      diagnostic.steps.push({ step: 'Check hardcoded fallback', status: 'checking' });
+      const fallbackResults: any[] = [];
+      for (const [pid, name] of Object.entries(HARDCODED_PRODUCT_COURSE_MAP)) {
+        const course = allCourses.find(c => c.title.toUpperCase().includes(name));
+        fallbackResults.push({ productId: pid, courseName: name, found: !!course, courseId: course?.id });
+      }
+      diagnostic.steps[2] = { step: 'Check hardcoded fallback', status: 'ok', fallbackResults };
+
+      diagnostic.steps.push({ step: 'Check webhook logs', status: 'checking' });
+      try {
+        const logs = await storage.getWoocommerceWebhookLogs();
+        diagnostic.steps[3] = { step: 'Check webhook logs', status: 'ok', count: logs.length, recent: logs.slice(0, 5) };
+      } catch (e: any) {
+        diagnostic.steps[3] = { step: 'Check webhook logs', status: 'ERROR', error: e.message };
+      }
+
+      diagnostic.steps.push({ step: 'Test product lookup (1216=REMATA)', status: 'checking' });
+      try {
+        const testCourses = await resolveCoursesForProducts([1216]);
+        diagnostic.steps[4] = { step: 'Test product lookup (1216=REMATA)', status: testCourses.length > 0 ? 'ok' : 'FAILED', courseIds: testCourses };
+      } catch (e: any) {
+        diagnostic.steps[4] = { step: 'Test product lookup (1216=REMATA)', status: 'ERROR', error: e.message };
+      }
+
+      res.json(diagnostic);
+    } catch (error: any) {
+      res.status(500).json({ message: 'Diagnostic failed', error: error.message });
     }
   });
 
