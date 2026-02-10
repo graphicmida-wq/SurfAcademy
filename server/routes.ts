@@ -1902,6 +1902,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ========== Admin Force Seed ==========
+  app.post('/api/admin/force-seed', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { seedProductionDatabase } = await import('./seed');
+      const originalEnv = process.env.NODE_ENV;
+      process.env.NODE_ENV = 'production';
+      await seedProductionDatabase();
+      process.env.NODE_ENV = originalEnv;
+      
+      const allCourses = await storage.getAllCourses();
+      const allMappings = await storage.getAllCourseProducts().catch(() => []);
+      
+      res.json({
+        message: 'Seed completed',
+        courses: allCourses.map(c => ({ id: c.id, title: c.title })),
+        courseMappings: allMappings,
+      });
+    } catch (error: any) {
+      console.error('Force seed error:', error);
+      res.status(500).json({ message: 'Seed failed', error: error.message });
+    }
+  });
+
   // ========== Newsletter Routes ==========
   registerNewsletterRoutes(app, isAuthenticated, isAdmin);
 

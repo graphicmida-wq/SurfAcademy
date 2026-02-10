@@ -3,7 +3,7 @@
 import { neonConfig, Pool } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-serverless";
 import ws from "ws";
-import { heroSlides, pageHeaders, courses, clinics, customPages, pageBlocks } from "../shared/schema";
+import { heroSlides, pageHeaders, courses, modules, lessons, exercises, customPages, pageBlocks } from "../shared/schema";
 import { writeFileSync } from "fs";
 import { join } from "path";
 
@@ -32,9 +32,17 @@ async function exportData() {
   const coursesData = await db.select().from(courses);
   console.log(`✅ Exported ${coursesData.length} courses`);
 
-  // Export clinics
-  const clinicsData = await db.select().from(clinics);
-  console.log(`✅ Exported ${clinicsData.length} clinics`);
+  // Export modules
+  const modulesData = await db.select().from(modules);
+  console.log(`✅ Exported ${modulesData.length} modules`);
+
+  // Export lessons
+  const lessonsData = await db.select().from(lessons);
+  console.log(`✅ Exported ${lessonsData.length} lessons`);
+
+  // Export exercises
+  const exercisesData = await db.select().from(exercises);
+  console.log(`✅ Exported ${exercisesData.length} exercises`);
 
   // Export custom pages
   const customPagesData = await db.select().from(customPages);
@@ -44,12 +52,13 @@ async function exportData() {
   const pageBlocksData = await db.select().from(pageBlocks);
   console.log(`✅ Exported ${pageBlocksData.length} page blocks`);
 
-  // Create export object
   const exportData = {
     heroSlides: heroSlidesData,
     pageHeaders: pageHeadersData,
     courses: coursesData,
-    clinics: clinicsData,
+    modules: modulesData,
+    lessons: lessonsData,
+    exercises: exercisesData,
     customPages: customPagesData,
     pageBlocks: pageBlocksData,
     exportedAt: new Date().toISOString(),
@@ -64,7 +73,9 @@ async function exportData() {
   console.log(`  - ${heroSlidesData.length} hero slides`);
   console.log(`  - ${pageHeadersData.length} page headers`);
   console.log(`  - ${coursesData.length} courses`);
-  console.log(`  - ${clinicsData.length} clinics`);
+  console.log(`  - ${modulesData.length} modules`);
+  console.log(`  - ${lessonsData.length} lessons`);
+  console.log(`  - ${exercisesData.length} exercises`);
   console.log(`  - ${customPagesData.length} custom pages`);
   console.log(`  - ${pageBlocksData.length} page blocks`);
 

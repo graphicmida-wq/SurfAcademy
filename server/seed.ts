@@ -2,7 +2,7 @@ import { storage } from "./storage";
 import { neonConfig, Pool } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-serverless";
 import ws from "ws";
-import { heroSlides, pageHeaders, courses, customPages, pageBlocks } from "../shared/schema";
+import { heroSlides, pageHeaders, courses, modules, lessons, exercises, customPages, pageBlocks } from "../shared/schema";
 import { readFileSync, existsSync } from "fs";
 import { join } from "path";
 import { fileURLToPath } from "url";
@@ -176,6 +176,138 @@ async function seedCourseProducts(db: ReturnType<typeof drizzle>) {
   }
 }
 
+async function seedHardcodedCourses(db: ReturnType<typeof drizzle>) {
+  console.log("🔧 Seeding hardcoded course data (fallback)...");
+  
+  const courseData = [
+    {
+      id: '2deecb7e-9946-4b01-a834-c5c839bf2d35',
+      title: 'REMATA',
+      description: 'Corso completo sulla tecnica di remata per longboard',
+      level: 'beginner',
+      isFree: false,
+      price: 9900,
+      instructorName: 'Scuola di Longboard',
+      duration: 0,
+      courseCategory: 'remata',
+      activationStatus: 'active',
+      imageGallery: [],
+    },
+    {
+      id: '61ad0b17-22be-416f-8c37-250142a1d9a2',
+      title: 'TAKEOFF',
+      description: 'Padroneggia la tecnica del takeoff perfetto',
+      level: 'intermediate',
+      isFree: false,
+      price: 9900,
+      instructorName: 'Scuola di Longboard',
+      duration: 0,
+      courseCategory: 'takeoff',
+      activationStatus: 'active',
+      imageGallery: [],
+    },
+    {
+      id: '8c5e2723-75f0-4395-ba4c-af01e96d247f',
+      title: 'NOSERIDE',
+      description: "Impara l'arte del noseride e camminata sulla tavola",
+      level: 'advanced',
+      isFree: false,
+      price: 12900,
+      instructorName: 'Scuola di Longboard',
+      duration: 0,
+      courseCategory: 'noseride',
+      activationStatus: 'active',
+      imageGallery: [],
+    },
+  ];
+
+  for (const c of courseData) {
+    await db.execute(sql`
+      INSERT INTO courses (id, title, description, level, is_free, price, instructor_name, duration, course_category, activation_status, image_gallery)
+      VALUES (${c.id}, ${c.title}, ${c.description}, ${c.level}, ${c.isFree}, ${c.price}, ${c.instructorName}, ${c.duration}, ${c.courseCategory}, ${c.activationStatus}, ${JSON.stringify(c.imageGallery)}::jsonb)
+      ON CONFLICT (id) DO NOTHING
+    `);
+    console.log(`✅ Hardcoded course: ${c.title} (${c.id})`);
+  }
+
+  await seedModulesAndLessons(db);
+}
+
+async function seedModulesAndLessons(db: ReturnType<typeof drizzle>) {
+  console.log("🔧 Seeding modules and lessons from seed data...");
+  
+  const dataPath = join(process.cwd(), "scripts", "production-seed-data.json");
+  const altPaths = [
+    dataPath,
+    join(__dirname, "..", "scripts", "production-seed-data.json"),
+    join(__dirname, "production-seed-data.json"),
+    "/app/scripts/production-seed-data.json",
+  ];
+  
+  let foundPath: string | null = null;
+  for (const p of altPaths) {
+    if (existsSync(p)) { foundPath = p; break; }
+  }
+  
+  if (!foundPath) {
+    console.log("⚠️  No seed data file found for modules/lessons");
+    return;
+  }
+
+  const seedData = JSON.parse(readFileSync(foundPath, "utf-8"));
+  
+  const convertDates = (obj: any): any => {
+    if (obj === null || obj === undefined) return obj;
+    if (obj instanceof Date) return obj;
+    if (Array.isArray(obj)) return obj.map(convertDates);
+    if (typeof obj === 'object') {
+      const result: any = {};
+      for (const key of Object.keys(obj)) {
+        const value = obj[key];
+        if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(value)) {
+          result[key] = new Date(value);
+        } else if (typeof value === 'object' && value !== null) {
+          result[key] = convertDates(value);
+        } else {
+          result[key] = value;
+        }
+      }
+      return result;
+    }
+    return obj;
+  };
+
+  if (seedData.modules?.length > 0) {
+    try {
+      const mods = convertDates(seedData.modules);
+      await db.insert(modules).values(mods).onConflictDoNothing();
+      console.log(`✅ Seeded ${mods.length} modules`);
+    } catch (e: any) {
+      console.error(`❌ Failed to seed modules: ${e.message}`);
+    }
+  }
+  
+  if (seedData.lessons?.length > 0) {
+    try {
+      const les = convertDates(seedData.lessons);
+      await db.insert(lessons).values(les).onConflictDoNothing();
+      console.log(`✅ Seeded ${les.length} lessons`);
+    } catch (e: any) {
+      console.error(`❌ Failed to seed lessons: ${e.message}`);
+    }
+  }
+  
+  if (seedData.exercises?.length > 0) {
+    try {
+      const exs = convertDates(seedData.exercises);
+      await db.insert(exercises).values(exs).onConflictDoNothing();
+      console.log(`✅ Seeded ${exs.length} exercises`);
+    } catch (e: any) {
+      console.error(`❌ Failed to seed exercises: ${e.message}`);
+    }
+  }
+}
+
 export async function seedProductionDatabase() {
   if (process.env.NODE_ENV !== "production") {
     return;
@@ -196,40 +328,59 @@ export async function seedProductionDatabase() {
 
     console.log("🌱 Checking if production database needs content seeding...");
 
-    const existingSlides = await db.select().from(heroSlides);
-    if (existingSlides.length > 0) {
-      console.log("✅ Database content already seeded");
+    const existingCourses = await db.select().from(courses);
+    const existingModules = await db.select().from(modules);
+    const existingLessons = await db.select().from(lessons);
+    
+    if (existingCourses.length > 0 && existingModules.length > 0 && existingLessons.length > 0) {
+      console.log(`✅ Database already has ${existingCourses.length} courses, ${existingModules.length} modules, ${existingLessons.length} lessons`);
+      await pool.end();
+      return;
+    }
+    
+    if (existingCourses.length > 0 && (existingModules.length === 0 || existingLessons.length === 0)) {
+      console.log("⚠️  Courses exist but modules/lessons missing, seeding them...");
+      await seedModulesAndLessons(db);
       await pool.end();
       return;
     }
 
-    // Check if data file exists (use process.cwd() to work in both dev and production)
     const dataPath = join(process.cwd(), "scripts", "production-seed-data.json");
-    if (!existsSync(dataPath)) {
-      console.log("⚠️  No seed data file found, skipping seed");
+    
+    const altPaths = [
+      dataPath,
+      join(__dirname, "..", "scripts", "production-seed-data.json"),
+      join(__dirname, "production-seed-data.json"),
+      "/app/scripts/production-seed-data.json",
+    ];
+    
+    let foundPath: string | null = null;
+    for (const p of altPaths) {
+      if (existsSync(p)) {
+        foundPath = p;
+        break;
+      }
+    }
+    
+    if (!foundPath) {
+      console.log(`⚠️  No seed data file found. Tried: ${altPaths.join(', ')}`);
+      console.log("⚠️  Falling back to hardcoded course data...");
+      await seedHardcodedCourses(db);
       await pool.end();
       return;
     }
 
-    // Read seed data
-    const seedData = JSON.parse(readFileSync(dataPath, "utf-8"));
-    console.log(`📦 Loading seed data from ${seedData.exportedAt}`);
+    const seedData = JSON.parse(readFileSync(foundPath, "utf-8"));
+    console.log(`📦 Loading seed data from ${foundPath} (exported ${seedData.exportedAt})`);
 
-    // Helper function to convert timestamp strings to Date objects
     const convertDates = (obj: any): any => {
       if (obj === null || obj === undefined) return obj;
-      // Preserve existing Date instances
       if (obj instanceof Date) return obj;
-      // Handle arrays
-      if (Array.isArray(obj)) {
-        return obj.map(convertDates);
-      }
-      // Handle plain objects only
+      if (Array.isArray(obj)) return obj.map(convertDates);
       if (typeof obj === 'object') {
         const result: any = {};
         for (const key of Object.keys(obj)) {
           const value = obj[key];
-          // Check if value looks like an ISO timestamp string
           if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(value)) {
             result[key] = new Date(value);
           } else if (typeof value === 'object' && value !== null) {
@@ -243,42 +394,56 @@ export async function seedProductionDatabase() {
       return obj;
     };
 
-    // Convert all timestamp strings to Date objects
     if (seedData.heroSlides) seedData.heroSlides = convertDates(seedData.heroSlides);
     if (seedData.pageHeaders) seedData.pageHeaders = convertDates(seedData.pageHeaders);
     if (seedData.courses) seedData.courses = convertDates(seedData.courses);
+    if (seedData.modules) seedData.modules = convertDates(seedData.modules);
+    if (seedData.lessons) seedData.lessons = convertDates(seedData.lessons);
+    if (seedData.exercises) seedData.exercises = convertDates(seedData.exercises);
     if (seedData.customPages) seedData.customPages = convertDates(seedData.customPages);
     if (seedData.pageBlocks) seedData.pageBlocks = convertDates(seedData.pageBlocks);
 
-    // Seed hero slides
     if (seedData.heroSlides?.length > 0) {
-      await db.insert(heroSlides).values(seedData.heroSlides);
+      await db.insert(heroSlides).values(seedData.heroSlides).onConflictDoNothing();
       console.log(`✅ Seeded ${seedData.heroSlides.length} hero slides`);
     }
 
-    // Seed page headers
     if (seedData.pageHeaders?.length > 0) {
-      await db.insert(pageHeaders).values(seedData.pageHeaders);
+      await db.insert(pageHeaders).values(seedData.pageHeaders).onConflictDoNothing();
       console.log(`✅ Seeded ${seedData.pageHeaders.length} page headers`);
     }
 
-    // Seed courses
     if (seedData.courses?.length > 0) {
-      await db.insert(courses).values(seedData.courses);
+      await db.insert(courses).values(seedData.courses).onConflictDoNothing();
       console.log(`✅ Seeded ${seedData.courses.length} courses`);
     }
 
-    // Seed custom pages
+    if (seedData.modules?.length > 0) {
+      await db.insert(modules).values(seedData.modules).onConflictDoNothing();
+      console.log(`✅ Seeded ${seedData.modules.length} modules`);
+    }
+
+    if (seedData.lessons?.length > 0) {
+      await db.insert(lessons).values(seedData.lessons).onConflictDoNothing();
+      console.log(`✅ Seeded ${seedData.lessons.length} lessons`);
+    }
+
+    if (seedData.exercises?.length > 0) {
+      await db.insert(exercises).values(seedData.exercises).onConflictDoNothing();
+      console.log(`✅ Seeded ${seedData.exercises.length} exercises`);
+    }
+
     if (seedData.customPages?.length > 0) {
-      await db.insert(customPages).values(seedData.customPages);
+      await db.insert(customPages).values(seedData.customPages).onConflictDoNothing();
       console.log(`✅ Seeded ${seedData.customPages.length} custom pages`);
     }
 
-    // Seed page blocks (depends on custom pages)
     if (seedData.pageBlocks?.length > 0) {
-      await db.insert(pageBlocks).values(seedData.pageBlocks);
+      await db.insert(pageBlocks).values(seedData.pageBlocks).onConflictDoNothing();
       console.log(`✅ Seeded ${seedData.pageBlocks.length} page blocks`);
     }
+
+    await seedCourseProducts(db);
 
     console.log("✨ Production database seeded successfully!");
 
