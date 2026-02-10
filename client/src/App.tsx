@@ -20,6 +20,7 @@ import CustomPageEditor from "@/pages/admin/CustomPageEditor";
 import AdminCourses from "@/pages/admin/Courses";
 import AdminCourseContent from "@/pages/admin/CourseContent";
 import AdminIscrizioni from "@/pages/admin/Iscrizioni";
+import AdminWebhookManager from "@/pages/admin/WebhookManager";
 import NotFound from "@/pages/not-found";
 import WelcomePage from "@/pages/WelcomePage";
 import { AdminLayout } from "@/components/AdminLayout";
@@ -97,6 +98,13 @@ function Router() {
             {user?.isAdmin ? (
               <AdminLayout>
                 <AdminIscrizioni />
+              </AdminLayout>
+            ) : <NotFound />}
+          </Route>
+          <Route path="/admin/webhook">
+            {user?.isAdmin ? (
+              <AdminLayout>
+                <AdminWebhookManager />
               </AdminLayout>
             ) : <NotFound />}
           </Route>

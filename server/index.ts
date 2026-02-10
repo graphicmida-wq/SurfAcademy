@@ -7,9 +7,7 @@ import { storage } from "./storage";
 const app = express();
 app.use(express.json({
   verify: (req: any, _res, buf) => {
-    if (req.url && req.url.startsWith('/webhooks/woocommerce')) {
-      req.rawBody = buf.toString('utf8');
-    }
+    req.rawBody = buf.toString('utf8');
   }
 }));
 app.use(express.urlencoded({ extended: false }));

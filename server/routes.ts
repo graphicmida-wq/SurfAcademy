@@ -1472,6 +1472,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     1243: 'NOSERIDE',
   };
 
+  app.get('/webhooks/woocommerce', (_req, res) => {
+    res.json({
+      status: 'ok',
+      message: 'WooCommerce webhook endpoint is active',
+      timestamp: new Date().toISOString(),
+      signatureVerification: !!WOOCOMMERCE_WEBHOOK_SECRET,
+    });
+  });
+
   async function resolveCoursesForProducts(numericProductIds: number[]): Promise<string[]> {
     let courseIds = await storage.getCoursesByWooProductIds(numericProductIds);
     
@@ -1511,13 +1520,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }
 
   app.post('/webhooks/woocommerce', async (req, res) => {
-    const isProduction = process.env.NODE_ENV === 'production';
     const debugLog: string[] = [];
-    const addLog = (msg: string) => { debugLog.push(msg); console.log(`WooCommerce webhook: ${msg}`); };
-    const safeDebug = () => isProduction ? undefined : debugLog;
+    const addLog = (msg: string) => { debugLog.push(msg); console.log(`[WEBHOOK] ${msg}`); };
+    
+    const saveLog = async (orderId: number, orderStatus: string, email: string, productIds: string[], processed: boolean) => {
+      try {
+        await storage.createWoocommerceWebhookLog({
+          orderId,
+          orderStatus,
+          customerEmail: email,
+          productIds,
+          processed,
+          error: debugLog.join('\n'),
+        });
+      } catch (e) {}
+    };
     
     try {
       const order = req.body;
+      
+      addLog(`Headers: topic=${req.headers['x-wc-webhook-topic']}, source=${req.headers['x-wc-webhook-source']}, delivery=${req.headers['x-wc-webhook-delivery-id']}`);
       
       if (!order || !order.id) {
         addLog(`Received non-order payload or ping. Body keys: ${JSON.stringify(Object.keys(order || {}))}`);
@@ -1531,35 +1553,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const lineItems = order.line_items || [];
       const productIds = lineItems.map((item: any) => item.product_id);
 
-      addLog(`Received: orderId=${orderId}, status=${orderStatus}, email=${customerEmail}, wpCustomerId=${customerWpId}, products=${JSON.stringify(productIds)}`);
-
-      try {
-        await storage.createWoocommerceWebhookLog({
-          orderId,
-          orderStatus,
-          customerEmail,
-          productIds: productIds.map(String),
-          processed: false,
-        });
-        addLog('Log entry written');
-      } catch (logErr: any) {
-        addLog(`Failed to write log: ${logErr.message}`);
-      }
+      addLog(`Order: id=${orderId}, status=${orderStatus}, email=${customerEmail}, wpId=${customerWpId}, products=${JSON.stringify(productIds)}`);
 
       const signature = req.headers['x-wc-webhook-signature'] as string;
       
       if (WOOCOMMERCE_WEBHOOK_SECRET) {
         if (!signature) {
-          addLog('REJECTED: Missing signature header');
-          return res.status(401).json({ message: 'Missing signature', debug: safeDebug() });
+          addLog('REJECTED: Missing x-wc-webhook-signature header');
+          await saveLog(orderId, orderStatus, customerEmail || '', productIds.map(String), false);
+          return res.status(401).json({ message: 'Missing signature' });
         }
         
         const crypto = await import('crypto');
         const rawBody = (req as any).rawBody;
         
-        if (!rawBody) {
-          addLog('WARNING: rawBody not captured! Falling back to JSON.stringify');
-        }
+        addLog(`rawBody captured: ${!!rawBody}, rawBody length: ${rawBody?.length || 0}`);
         
         const bodyToVerify = rawBody || JSON.stringify(req.body);
         const expectedSignature = crypto
@@ -1568,8 +1576,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .digest('base64');
         
         if (signature !== expectedSignature) {
-          addLog(`REJECTED: Signature mismatch. Got: ${signature}, Expected: ${expectedSignature}, rawBody captured: ${!!rawBody}`);
-          return res.status(401).json({ message: 'Invalid signature', debug: safeDebug() });
+          addLog(`REJECTED: Signature mismatch`);
+          addLog(`Got:      ${signature}`);
+          addLog(`Expected: ${expectedSignature}`);
+          addLog(`Used rawBody: ${!!rawBody}`);
+          await saveLog(orderId, orderStatus, customerEmail || '', productIds.map(String), false);
+          return res.status(401).json({ message: 'Invalid signature' });
         }
         addLog('Signature verified OK');
       } else {
@@ -1577,17 +1589,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       if (orderStatus !== 'completed' && orderStatus !== 'processing') {
-        addLog(`Order status "${orderStatus}" is not completed/processing - skipping`);
-        return res.json({ message: 'Order not completed/processing, skipping', debug: safeDebug() });
+        addLog(`Order status "${orderStatus}" not actionable - skipping`);
+        await saveLog(orderId, orderStatus, customerEmail || '', productIds.map(String), false);
+        return res.json({ message: 'Order not completed/processing, skipping' });
       }
 
       if (!customerEmail) {
         addLog('REJECTED: No billing email in order');
-        return res.status(400).json({ message: 'No customer email', debug: safeDebug() });
+        await saveLog(orderId, orderStatus || '', '', productIds.map(String), false);
+        return res.status(400).json({ message: 'No customer email' });
       }
 
       const userId = customerWpId ? `wp_${customerWpId}` : `wp_${customerEmail.replace(/[^a-zA-Z0-9]/g, '_')}`;
-      addLog(`User ID resolved: ${userId}`);
+      addLog(`User ID: ${userId}`);
       
       try {
         await storage.upsertUser({
@@ -1596,10 +1610,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           firstName: order.billing?.first_name || null,
           lastName: order.billing?.last_name || null,
         });
-        addLog(`User upserted: ${userId}`);
+        addLog(`User upserted OK`);
       } catch (userErr: any) {
-        addLog(`ERROR creating/updating user: ${userErr.message}`);
-        return res.status(500).json({ message: 'Failed to create user', debug: safeDebug() });
+        addLog(`ERROR user upsert: ${userErr.message}`);
+        await saveLog(orderId, orderStatus, customerEmail, productIds.map(String), false);
+        return res.status(500).json({ message: 'Failed to create user' });
       }
 
       const numericProductIds = productIds
@@ -1610,11 +1625,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let courseIds: string[];
       try {
         courseIds = await resolveCoursesForProducts(numericProductIds);
-        addLog(`Resolved course IDs: ${JSON.stringify(courseIds)}`);
+        addLog(`Resolved courses: ${JSON.stringify(courseIds)}`);
       } catch (lookupErr: any) {
-        addLog(`ERROR looking up courses: ${lookupErr.message}`);
-        
-        addLog('Attempting direct course lookup as last resort...');
+        addLog(`ERROR course lookup: ${lookupErr.message}`);
         const allCourses = await storage.getAllCourses();
         courseIds = [];
         for (const pid of numericProductIds) {
@@ -1624,17 +1637,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
             if (c) courseIds.push(c.id);
           }
         }
-        addLog(`Last resort found: ${JSON.stringify(courseIds)}`);
+        addLog(`Fallback found: ${JSON.stringify(courseIds)}`);
       }
 
       if (courseIds.length === 0) {
         addLog(`No courses found for products ${JSON.stringify(numericProductIds)}`);
         const allMappings = await storage.getAllCourseProducts().catch(() => []);
-        const allCourses = await storage.getAllCourses().catch(() => []);
-        return res.json({ 
-          message: 'No course mappings found', 
-          debug: safeDebug(),
-        });
+        addLog(`Available mappings: ${JSON.stringify(allMappings)}`);
+        await saveLog(orderId, orderStatus, customerEmail, productIds.map(String), false);
+        return res.json({ message: 'No course mappings found' });
       }
 
       let enrollmentsCreated = 0;
@@ -1644,36 +1655,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (!existingEnrollment) {
             await storage.createEnrollment({ userId, courseId });
             enrollmentsCreated++;
-            addLog(`Enrollment CREATED: user=${userId}, course=${courseId}`);
+            addLog(`ENROLLED: user=${userId}, course=${courseId}`);
           } else {
-            addLog(`Enrollment already exists: user=${userId}, course=${courseId}`);
+            addLog(`Already enrolled: user=${userId}, course=${courseId}`);
           }
         } catch (enrollErr: any) {
-          addLog(`ERROR creating enrollment for course ${courseId}: ${enrollErr.message}`);
+          addLog(`ERROR enrollment: course=${courseId}: ${enrollErr.message}`);
         }
       }
 
-      try {
-        await storage.createWoocommerceWebhookLog({
-          orderId,
-          orderStatus,
-          customerEmail,
-          productIds: productIds.map(String),
-          processed: true,
-        });
-      } catch (e) {}
-
-      addLog(`Done. Enrollments created: ${enrollmentsCreated}`);
+      addLog(`DONE: ${enrollmentsCreated} enrollments created`);
+      await saveLog(orderId, orderStatus, customerEmail, productIds.map(String), true);
+      
       res.json({ 
         message: 'Webhook processed successfully',
         enrollmentsCreated,
         courses: courseIds,
-        debug: safeDebug(),
       });
     } catch (error: any) {
-      addLog(`FATAL ERROR: ${error.message}`);
-      console.error('WooCommerce webhook fatal error:', error);
-      res.status(500).json({ message: 'Webhook processing failed', debug: safeDebug(), error: error.message });
+      addLog(`FATAL: ${error.message}`);
+      console.error('[WEBHOOK] Fatal error:', error);
+      try {
+        await storage.createWoocommerceWebhookLog({
+          orderId: 0,
+          orderStatus: 'error',
+          customerEmail: '',
+          productIds: [],
+          processed: false,
+          error: debugLog.join('\n'),
+        });
+      } catch (e) {}
+      res.status(500).json({ message: 'Webhook processing failed' });
     }
   });
 
@@ -1706,6 +1718,77 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error('Admin enrollment error:', error);
       res.status(500).json({ message: 'Failed to enroll user', error: error.message });
+    }
+  });
+
+  // ========== Admin Simulate Webhook (no signature check) ==========
+  app.post('/api/admin/webhook-simulate', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { email, firstName, lastName, wpUserId, productIds: rawProductIds } = req.body;
+      
+      if (!email || !rawProductIds || !Array.isArray(rawProductIds) || rawProductIds.length === 0) {
+        return res.status(400).json({ message: 'email and productIds (array) are required' });
+      }
+
+      const log: string[] = [];
+      const addLog = (msg: string) => { log.push(msg); console.log(`Webhook simulate: ${msg}`); };
+
+      const userId = wpUserId ? `wp_${wpUserId}` : `wp_${email.replace(/[^a-zA-Z0-9]/g, '_')}`;
+      addLog(`User ID: ${userId}`);
+
+      await storage.upsertUser({
+        id: userId,
+        email,
+        firstName: firstName || null,
+        lastName: lastName || null,
+      });
+      addLog(`User upserted: ${userId}`);
+
+      const numericProductIds = rawProductIds.map((id: any) => Number(id)).filter((id: number) => !isNaN(id));
+      addLog(`Product IDs: ${JSON.stringify(numericProductIds)}`);
+
+      const courseIds = await resolveCoursesForProducts(numericProductIds);
+      addLog(`Resolved courses: ${JSON.stringify(courseIds)}`);
+
+      if (courseIds.length === 0) {
+        const allMappings = await storage.getAllCourseProducts().catch(() => []);
+        const allCourses = await storage.getAllCourses().catch(() => []);
+        return res.json({
+          success: false,
+          message: 'No courses found for these product IDs',
+          log,
+          availableMappings: allMappings,
+          availableCourses: allCourses.map(c => ({ id: c.id, title: c.title })),
+        });
+      }
+
+      let enrollmentsCreated = 0;
+      for (const courseId of courseIds) {
+        const existing = await storage.getEnrollmentByUserAndCourse(userId, courseId);
+        if (!existing) {
+          await storage.createEnrollment({ userId, courseId });
+          enrollmentsCreated++;
+          addLog(`Enrollment CREATED: course=${courseId}`);
+        } else {
+          addLog(`Enrollment already exists: course=${courseId}`);
+        }
+      }
+
+      addLog(`Done. Enrollments created: ${enrollmentsCreated}`);
+      res.json({ success: true, userId, enrollmentsCreated, courseIds, log });
+    } catch (error: any) {
+      console.error('Webhook simulate error:', error);
+      res.status(500).json({ message: 'Simulation failed', error: error.message });
+    }
+  });
+
+  // ========== Admin Webhook Logs ==========
+  app.get('/api/admin/webhook-logs', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const logs = await storage.getWoocommerceWebhookLogs();
+      res.json(logs);
+    } catch (error: any) {
+      res.status(500).json({ message: 'Failed to fetch webhook logs', error: error.message });
     }
   });
 
