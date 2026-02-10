@@ -75,6 +75,8 @@ export default function AdminCourseContent() {
   const [editingModule, setEditingModule] = useState<Module | null>(null);
   const [videoUrls, setVideoUrls] = useState<string[]>([]);
   const [preselectedContentType, setPreselectedContentType] = useState<string>("");
+  const [reorderModule, setReorderModule] = useState<(Module & { lessons: Lesson[] }) | null>(null);
+  const [reorderLessons, setReorderLessons] = useState<Lesson[]>([]);
 
   const { data: courses = [], isLoading: coursesLoading } = useQuery<Course[]>({
     queryKey: ["/api/admin/courses"],
@@ -438,6 +440,31 @@ export default function AdminCourseContent() {
     reorderModulesMutation.mutate(items);
   };
 
+  const openReorderDialog = (mod: Module & { lessons: Lesson[] }) => {
+    setReorderModule(mod);
+    setReorderLessons([...(mod.lessons || [])].sort((a, b) => (a.orderIndex ?? 0) - (b.orderIndex ?? 0)));
+  };
+
+  const handleMoveReorderLesson = (index: number, direction: "up" | "down") => {
+    if (direction === "up" && index === 0) return;
+    if (direction === "down" && index === reorderLessons.length - 1) return;
+    const newIndex = direction === "up" ? index - 1 : index + 1;
+    const reordered = [...reorderLessons];
+    [reordered[index], reordered[newIndex]] = [reordered[newIndex], reordered[index]];
+    setReorderLessons(reordered);
+  };
+
+  const saveReorder = () => {
+    const items = reorderLessons.map((lesson, i) => ({ id: lesson.id, orderIndex: i }));
+    reorderLessonsMutation.mutate(items, {
+      onSuccess: () => {
+        toast({ title: "Ordine aggiornato con successo" });
+        setReorderModule(null);
+        setReorderLessons([]);
+      },
+    });
+  };
+
   // Group lessons by content type
   const allLessons = modules.flatMap(m => m.lessons || []);
   
@@ -669,7 +696,12 @@ export default function AdminCourseContent() {
                           <p className="text-xs text-muted-foreground">{module.description}</p>
                         )}
                       </div>
-                      <Badge variant="secondary">
+                      <Badge
+                        variant="secondary"
+                        className="cursor-pointer"
+                        onClick={() => openReorderDialog(module)}
+                        data-testid={`badge-reorder-module-${module.id}`}
+                      >
                         {module.lessons?.length || 0} contenuti
                       </Badge>
                     </div>
@@ -1068,6 +1100,68 @@ export default function AdminCourseContent() {
           </p>
         </Card>
       )}
+
+      <Dialog open={!!reorderModule} onOpenChange={(open) => { if (!open) { setReorderModule(null); setReorderLessons([]); } }}>
+        <DialogContent className="max-w-md" data-testid="dialog-reorder-lessons">
+          <DialogHeader>
+            <DialogTitle>Riordina Contenuti</DialogTitle>
+            <p className="text-sm text-muted-foreground">{reorderModule?.title}</p>
+          </DialogHeader>
+          <div className="space-y-1 max-h-[60vh] overflow-y-auto">
+            {reorderLessons.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">Nessun contenuto in questo modulo</p>
+            ) : (
+              reorderLessons.map((lesson, index) => {
+                const typeInfo = CONTENT_TYPES.find(ct => ct.value === lesson.contentType);
+                const Icon = typeInfo?.icon || FileText;
+                return (
+                  <div
+                    key={lesson.id}
+                    className="flex items-center gap-2 p-2 rounded-md border"
+                    data-testid={`reorder-item-${lesson.id}`}
+                  >
+                    <div className="flex flex-col gap-0.5">
+                      <button
+                        className="p-0.5 rounded hover-elevate active-elevate-2 disabled:opacity-30"
+                        disabled={index === 0}
+                        onClick={() => handleMoveReorderLesson(index, "up")}
+                        data-testid={`reorder-up-${lesson.id}`}
+                      >
+                        <ChevronUp className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        className="p-0.5 rounded hover-elevate active-elevate-2 disabled:opacity-30"
+                        disabled={index === reorderLessons.length - 1}
+                        onClick={() => handleMoveReorderLesson(index, "down")}
+                        data-testid={`reorder-down-${lesson.id}`}
+                      >
+                        <ChevronDown className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                    <Icon className="h-4 w-4 text-primary flex-shrink-0" />
+                    <span className="text-sm flex-1 truncate">{lesson.title.replace(/<[^>]*>/g, '')}</span>
+                    <span className="text-xs text-muted-foreground flex-shrink-0">{index + 1}</span>
+                  </div>
+                );
+              })
+            )}
+          </div>
+          {reorderLessons.length > 0 && (
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={() => { setReorderModule(null); setReorderLessons([]); }} data-testid="button-cancel-reorder">Annulla</Button>
+              <Button
+                onClick={saveReorder}
+                disabled={reorderLessonsMutation.isPending}
+                data-testid="button-save-reorder"
+              >
+                {reorderLessonsMutation.isPending ? (
+                  <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Salvataggio...</>
+                ) : "Salva Ordine"}
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

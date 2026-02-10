@@ -412,6 +412,9 @@ export default function CourseDetail() {
                         </AccordionTrigger>
                       </div>
                       <AccordionContent>
+                        {module.description && (
+                          <p className="text-xs text-muted-foreground px-4 pb-2 italic">{module.description}</p>
+                        )}
                         <div className="space-y-1 ml-6 mt-2">
                           {(!module.lessons || module.lessons.length === 0) ? (
                             <p className="text-xs text-muted-foreground px-2 py-1">Nessuna lezione</p>
