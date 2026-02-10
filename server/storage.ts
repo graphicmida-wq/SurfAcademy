@@ -143,8 +143,9 @@ export interface IStorage {
   
   // Lesson progress operations
   getLessonProgressByUser(userId: string, lessonId: string): Promise<any>;
-  getLessonProgressByCourse(userId: string, courseId: string): Promise<{ lessonId: string; completed: boolean }[]>;
+  getLessonProgressByCourse(userId: string, courseId: string): Promise<{ lessonId: string; completed: boolean; completedDays: number[] }[]>;
   toggleLessonComplete(userId: string, lessonId: string, completed: boolean): Promise<void>;
+  toggleLessonDay(userId: string, lessonId: string, day: number): Promise<{ completedDays: number[]; completed: boolean }>;
   markLessonComplete(userId: string, lessonId: string): Promise<void>;
   
   // Exercise progress operations
@@ -534,7 +535,7 @@ export class DatabaseStorage implements IStorage {
     return progress;
   }
 
-  async getLessonProgressByCourse(userId: string, courseId: string): Promise<{ lessonId: string; completed: boolean }[]> {
+  async getLessonProgressByCourse(userId: string, courseId: string): Promise<{ lessonId: string; completed: boolean; completedDays: number[] }[]> {
     const courseModules = await db
       .select({ id: modules.id })
       .from(modules)
@@ -555,6 +556,7 @@ export class DatabaseStorage implements IStorage {
       .select({
         lessonId: lessonProgress.lessonId,
         completed: lessonProgress.completed,
+        completedDays: lessonProgress.completedDays,
       })
       .from(lessonProgress)
       .where(and(
@@ -565,6 +567,7 @@ export class DatabaseStorage implements IStorage {
     return progress.map(p => ({
       lessonId: p.lessonId,
       completed: p.completed ?? false,
+      completedDays: (p.completedDays as number[]) || [],
     }));
   }
 
@@ -581,6 +584,36 @@ export class DatabaseStorage implements IStorage {
         completedAt: completed ? new Date() : null,
       },
     });
+  }
+
+  async toggleLessonDay(userId: string, lessonId: string, day: number): Promise<{ completedDays: number[]; completed: boolean }> {
+    const existing = await this.getLessonProgressByUser(userId, lessonId);
+    let currentDays: number[] = (existing?.completedDays as number[]) || [];
+    
+    if (currentDays.includes(day)) {
+      currentDays = currentDays.filter(d => d !== day);
+    } else {
+      currentDays = [...currentDays, day].sort((a, b) => a - b);
+    }
+    
+    const allDaysComplete = currentDays.length >= 5;
+    
+    await db.insert(lessonProgress).values({
+      userId,
+      lessonId,
+      completed: allDaysComplete,
+      completedAt: allDaysComplete ? new Date() : null,
+      completedDays: currentDays,
+    }).onConflictDoUpdate({
+      target: [lessonProgress.userId, lessonProgress.lessonId],
+      set: {
+        completed: allDaysComplete,
+        completedAt: allDaysComplete ? new Date() : null,
+        completedDays: currentDays,
+      },
+    });
+    
+    return { completedDays: currentDays, completed: allDaysComplete };
   }
 
   async markLessonComplete(userId: string, lessonId: string): Promise<void> {

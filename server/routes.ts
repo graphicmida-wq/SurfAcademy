@@ -815,6 +815,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/lesson-progress/toggle-day", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.claims?.sub || req.user?.id;
+      const { lessonId, day } = req.body;
+      if (!lessonId || typeof day !== 'number' || day < 1 || day > 5) {
+        return res.status(400).json({ message: "Invalid lessonId or day (must be 1-5)" });
+      }
+      
+      const lesson = await storage.getLesson(lessonId);
+      if (!lesson) {
+        return res.status(404).json({ message: "Lesson not found" });
+      }
+      
+      const { TRAINING_CONTENT_TYPES } = await import("@shared/schema");
+      if (!lesson.contentType || !(TRAINING_CONTENT_TYPES as readonly string[]).includes(lesson.contentType)) {
+        return res.status(400).json({ message: "Day tracking is only available for training content types" });
+      }
+      
+      const module = await storage.getModule(lesson.moduleId);
+      if (!module) {
+        return res.status(404).json({ message: "Module not found" });
+      }
+      
+      const courseId = module.courseId;
+      const enrollment = await storage.getEnrollmentByUserAndCourse(userId, courseId);
+      if (!enrollment) {
+        return res.status(403).json({ message: "Not enrolled in this course" });
+      }
+      
+      const result = await storage.toggleLessonDay(userId, lessonId, day);
+      
+      const allProgress = await storage.getLessonProgressByCourse(userId, courseId);
+      const courseModules = await storage.getModulesByCourse(courseId);
+      const totalLessons = courseModules.reduce((sum, m) => sum + (m.lessons?.length || 0), 0);
+      const completedLessons = allProgress.filter(p => p.completed).length;
+      const progressPercent = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
+      await storage.updateEnrollmentProgress(enrollment.id, progressPercent);
+      
+      res.status(200).json(result);
+    } catch (error) {
+      console.error("Error toggling lesson day:", error);
+      res.status(500).json({ message: "Failed to toggle lesson day" });
+    }
+  });
+
   // ========== Exercise Progress Routes ==========
   app.get("/api/exercise-progress", isAuthenticated, async (req: any, res) => {
     try {

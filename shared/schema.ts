@@ -130,6 +130,7 @@ export const lessonProgress = pgTable("lesson_progress", {
   lessonId: varchar("lesson_id").notNull().references(() => lessons.id, { onDelete: 'cascade' }),
   completed: boolean("completed").default(false),
   completedAt: timestamp("completed_at"),
+  completedDays: integer("completed_days").array().default(sql`'{}'::integer[]`),
 }, (table) => [
   uniqueIndex("lesson_progress_user_lesson_idx").on(table.userId, table.lessonId),
 ]);
@@ -861,3 +862,5 @@ export type InsertCourseProduct = z.infer<typeof insertCourseProductSchema>;
 
 export type WoocommerceWebhookLog = typeof woocommerceWebhookLogs.$inferSelect;
 export type InsertWoocommerceWebhookLog = z.infer<typeof insertWoocommerceWebhookLogSchema>;
+
+export const TRAINING_CONTENT_TYPES = ['settimana-1', 'settimana-2', 'settimana-3', 'settimana-4', 'stretching', 'riscaldamento'] as const;

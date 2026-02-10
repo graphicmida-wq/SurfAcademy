@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import DOMPurify from "dompurify";
+import { TRAINING_CONTENT_TYPES } from "@shared/schema";
 import {
   Accordion,
   AccordionContent,
@@ -106,7 +107,7 @@ export default function CourseDetail() {
     enabled: isAuthenticated && !!id,
   });
 
-  const { data: lessonProgress = [] } = useQuery<{ lessonId: string; completed: boolean }[]>({
+  const { data: lessonProgress = [] } = useQuery<{ lessonId: string; completed: boolean; completedDays: number[] }[]>({
     queryKey: [`/api/lesson-progress/course/${id}`],
     enabled: isAuthenticated && !!id,
   });
@@ -122,9 +123,23 @@ export default function CourseDetail() {
     },
   });
 
+  const toggleDayMutation = useMutation({
+    mutationFn: async ({ lessonId, day }: { lessonId: string; day: number }) => {
+      const res = await apiRequest("POST", "/api/lesson-progress/toggle-day", { lessonId, day });
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/lesson-progress/course/${id}`] });
+      queryClient.invalidateQueries({ queryKey: ['/api/enrollments'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/enrollments/course/${id}`] });
+    },
+  });
+
 
   const watchedVideosRef = useRef<Set<string>>(new Set());
   const autoCompleteTriggeredRef = useRef<Set<string>>(new Set());
+
+  const trainingContentTypes = useMemo(() => new Set(TRAINING_CONTENT_TYPES as readonly string[]), []);
 
   const checkAndAutoComplete = useCallback((lessonId: string, videoIndex: number, totalVideos: number) => {
     const videoKey = `${lessonId}-${videoIndex}`;
@@ -135,12 +150,16 @@ export default function CourseDetail() {
     
     if (allWatched && !autoCompleteTriggeredRef.current.has(lessonId)) {
       autoCompleteTriggeredRef.current.add(lessonId);
+      const lesson = modules?.flatMap(m => m.lessons || []).find(l => l.id === lessonId);
+      if (lesson && trainingContentTypes.has(lesson.contentType || '')) {
+        return;
+      }
       const alreadyCompleted = lessonProgress.some(p => p.lessonId === lessonId && p.completed);
       if (!alreadyCompleted) {
         toggleLessonCompleteMutation.mutate({ lessonId, completed: true });
       }
     }
-  }, [lessonProgress, toggleLessonCompleteMutation]);
+  }, [lessonProgress, toggleLessonCompleteMutation, modules, trainingContentTypes]);
 
   const handleVideoTimeUpdate = useCallback((lessonId: string, videoIndex: number, totalVideos: number, event: React.SyntheticEvent<HTMLVideoElement>) => {
     const video = event.currentTarget;
@@ -226,6 +245,9 @@ export default function CourseDetail() {
     const isCompleted = lessonProgress.some(p => p.lessonId === lesson.id && p.completed);
     const hasVideo = (lesson.videoUrls && lesson.videoUrls.length > 0) || lesson.videoUrl;
     const isPdfOnly = lesson.pdfUrl && !hasVideo;
+    const isTrainingContent = trainingContentTypes.has(lesson.contentType || '');
+    const progressEntry = lessonProgress.find(p => p.lessonId === lesson.id);
+    const completedDays: number[] = progressEntry?.completedDays || [];
 
     return (
       <div className="space-y-6">
@@ -317,7 +339,7 @@ export default function CourseDetail() {
             )}
 
             {/* Completion Toggle - hidden for PDF-only lessons (auto-completed on download) */}
-            {isAuthenticated && canAccess && !isPdfOnly && (
+            {isAuthenticated && canAccess && !isPdfOnly && !isTrainingContent && (
               <div className="pt-4 border-t">
                 <Button
                   variant={isCompleted ? "outline" : "default"}
@@ -340,6 +362,39 @@ export default function CourseDetail() {
                     </>
                   )}
                 </Button>
+              </div>
+            )}
+
+            {/* Training Day Tracker - for settimana/stretching/riscaldamento content */}
+            {isAuthenticated && canAccess && isTrainingContent && (
+              <div className="pt-4 border-t" data-testid={`day-tracker-${lesson.id}`}>
+                <p className="text-sm font-medium mb-3">
+                  Segna i giorni completati ({completedDays.length}/5)
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {[1, 2, 3, 4, 5].map(day => {
+                    const isDayDone = completedDays.includes(day);
+                    return (
+                      <Button
+                        key={day}
+                        variant={isDayDone ? "default" : "outline"}
+                        onClick={() => toggleDayMutation.mutate({ lessonId: lesson.id, day })}
+                        disabled={toggleDayMutation.isPending}
+                        className="min-w-[90px]"
+                        data-testid={`button-day-${day}-${lesson.id}`}
+                      >
+                        {isDayDone && <CheckCircle2 className="h-4 w-4 mr-1.5" />}
+                        Giorno {day}
+                      </Button>
+                    );
+                  })}
+                </div>
+                {isCompleted && (
+                  <p className="text-sm text-chart-4 mt-3 flex items-center gap-1.5">
+                    <CheckCircle2 className="h-4 w-4" />
+                    Settimana completata!
+                  </p>
+                )}
               </div>
             )}
           </CardContent>
@@ -424,7 +479,10 @@ export default function CourseDetail() {
                                   ? contentIcons[lesson.contentType as ContentType] 
                                   : FileText;
                                 const isSelected = selectedLessonId === lesson.id;
-                                const isCompleted = lessonProgress.some(p => p.lessonId === lesson.id && p.completed);
+                                const isLessonCompleted = lessonProgress.some(p => p.lessonId === lesson.id && p.completed);
+                                const isTraining = trainingContentTypes.has(lesson.contentType || '');
+                                const lessonDays = lessonProgress.find(p => p.lessonId === lesson.id)?.completedDays || [];
+                                const hasPartialDays = isTraining && lessonDays.length > 0 && lessonDays.length < 5;
                                 return (
                                   <div
                                     key={lesson.id}
@@ -445,8 +503,16 @@ export default function CourseDetail() {
                                     >
                                       <Icon className="h-3.5 w-3.5 flex-shrink-0" />
                                       <span className="truncate flex-1">{lesson.title.replace(/<[^>]*>/g, '')}</span>
+                                      {hasPartialDays && (
+                                        <span className={cn(
+                                          "text-[10px] flex-shrink-0",
+                                          isSelected ? "text-primary-foreground/80" : "text-muted-foreground"
+                                        )}>
+                                          {lessonDays.length}/5
+                                        </span>
+                                      )}
                                     </button>
-                                    {isCompleted && (
+                                    {isLessonCompleted && (
                                       <CheckCircle2 
                                         className={cn(
                                           "h-4 w-4 mr-2 flex-shrink-0",
