@@ -1468,30 +1468,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/webhooks/woocommerce', async (req, res) => {
     try {
-      const signature = req.headers['x-wc-webhook-signature'] as string;
-      
-      // Require signature verification when secret is configured
-      if (WOOCOMMERCE_WEBHOOK_SECRET) {
-        if (!signature) {
-          console.warn('WooCommerce webhook missing signature');
-          return res.status(401).json({ message: 'Missing signature' });
-        }
-        
-        const crypto = await import('crypto');
-        const body = JSON.stringify(req.body);
-        const expectedSignature = crypto
-          .createHmac('sha256', WOOCOMMERCE_WEBHOOK_SECRET)
-          .update(body, 'utf8')
-          .digest('base64');
-        
-        if (signature !== expectedSignature) {
-          console.warn('WooCommerce webhook signature mismatch');
-          return res.status(401).json({ message: 'Invalid signature' });
-        }
-      } else {
-        console.warn('WooCommerce webhook received without secret configured - accepting for development only');
-      }
-
       const order = req.body;
       const orderId = order.id;
       const orderStatus = order.status;
@@ -1499,19 +1475,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const lineItems = order.line_items || [];
       const productIds = lineItems.map((item: any) => item.product_id);
 
-      // Log the webhook
-      await storage.createWoocommerceWebhookLog({
-        orderId,
-        orderStatus,
-        customerEmail,
-        productIds: productIds.map(String),
-        processed: false,
-      });
+      console.log(`WooCommerce webhook received: orderId=${orderId}, status=${orderStatus}, email=${customerEmail}, products=${JSON.stringify(productIds)}`);
 
-      // Only process completed orders
-      if (orderStatus !== 'completed') {
+      // Log the webhook immediately (before any verification)
+      try {
+        await storage.createWoocommerceWebhookLog({
+          orderId,
+          orderStatus,
+          customerEmail,
+          productIds: productIds.map(String),
+          processed: false,
+        });
+      } catch (logErr) {
+        console.error('WooCommerce webhook: Failed to write log', logErr);
+      }
+
+      const signature = req.headers['x-wc-webhook-signature'] as string;
+      
+      // Verify signature when secret is configured
+      if (WOOCOMMERCE_WEBHOOK_SECRET) {
+        if (!signature) {
+          console.warn('WooCommerce webhook missing signature');
+          return res.status(401).json({ message: 'Missing signature' });
+        }
+        
+        const crypto = await import('crypto');
+        const rawBody = (req as any).rawBody || JSON.stringify(req.body);
+        const expectedSignature = crypto
+          .createHmac('sha256', WOOCOMMERCE_WEBHOOK_SECRET)
+          .update(rawBody, 'utf8')
+          .digest('base64');
+        
+        if (signature !== expectedSignature) {
+          console.warn(`WooCommerce webhook signature mismatch. Received: ${signature}, Expected: ${expectedSignature}`);
+          return res.status(401).json({ message: 'Invalid signature' });
+        }
+        console.log('WooCommerce webhook: Signature verified OK');
+      } else {
+        console.warn('WooCommerce webhook received without secret configured - accepting for development only');
+      }
+
+      // Process both completed and processing orders
+      if (orderStatus !== 'completed' && orderStatus !== 'processing') {
         console.log(`WooCommerce webhook: Order ${orderId} status is ${orderStatus}, skipping enrollment`);
-        return res.json({ message: 'Order not completed, skipping' });
+        return res.json({ message: 'Order not completed/processing, skipping' });
       }
 
       if (!customerEmail) {
@@ -1530,13 +1537,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         lastName: order.billing?.last_name || null,
       });
 
-      // Get course IDs for the purchased products
-      const courseIds = await storage.getCoursesByWooProductIds(productIds);
+      // Get course IDs for the purchased products (ensure integer type)
+      const numericProductIds = productIds.map((id: any) => typeof id === 'string' ? parseInt(id, 10) : Number(id)).filter((id: number) => !isNaN(id));
+      console.log(`WooCommerce webhook: Looking up courses for product IDs: ${JSON.stringify(numericProductIds)}`);
+      
+      const courseIds = await storage.getCoursesByWooProductIds(numericProductIds);
 
       if (courseIds.length === 0) {
-        console.log(`WooCommerce webhook: No course mappings found for products ${productIds.join(', ')}`);
+        console.log(`WooCommerce webhook: No course mappings found for products ${numericProductIds.join(', ')}`);
         return res.json({ message: 'No course mappings found' });
       }
+      console.log(`WooCommerce webhook: Found course mappings: ${JSON.stringify(courseIds)}`);
 
       // Create enrollments for each course
       let enrollmentsCreated = 0;
