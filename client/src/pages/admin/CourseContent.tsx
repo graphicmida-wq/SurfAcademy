@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import RichTextEditor from "@/components/ui/rich-text-editor";
+import { MiniRichTextEditor } from "@/components/MiniRichTextEditor";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MediaUploadZone } from "@/components/MediaUploadZone";
 import { useToast } from "@/hooks/use-toast";
@@ -867,7 +868,13 @@ export default function AdminCourseContent() {
                   <FormItem>
                     <FormLabel>Titolo *</FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="Nome del contenuto" data-testid="input-lesson-title" />
+                      <MiniRichTextEditor
+                        value={field.value}
+                        onChange={field.onChange}
+                        placeholder="Nome del contenuto"
+                        singleLine
+                        minHeight="36px"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -881,7 +888,12 @@ export default function AdminCourseContent() {
                   <FormItem>
                     <FormLabel>Descrizione</FormLabel>
                     <FormControl>
-                      <Input {...field} value={field.value ?? ""} placeholder="Descrizione o istruzioni per lo studente" data-testid="input-lesson-description" />
+                      <MiniRichTextEditor
+                        value={field.value ?? ""}
+                        onChange={field.onChange}
+                        placeholder="Descrizione o istruzioni per lo studente"
+                        minHeight="60px"
+                      />
                     </FormControl>
                     <FormDescription>Verrà mostrata sotto il titolo nel player</FormDescription>
                     <FormMessage />

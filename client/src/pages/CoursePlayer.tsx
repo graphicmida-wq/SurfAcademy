@@ -9,6 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { isUnauthorizedError } from "@/lib/authUtils";
+import DOMPurify from "dompurify";
 import {
   Accordion,
   AccordionContent,
@@ -231,7 +232,9 @@ export default function CourseDetail() {
         <Card data-testid={`lesson-card-${lesson.id}`}>
           <CardHeader className="p-6 sm:p-8">
             <div className="flex items-center justify-between gap-2 flex-wrap">
-              <CardTitle>{lesson.title}</CardTitle>
+              <CardTitle>
+                <span dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(lesson.title) }} />
+              </CardTitle>
               {isCompleted && (
                 <Badge className="bg-chart-4 text-white">
                   <CheckCircle2 className="h-3 w-3 mr-1" />
@@ -240,7 +243,7 @@ export default function CourseDetail() {
               )}
             </div>
             {lesson.description && (
-              <p className="text-muted-foreground mt-1">{lesson.description}</p>
+              <div className="text-muted-foreground mt-1 prose prose-sm max-w-none dark:prose-invert" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(lesson.description) }} />
             )}
           </CardHeader>
           <CardContent className="space-y-4 p-6 sm:p-8 pt-0 sm:pt-0">
@@ -308,7 +311,7 @@ export default function CourseDetail() {
             {lesson.htmlContent && (
               <div 
                 className="prose prose-sm max-w-none dark:prose-invert py-4"
-                dangerouslySetInnerHTML={{ __html: lesson.htmlContent }}
+                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(lesson.htmlContent) }}
                 data-testid={`html-content-${lesson.id}`}
               />
             )}
@@ -438,7 +441,7 @@ export default function CourseDetail() {
                                       data-testid={`lesson-${lesson.id}`}
                                     >
                                       <Icon className="h-3.5 w-3.5 flex-shrink-0" />
-                                      <span className="truncate flex-1">{lesson.title}</span>
+                                      <span className="truncate flex-1">{lesson.title.replace(/<[^>]*>/g, '')}</span>
                                     </button>
                                     {isCompleted && (
                                       <CheckCircle2 
