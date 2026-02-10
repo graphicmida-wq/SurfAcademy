@@ -229,8 +229,8 @@ export default function CourseDetail() {
     return (
       <div className="space-y-6">
         <Card data-testid={`lesson-card-${lesson.id}`}>
-          <CardHeader>
-            <div className="flex items-center justify-between">
+          <CardHeader className="p-6 sm:p-8">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
               <CardTitle>{lesson.title}</CardTitle>
               {isCompleted && (
                 <Badge className="bg-chart-4 text-white">
@@ -243,7 +243,7 @@ export default function CourseDetail() {
               <p className="text-muted-foreground mt-1">{lesson.description}</p>
             )}
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 p-6 sm:p-8 pt-0 sm:pt-0">
             {/* Video URLs */}
             {lesson.videoUrls && lesson.videoUrls.length > 0 && (
               <div className="space-y-4">
@@ -307,7 +307,7 @@ export default function CourseDetail() {
             {/* HTML Content */}
             {lesson.htmlContent && (
               <div 
-                className="prose prose-sm max-w-none dark:prose-invert"
+                className="prose prose-sm max-w-none dark:prose-invert py-4"
                 dangerouslySetInnerHTML={{ __html: lesson.htmlContent }}
                 data-testid={`html-content-${lesson.id}`}
               />
