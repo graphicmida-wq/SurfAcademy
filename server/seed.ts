@@ -7,14 +7,176 @@ import { readFileSync, existsSync } from "fs";
 import { join } from "path";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
+import { sql } from "drizzle-orm";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 neonConfig.webSocketConstructor = ws;
 
+async function ensureProductionSchema(db: ReturnType<typeof drizzle>) {
+  console.log("🔧 Ensuring all required tables exist in production...");
+
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS course_products (
+      id VARCHAR PRIMARY KEY DEFAULT gen_random_uuid(),
+      woo_product_id INTEGER NOT NULL UNIQUE,
+      course_id VARCHAR NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
+      product_name VARCHAR,
+      created_at TIMESTAMP DEFAULT NOW()
+    )
+  `);
+
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS woocommerce_webhook_logs (
+      id VARCHAR PRIMARY KEY DEFAULT gen_random_uuid(),
+      order_id INTEGER NOT NULL,
+      order_status VARCHAR,
+      customer_email VARCHAR,
+      product_ids TEXT[],
+      processed BOOLEAN DEFAULT FALSE,
+      error TEXT,
+      created_at TIMESTAMP DEFAULT NOW()
+    )
+  `);
+
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS purchases (
+      id VARCHAR PRIMARY KEY DEFAULT gen_random_uuid(),
+      user_id VARCHAR NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      course_id VARCHAR NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
+      stripe_payment_id VARCHAR NOT NULL UNIQUE,
+      amount INTEGER NOT NULL,
+      purchased_at TIMESTAMP DEFAULT NOW()
+    )
+  `);
+
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS memberships (
+      id VARCHAR PRIMARY KEY DEFAULT gen_random_uuid(),
+      user_id VARCHAR NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      stripe_subscription_id VARCHAR NOT NULL UNIQUE,
+      stripe_customer_id VARCHAR,
+      status VARCHAR NOT NULL,
+      type VARCHAR NOT NULL,
+      start_date TIMESTAMP NOT NULL,
+      end_date TIMESTAMP,
+      cancel_at_period_end BOOLEAN DEFAULT FALSE,
+      created_at TIMESTAMP DEFAULT NOW(),
+      updated_at TIMESTAMP DEFAULT NOW()
+    )
+  `);
+
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS referral_codes (
+      id VARCHAR PRIMARY KEY DEFAULT gen_random_uuid(),
+      user_id VARCHAR NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+      code VARCHAR NOT NULL UNIQUE,
+      created_at TIMESTAMP DEFAULT NOW()
+    )
+  `);
+
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS referral_earnings (
+      id VARCHAR PRIMARY KEY DEFAULT gen_random_uuid(),
+      user_id VARCHAR NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      referred_user_id VARCHAR NOT NULL REFERENCES users(id),
+      purchase_id VARCHAR REFERENCES purchases(id),
+      membership_id VARCHAR REFERENCES memberships(id),
+      wave_points INTEGER NOT NULL,
+      created_at TIMESTAMP DEFAULT NOW()
+    )
+  `);
+
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS newsletter_contacts (
+      id VARCHAR PRIMARY KEY DEFAULT gen_random_uuid(),
+      email VARCHAR NOT NULL UNIQUE,
+      first_name VARCHAR,
+      last_name VARCHAR,
+      status VARCHAR DEFAULT 'active',
+      source VARCHAR DEFAULT 'manual',
+      subscribed_at TIMESTAMP DEFAULT NOW(),
+      unsubscribed_at TIMESTAMP,
+      created_at TIMESTAMP DEFAULT NOW()
+    )
+  `);
+
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS newsletter_campaigns (
+      id VARCHAR PRIMARY KEY DEFAULT gen_random_uuid(),
+      subject VARCHAR NOT NULL,
+      content TEXT NOT NULL,
+      status VARCHAR DEFAULT 'draft',
+      sent_at TIMESTAMP,
+      total_recipients INTEGER DEFAULT 0,
+      total_opens INTEGER DEFAULT 0,
+      total_clicks INTEGER DEFAULT 0,
+      created_at TIMESTAMP DEFAULT NOW(),
+      updated_at TIMESTAMP DEFAULT NOW()
+    )
+  `);
+
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS newsletter_events (
+      id VARCHAR PRIMARY KEY DEFAULT gen_random_uuid(),
+      campaign_id VARCHAR NOT NULL REFERENCES newsletter_campaigns(id) ON DELETE CASCADE,
+      contact_id VARCHAR NOT NULL REFERENCES newsletter_contacts(id) ON DELETE CASCADE,
+      event_type VARCHAR NOT NULL,
+      created_at TIMESTAMP DEFAULT NOW()
+    )
+  `);
+
+  console.log("✅ All required tables verified/created");
+}
+
+async function seedCourseProducts(db: ReturnType<typeof drizzle>) {
+  const result = await db.execute(sql`SELECT COUNT(*) as count FROM course_products`);
+  const count = Number((result as any).rows?.[0]?.count ?? (result as any)[0]?.count ?? 0);
+
+  if (count > 0) {
+    console.log(`✅ Course products already seeded (${count} mappings)`);
+    return;
+  }
+
+  const courseRows = await db.execute(sql`SELECT id, title FROM courses`);
+  const rows = (courseRows as any).rows || courseRows;
+
+  const courseMap: Record<string, string> = {};
+  for (const row of rows) {
+    const title = (row.title || '').toUpperCase();
+    if (title.includes('REMATA') || title.includes('REMAT')) courseMap['REMATA'] = row.id;
+    if (title.includes('TAKEOFF') || title.includes('TAKE OFF') || title.includes('TAKE-OFF')) courseMap['TAKEOFF'] = row.id;
+    if (title.includes('NOSERIDE') || title.includes('NOSE RIDE') || title.includes('NOSE-RIDE')) courseMap['NOSERIDE'] = row.id;
+  }
+
+  if (!courseMap['REMATA'] || !courseMap['TAKEOFF'] || !courseMap['NOSERIDE']) {
+    console.warn(`⚠️  Could not find all courses by title. Found: ${JSON.stringify(courseMap)}`);
+    console.warn(`⚠️  Available courses: ${JSON.stringify(rows.map((r: any) => ({ id: r.id, title: r.title })))}`);
+  }
+
+  const mappings = [
+    { wooProductId: 1216, courseKey: 'REMATA', name: 'REMATA' },
+    { wooProductId: 1231, courseKey: 'TAKEOFF', name: 'TAKEOFF' },
+    { wooProductId: 1243, courseKey: 'NOSERIDE', name: 'NOSERIDE' },
+  ];
+
+  for (const m of mappings) {
+    const courseId = courseMap[m.courseKey];
+    if (courseId) {
+      await db.execute(sql`
+        INSERT INTO course_products (woo_product_id, course_id, product_name)
+        VALUES (${m.wooProductId}, ${courseId}, ${m.name})
+        ON CONFLICT (woo_product_id) DO NOTHING
+      `);
+      console.log(`✅ Mapped WooCommerce product ${m.wooProductId} (${m.name}) -> course ${courseId}`);
+    } else {
+      console.warn(`⚠️  Could not find course for ${m.courseKey} - available courses: ${JSON.stringify(rows.map((r: any) => r.title))}`);
+    }
+  }
+}
+
 export async function seedProductionDatabase() {
-  // Only run in production
   if (process.env.NODE_ENV !== "production") {
     return;
   }
@@ -29,12 +191,14 @@ export async function seedProductionDatabase() {
   const db = drizzle(pool);
 
   try {
-    console.log("🌱 Checking if production database needs seeding...");
+    await ensureProductionSchema(db);
+    await seedCourseProducts(db);
 
-    // Check if database is already seeded
+    console.log("🌱 Checking if production database needs content seeding...");
+
     const existingSlides = await db.select().from(heroSlides);
     if (existingSlides.length > 0) {
-      console.log("✅ Database already seeded");
+      console.log("✅ Database content already seeded");
       await pool.end();
       return;
     }

@@ -1580,6 +1580,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/admin/webhook-status', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const allMappings = await storage.getAllCourseProducts();
+      const hasSecret = !!process.env.WOOCOMMERCE_WEBHOOK_SECRET;
+      
+      res.json({
+        webhookUrl: '/webhooks/woocommerce',
+        signatureSecretConfigured: hasSecret,
+        courseProductMappings: allMappings,
+        acceptedStatuses: ['completed', 'processing'],
+      });
+    } catch (error) {
+      console.error('Error checking webhook status:', error);
+      res.status(500).json({ message: 'Failed to check webhook status' });
+    }
+  });
+
+  app.post('/api/admin/webhook-test', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { email, productId } = req.body;
+      if (!email || !productId) {
+        return res.status(400).json({ message: 'email and productId required' });
+      }
+
+      const numericProductId = Number(productId);
+      const courseIds = await storage.getCoursesByWooProductIds([numericProductId]);
+
+      if (courseIds.length === 0) {
+        return res.json({
+          success: false,
+          message: `Nessun corso mappato per il prodotto WooCommerce ID ${numericProductId}`,
+          allMappings: await storage.getAllCourseProducts(),
+        });
+      }
+
+      const existingUser = await storage.getUserByEmail(email);
+      
+      res.json({
+        success: true,
+        message: 'Simulazione completata',
+        wouldCreateUser: !existingUser,
+        existingUserId: existingUser?.id || null,
+        coursesFound: courseIds,
+        productId: numericProductId,
+      });
+    } catch (error) {
+      console.error('Webhook test error:', error);
+      res.status(500).json({ message: 'Test failed', error: String(error) });
+    }
+  });
+
   // Admin endpoint to manage course-product mappings
   app.get('/api/admin/course-products', isAuthenticated, isAdmin, async (req, res) => {
     try {

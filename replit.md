@@ -44,7 +44,11 @@ PostgreSQL, hosted on Neon, is the primary database, accessed via `@neondatabase
 
 2. **Direct Login** (`/api/login`): Users can log in directly from the app using WordPress credentials. The app verifies credentials against WordPress REST API.
 
-**WooCommerce Integration**: When a customer completes a purchase, WooCommerce sends a webhook to `/webhooks/woocommerce`. The webhook creates the user (if new) and enrolls them in the purchased courses based on product-to-course mappings stored in `courseProducts` table.
+**WooCommerce Integration**: When a customer completes a purchase (status: 'completed' or 'processing'), WooCommerce sends a webhook to `/webhooks/woocommerce`. The webhook creates the user (if new) and enrolls them in the purchased courses based on product-to-course mappings stored in `courseProducts` table. Raw body is captured via express.json verify callback for HMAC signature verification. Product ID mappings: REMATA=1216, TAKEOFF=1231, NOSERIDE=1243. Auto-migration in `server/seed.ts` creates missing tables (`course_products`, `woocommerce_webhook_logs`, etc.) and seeds product mappings on production startup.
+
+**Deployment**: User deploys via git push to Railway (NOT Replit publishing). Railway connects to Neon production database. The Replit "production" database is separate from Railway's.
+
+**Admin Webhook Tools**: GET `/api/admin/webhook-status` shows config and mappings. POST `/api/admin/webhook-test` simulates webhook lookup.
 
 **User IDs**: All users are prefixed with `wp_` followed by their WordPress user ID (e.g., `wp_123`). This ensures consistency between WordPress and Replit.
 
