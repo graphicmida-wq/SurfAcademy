@@ -808,7 +808,7 @@ export default function AdminCourseContent() {
                                         </Button>
                                       </div>
                                       <div className="flex-1">
-                                        <p className="font-medium text-sm">{lesson.title}</p>
+                                        <p className="font-medium text-sm">{lesson.title.replace(/<[^>]*>/g, '')}</p>
                                         <div className="flex gap-2 mt-1 flex-wrap">
                                           {lessonModule && (
                                             <Badge variant="outline" className="text-xs">
@@ -849,7 +849,7 @@ export default function AdminCourseContent() {
                                       <Button
                                         variant="ghost"
                                         size="sm"
-                                        onClick={() => handleDeleteLesson(lesson.id, lesson.title)}
+                                        onClick={() => handleDeleteLesson(lesson.id, lesson.title.replace(/<[^>]*>/g, ''))}
                                         disabled={deleteLessonMutation.isPending}
                                         data-testid={`button-delete-lesson-${lesson.id}`}
                                       >
