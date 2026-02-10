@@ -1466,6 +1466,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ========== WooCommerce Webhook ==========
   const WOOCOMMERCE_WEBHOOK_SECRET = process.env.WOOCOMMERCE_WEBHOOK_SECRET;
 
+  if (process.env.WOOCOMMERCE_SKIP_SIGNATURE === 'true') {
+    console.warn('⚠️  WARNING: WOOCOMMERCE_SKIP_SIGNATURE=true — webhook signature verification is BYPASSED. Remove this env var in production after debugging!');
+  }
+
   const HARDCODED_PRODUCT_COURSE_MAP: Record<number, string> = {
     1216: 'REMATA',
     1231: 'TAKEOFF',
@@ -1478,6 +1482,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       message: 'WooCommerce webhook endpoint is active',
       timestamp: new Date().toISOString(),
       signatureVerification: !!WOOCOMMERCE_WEBHOOK_SECRET,
+      signatureBypass: process.env.WOOCOMMERCE_SKIP_SIGNATURE === 'true',
     });
   });
 
@@ -1533,17 +1538,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
           processed,
           error: debugLog.join('\n'),
         });
-      } catch (e) {}
+      } catch (e) {
+        console.error('[WEBHOOK] Failed to save log:', e);
+      }
     };
     
     try {
       const order = req.body;
       
       addLog(`Headers: topic=${req.headers['x-wc-webhook-topic']}, source=${req.headers['x-wc-webhook-source']}, delivery=${req.headers['x-wc-webhook-delivery-id']}`);
+      addLog(`Content-Type: ${req.headers['content-type']}`);
+      addLog(`Raw body captured: ${!!(req as any).rawBody}, length: ${(req as any).rawBody?.length || 0}`);
       
       if (!order || !order.id) {
-        addLog(`Received non-order payload or ping. Body keys: ${JSON.stringify(Object.keys(order || {}))}`);
-        return res.json({ message: 'Not an order payload, ignored' });
+        addLog(`Non-order payload or ping. Body keys: ${JSON.stringify(Object.keys(order || {}))}`);
+        if (order && order.webhook_id) {
+          addLog(`WooCommerce ping detected (webhook_id=${order.webhook_id}) - responding OK`);
+        }
+        return res.json({ message: 'Webhook endpoint active' });
       }
 
       const orderId = order.id;
@@ -1551,57 +1563,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const customerEmail = order.billing?.email;
       const customerWpId = order.customer_id;
       const lineItems = order.line_items || [];
-      const productIds = lineItems.map((item: any) => item.product_id);
 
-      addLog(`Order: id=${orderId}, status=${orderStatus}, email=${customerEmail}, wpId=${customerWpId}, products=${JSON.stringify(productIds)}`);
-
-      const signature = req.headers['x-wc-webhook-signature'] as string;
-      
-      if (WOOCOMMERCE_WEBHOOK_SECRET) {
-        if (!signature) {
-          addLog('REJECTED: Missing x-wc-webhook-signature header');
-          await saveLog(orderId, orderStatus, customerEmail || '', productIds.map(String), false);
-          return res.status(401).json({ message: 'Missing signature' });
+      const allProductIds: number[] = [];
+      for (const item of lineItems) {
+        if (item.product_id) {
+          const pid = Number(item.product_id);
+          if (!isNaN(pid) && pid > 0) allProductIds.push(pid);
         }
-        
+        if (item.variation_id && Number(item.variation_id) > 0) {
+          const vid = Number(item.variation_id);
+          if (!isNaN(vid)) allProductIds.push(vid);
+        }
+        if (item.sku) {
+          addLog(`Line item SKU: ${item.sku}, name: ${item.name}`);
+        }
+      }
+      const uniqueProductIds = [...new Set(allProductIds)];
+
+      addLog(`Order: id=${orderId}, status=${orderStatus}, email=${customerEmail}, wpId=${customerWpId}`);
+      addLog(`Line items: ${lineItems.length}, product_ids=${JSON.stringify(lineItems.map((i: any) => i.product_id))}, variation_ids=${JSON.stringify(lineItems.map((i: any) => i.variation_id))}`);
+      addLog(`All unique IDs to check: ${JSON.stringify(uniqueProductIds)}`);
+
+      let signatureValid = false;
+      const signature = req.headers['x-wc-webhook-signature'] as string;
+      const skipSignature = process.env.WOOCOMMERCE_SKIP_SIGNATURE === 'true';
+      
+      if (WOOCOMMERCE_WEBHOOK_SECRET && signature) {
         const crypto = await import('crypto');
         const rawBody = (req as any).rawBody;
-        
-        addLog(`rawBody captured: ${!!rawBody}, rawBody length: ${rawBody?.length || 0}`);
-        
         const bodyToVerify = rawBody || JSON.stringify(req.body);
         const expectedSignature = crypto
           .createHmac('sha256', WOOCOMMERCE_WEBHOOK_SECRET)
           .update(bodyToVerify, 'utf8')
           .digest('base64');
         
-        if (signature !== expectedSignature) {
-          addLog(`REJECTED: Signature mismatch`);
-          addLog(`Got:      ${signature}`);
-          addLog(`Expected: ${expectedSignature}`);
-          addLog(`Used rawBody: ${!!rawBody}`);
-          await saveLog(orderId, orderStatus, customerEmail || '', productIds.map(String), false);
-          return res.status(401).json({ message: 'Invalid signature' });
+        if (signature === expectedSignature) {
+          signatureValid = true;
+          addLog('Signature: VERIFIED OK');
+        } else {
+          addLog(`Signature: MISMATCH (got=${signature.substring(0, 20)}..., expected=${expectedSignature.substring(0, 20)}..., usedRawBody=${!!rawBody})`);
+          if (!skipSignature) {
+            addLog('REJECTED: Signature mismatch. Set WOOCOMMERCE_SKIP_SIGNATURE=true in Railway env to bypass temporarily for debugging.');
+            await saveLog(orderId, orderStatus, customerEmail || '', uniqueProductIds.map(String), false);
+            return res.status(401).json({ message: 'Invalid signature' });
+          }
+          addLog('BYPASS: WOOCOMMERCE_SKIP_SIGNATURE=true - processing despite mismatch');
         }
-        addLog('Signature verified OK');
+      } else if (WOOCOMMERCE_WEBHOOK_SECRET && !signature) {
+        addLog('Signature: MISSING header x-wc-webhook-signature');
+        if (!skipSignature) {
+          addLog('REJECTED: Missing signature. Set WOOCOMMERCE_SKIP_SIGNATURE=true in Railway env to bypass temporarily for debugging.');
+          await saveLog(orderId, orderStatus, customerEmail || '', uniqueProductIds.map(String), false);
+          return res.status(401).json({ message: 'Missing signature' });
+        }
+        addLog('BYPASS: WOOCOMMERCE_SKIP_SIGNATURE=true - processing despite missing signature');
       } else {
-        addLog('No WOOCOMMERCE_WEBHOOK_SECRET configured - skipping signature verification');
+        addLog('Signature: No WOOCOMMERCE_WEBHOOK_SECRET configured - skipping verification');
+        signatureValid = true;
       }
 
       if (orderStatus !== 'completed' && orderStatus !== 'processing') {
-        addLog(`Order status "${orderStatus}" not actionable - skipping`);
-        await saveLog(orderId, orderStatus, customerEmail || '', productIds.map(String), false);
-        return res.json({ message: 'Order not completed/processing, skipping' });
+        addLog(`Order status "${orderStatus}" not actionable (need completed or processing) - skipping enrollment`);
+        await saveLog(orderId, orderStatus, customerEmail || '', uniqueProductIds.map(String), false);
+        return res.json({ message: `Order status ${orderStatus} not actionable` });
       }
 
       if (!customerEmail) {
-        addLog('REJECTED: No billing email in order');
-        await saveLog(orderId, orderStatus || '', '', productIds.map(String), false);
+        addLog('ERROR: No billing email in order - cannot create user');
+        await saveLog(orderId, orderStatus || '', '', uniqueProductIds.map(String), false);
         return res.status(400).json({ message: 'No customer email' });
       }
 
       const userId = customerWpId ? `wp_${customerWpId}` : `wp_${customerEmail.replace(/[^a-zA-Z0-9]/g, '_')}`;
-      addLog(`User ID: ${userId}`);
+      addLog(`User ID: ${userId} (from ${customerWpId ? 'WP customer_id' : 'email fallback'})`);
       
       try {
         await storage.upsertUser({
@@ -1610,75 +1644,88 @@ export async function registerRoutes(app: Express): Promise<Server> {
           firstName: order.billing?.first_name || null,
           lastName: order.billing?.last_name || null,
         });
-        addLog(`User upserted OK`);
+        addLog(`User upserted: ${userId} (${customerEmail})`);
       } catch (userErr: any) {
-        addLog(`ERROR user upsert: ${userErr.message}`);
-        await saveLog(orderId, orderStatus, customerEmail, productIds.map(String), false);
+        addLog(`ERROR creating user: ${userErr.message}`);
+        await saveLog(orderId, orderStatus, customerEmail, uniqueProductIds.map(String), false);
         return res.status(500).json({ message: 'Failed to create user' });
       }
 
-      const numericProductIds = productIds
-        .map((id: any) => typeof id === 'string' ? parseInt(id, 10) : Number(id))
-        .filter((id: number) => !isNaN(id));
-      addLog(`Numeric product IDs: ${JSON.stringify(numericProductIds)}`);
-
-      let courseIds: string[];
+      let courseIds: string[] = [];
+      
       try {
-        courseIds = await resolveCoursesForProducts(numericProductIds);
-        addLog(`Resolved courses: ${JSON.stringify(courseIds)}`);
+        courseIds = await resolveCoursesForProducts(uniqueProductIds);
+        addLog(`DB/fallback resolved ${courseIds.length} courses: ${JSON.stringify(courseIds)}`);
       } catch (lookupErr: any) {
-        addLog(`ERROR course lookup: ${lookupErr.message}`);
-        const allCourses = await storage.getAllCourses();
-        courseIds = [];
-        for (const pid of numericProductIds) {
-          const courseName = HARDCODED_PRODUCT_COURSE_MAP[pid];
-          if (courseName) {
-            const c = allCourses.find(cc => cc.title.toUpperCase().includes(courseName));
-            if (c) courseIds.push(c.id);
-          }
-        }
-        addLog(`Fallback found: ${JSON.stringify(courseIds)}`);
+        addLog(`ERROR in resolveCoursesForProducts: ${lookupErr.message}`);
       }
 
       if (courseIds.length === 0) {
-        addLog(`No courses found for products ${JSON.stringify(numericProductIds)}`);
+        addLog(`No courses found via DB lookup. Trying hardcoded fallback directly...`);
+        const allCourses = await storage.getAllCourses().catch(() => []);
+        addLog(`Available courses in DB: ${allCourses.map(c => `${c.title}(${c.id})`).join(', ')}`);
+        
+        for (const pid of uniqueProductIds) {
+          const courseName = HARDCODED_PRODUCT_COURSE_MAP[pid];
+          if (courseName) {
+            const course = allCourses.find(c => c.title.toUpperCase().includes(courseName));
+            if (course) {
+              courseIds.push(course.id);
+              addLog(`Hardcoded match: product ${pid} -> ${courseName} -> ${course.title} (${course.id})`);
+            } else {
+              addLog(`Hardcoded map found name "${courseName}" for product ${pid}, but no matching course in DB`);
+            }
+          } else {
+            addLog(`No hardcoded mapping for product ID ${pid}`);
+          }
+        }
+        
         const allMappings = await storage.getAllCourseProducts().catch(() => []);
-        addLog(`Available mappings: ${JSON.stringify(allMappings)}`);
-        await saveLog(orderId, orderStatus, customerEmail, productIds.map(String), false);
-        return res.json({ message: 'No course mappings found' });
+        addLog(`course_products table mappings: ${JSON.stringify(allMappings.map(m => ({ woo: m.wooProductId, course: m.courseId, name: m.productName })))}`);
+      }
+
+      if (courseIds.length === 0) {
+        addLog(`FAILED: No courses found for any product ID ${JSON.stringify(uniqueProductIds)}`);
+        await saveLog(orderId, orderStatus, customerEmail, uniqueProductIds.map(String), false);
+        return res.json({ message: 'No course mappings found', signatureValid });
       }
 
       let enrollmentsCreated = 0;
+      const enrollmentErrors: string[] = [];
       for (const courseId of courseIds) {
         try {
-          const existingEnrollment = await storage.getEnrollmentByUserAndCourse(userId, courseId);
-          if (!existingEnrollment) {
+          const existing = await storage.getEnrollmentByUserAndCourse(userId, courseId);
+          if (!existing) {
             await storage.createEnrollment({ userId, courseId });
             enrollmentsCreated++;
-            addLog(`ENROLLED: user=${userId}, course=${courseId}`);
+            addLog(`ENROLLED: user=${userId} in course=${courseId}`);
           } else {
-            addLog(`Already enrolled: user=${userId}, course=${courseId}`);
+            addLog(`Already enrolled: user=${userId} in course=${courseId}`);
           }
         } catch (enrollErr: any) {
-          addLog(`ERROR enrollment: course=${courseId}: ${enrollErr.message}`);
+          const msg = `ERROR enrolling course=${courseId}: ${enrollErr.message}`;
+          addLog(msg);
+          enrollmentErrors.push(msg);
         }
       }
 
-      addLog(`DONE: ${enrollmentsCreated} enrollments created`);
-      await saveLog(orderId, orderStatus, customerEmail, productIds.map(String), true);
+      const success = enrollmentsCreated > 0 || enrollmentErrors.length === 0;
+      addLog(`COMPLETE: ${enrollmentsCreated} new enrollments, ${enrollmentErrors.length} errors, signatureValid=${signatureValid}`);
+      await saveLog(orderId, orderStatus, customerEmail, uniqueProductIds.map(String), success);
       
       res.json({ 
-        message: 'Webhook processed successfully',
+        message: 'Webhook processed',
         enrollmentsCreated,
         courses: courseIds,
+        signatureValid,
       });
     } catch (error: any) {
-      addLog(`FATAL: ${error.message}`);
+      addLog(`FATAL ERROR: ${error.message}\n${error.stack}`);
       console.error('[WEBHOOK] Fatal error:', error);
       try {
         await storage.createWoocommerceWebhookLog({
           orderId: 0,
-          orderStatus: 'error',
+          orderStatus: 'fatal_error',
           customerEmail: '',
           productIds: [],
           processed: false,
