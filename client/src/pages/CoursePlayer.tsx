@@ -121,6 +121,9 @@ export default function CourseDetail() {
       queryClient.invalidateQueries({ queryKey: ['/api/enrollments'] });
       queryClient.invalidateQueries({ queryKey: [`/api/enrollments/course/${id}`] });
     },
+    onError: (error: Error) => {
+      toast({ title: "Errore", description: error.message || "Impossibile aggiornare il progresso", variant: "destructive" });
+    },
   });
 
   const toggleDayMutation = useMutation({
@@ -132,6 +135,9 @@ export default function CourseDetail() {
       queryClient.invalidateQueries({ queryKey: [`/api/lesson-progress/course/${id}`] });
       queryClient.invalidateQueries({ queryKey: ['/api/enrollments'] });
       queryClient.invalidateQueries({ queryKey: [`/api/enrollments/course/${id}`] });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Errore", description: error.message || "Impossibile aggiornare il giorno", variant: "destructive" });
     },
   });
 

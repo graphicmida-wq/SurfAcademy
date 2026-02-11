@@ -127,6 +127,18 @@ async function ensureProductionSchema(db: ReturnType<typeof drizzle>) {
     )
   `);
 
+  await db.execute(sql`
+    DO $$ BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'lesson_progress' AND column_name = 'completed_days'
+      ) THEN
+        ALTER TABLE lesson_progress ADD COLUMN completed_days INTEGER[] DEFAULT '{}';
+      END IF;
+    END $$;
+  `);
+  console.log("✅ lesson_progress.completed_days column verified/created");
+
   console.log("✅ All required tables verified/created");
 }
 
