@@ -2081,6 +2081,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ========== Guide Pages Routes ==========
+  app.get("/api/guide-pages", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.claims?.sub || req.user?.id;
+      const user = userId ? await storage.getUser(userId) : null;
+      const adminUser = user?.isAdmin || false;
+      const pages = await storage.getAllGuidePages(!adminUser);
+      res.json(pages);
+    } catch (error) {
+      console.error("Error fetching guide pages:", error);
+      res.status(500).json({ message: "Failed to fetch guide pages" });
+    }
+  });
+
+  app.get("/api/guide-pages/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const page = await storage.getGuidePage(req.params.id);
+      if (!page) return res.status(404).json({ message: "Guide page not found" });
+      res.json(page);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch guide page" });
+    }
+  });
+
+  app.post("/api/guide-pages", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const page = await storage.createGuidePage(req.body);
+      res.status(201).json(page);
+    } catch (error) {
+      console.error("Error creating guide page:", error);
+      res.status(500).json({ message: "Failed to create guide page" });
+    }
+  });
+
+  app.patch("/api/guide-pages/:id", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const page = await storage.updateGuidePage(req.params.id, req.body);
+      res.json(page);
+    } catch (error) {
+      console.error("Error updating guide page:", error);
+      res.status(500).json({ message: "Failed to update guide page" });
+    }
+  });
+
+  app.delete("/api/guide-pages/:id", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      await storage.deleteGuidePage(req.params.id);
+      res.json({ message: "Guide page deleted" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete guide page" });
+    }
+  });
+
+  app.post("/api/guide-pages/reorder", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      await storage.reorderGuidePages(req.body.pages);
+      res.json({ message: "Guide pages reordered" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to reorder guide pages" });
+    }
+  });
+
   // ========== Newsletter Routes ==========
   registerNewsletterRoutes(app, isAuthenticated, isAdmin);
 

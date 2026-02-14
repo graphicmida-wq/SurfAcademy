@@ -21,6 +21,8 @@ import AdminCourses from "@/pages/admin/Courses";
 import AdminCourseContent from "@/pages/admin/CourseContent";
 import AdminIscrizioni from "@/pages/admin/Iscrizioni";
 import AdminWebhookManager from "@/pages/admin/WebhookManager";
+import AdminGuideApp from "@/pages/admin/GuideApp";
+import GuidaApp from "@/pages/GuidaApp";
 import NotFound from "@/pages/not-found";
 import WelcomePage from "@/pages/WelcomePage";
 import { AdminLayout } from "@/components/AdminLayout";
@@ -108,6 +110,13 @@ function Router() {
               </AdminLayout>
             ) : <NotFound />}
           </Route>
+          <Route path="/admin/guida-app">
+            {user?.isAdmin ? (
+              <AdminLayout>
+                <AdminGuideApp />
+              </AdminLayout>
+            ) : <NotFound />}
+          </Route>
           <Route component={NotFound} />
         </Switch>
       </div>
@@ -145,6 +154,7 @@ function Router() {
           {/* Protected routes - more specific first */}
           <Route path="/dashboard" component={Dashboard} />
           <Route path="/corsi/:id/player" component={CoursePlayer} />
+          <Route path="/guida-app" component={GuidaApp} />
           
           {/* Dynamic custom pages */}
           <Route path="/p/:slug" component={DynamicPage} />

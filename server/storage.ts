@@ -68,6 +68,9 @@ import {
   type InsertCourseProduct,
   type WoocommerceWebhookLog,
   type InsertWoocommerceWebhookLog,
+  guidePages,
+  type GuidePage,
+  type InsertGuidePage,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql, inArray } from "drizzle-orm";
@@ -248,6 +251,14 @@ export interface IStorage {
   createNewsletterEvent(event: InsertNewsletterEvent): Promise<NewsletterEvent>;
   getEventsByCampaign(campaignId: string): Promise<NewsletterEvent[]>;
   getEventsByContact(contactId: string): Promise<NewsletterEvent[]>;
+
+  // Guide page operations
+  getAllGuidePages(publishedOnly?: boolean): Promise<GuidePage[]>;
+  getGuidePage(id: string): Promise<GuidePage | undefined>;
+  createGuidePage(page: InsertGuidePage): Promise<GuidePage>;
+  updateGuidePage(id: string, page: Partial<InsertGuidePage>): Promise<GuidePage>;
+  deleteGuidePage(id: string): Promise<void>;
+  reorderGuidePages(pages: { id: string; orderIndex: number }[]): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1237,6 +1248,39 @@ export class DatabaseStorage implements IStorage {
 
   async getWoocommerceWebhookLogs(): Promise<WoocommerceWebhookLog[]> {
     return await db.select().from(woocommerceWebhookLogs).orderBy(desc(woocommerceWebhookLogs.createdAt)).limit(100);
+  }
+
+  // ========== Guide Page Operations ==========
+  async getAllGuidePages(publishedOnly = false): Promise<GuidePage[]> {
+    if (publishedOnly) {
+      return db.select().from(guidePages).where(eq(guidePages.published, true)).orderBy(guidePages.orderIndex);
+    }
+    return db.select().from(guidePages).orderBy(guidePages.orderIndex);
+  }
+
+  async getGuidePage(id: string): Promise<GuidePage | undefined> {
+    const [page] = await db.select().from(guidePages).where(eq(guidePages.id, id));
+    return page;
+  }
+
+  async createGuidePage(page: InsertGuidePage): Promise<GuidePage> {
+    const [created] = await db.insert(guidePages).values(page).returning();
+    return created;
+  }
+
+  async updateGuidePage(id: string, page: Partial<InsertGuidePage>): Promise<GuidePage> {
+    const [updated] = await db.update(guidePages).set(page).where(eq(guidePages.id, id)).returning();
+    return updated;
+  }
+
+  async deleteGuidePage(id: string): Promise<void> {
+    await db.delete(guidePages).where(eq(guidePages.id, id));
+  }
+
+  async reorderGuidePages(pages: { id: string; orderIndex: number }[]): Promise<void> {
+    for (const page of pages) {
+      await db.update(guidePages).set({ orderIndex: page.orderIndex }).where(eq(guidePages.id, page.id));
+    }
   }
 }
 

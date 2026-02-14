@@ -9,7 +9,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Moon, Sun, Menu, X, User, LogOut, BookOpen, ChevronDown } from "lucide-react";
+import { Moon, Sun, Menu, X, User, LogOut, BookOpen, ChevronDown, HelpCircle } from "lucide-react";
 import { useState, useEffect } from "react";
 import logoUrl from "@assets/web_logo_1760523001836.webp";
 import logoLightUrl from "@assets/chiaro1_1760538494784.webp";
@@ -90,6 +90,20 @@ export function Navbar() {
                 data-testid="link-dashboard"
               >
                 Dashboard
+              </Link>
+            )}
+
+            {/* Guida App */}
+            {isAuthenticated && (
+              <Link 
+                href="/guida-app"
+                className={`px-3 py-2 text-sm font-medium rounded-md transition-colors hover-elevate active-elevate-2 flex items-center gap-1 ${
+                  !isScrolled ? "text-white/90 hover:text-white" : location === "/guida-app" ? "text-primary" : "text-foreground/80 hover:text-foreground"
+                }`}
+                data-testid="link-guida-app"
+              >
+                <HelpCircle className="h-4 w-4" />
+                Guida App
               </Link>
             )}
 
@@ -224,6 +238,21 @@ export function Navbar() {
                   data-testid="mobile-link-dashboard"
                 >
                   Dashboard
+                </Link>
+              )}
+
+              {/* Guida App - Mobile */}
+              {isAuthenticated && (
+                <Link 
+                  href="/guida-app"
+                  className={`px-3 py-2 text-base font-medium rounded-md transition-colors hover-elevate active-elevate-2 flex items-center gap-2 ${
+                    location === "/guida-app" ? "text-primary bg-primary/10" : "text-foreground/80"
+                  }`}
+                  onClick={() => setMobileMenuOpen(false)}
+                  data-testid="mobile-link-guida-app"
+                >
+                  <HelpCircle className="h-4 w-4" />
+                  Guida App
                 </Link>
               )}
 

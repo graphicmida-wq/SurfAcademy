@@ -24,6 +24,7 @@ The frontend uses React 18, TypeScript, and Vite. **No public-facing landing pag
 
 **Navbar Features**:
 - Logo and Home link redirect to WordPress (https://scuoladilongboard.it)
+- "Guida App" link with HelpCircle icon for app guide section
 - "I Miei Corsi" dropdown shows enrolled courses for quick access
 - Profile section with avatar and link to Dashboard
 - Logout redirects to /login
@@ -71,6 +72,9 @@ The project is a full-stack TypeScript monorepo. It uses `zod` for schema valida
 - Gestione Studenti (Student management and progress tracking)
 - Pagine Custom (Custom page builder)
 - Header Pagine (Page header images)
+- Guida App (App guide page management - titles, descriptions, video URLs, HTML content, ordering, publish toggle)
+
+**Guida App Feature**: Standalone section at `/guida-app` for authenticated users. Managed via `/admin/guida-app`. Uses `guide_pages` table with title (MiniRichTextEditor), description (MiniRichTextEditor), videoUrl, videoUrls (array), htmlContent (RichTextEditor), orderIndex, and published flag. Course-player-style layout with sidebar navigation and content area.
 
 **Removed Features**: Newsletter, Events, Clinic, Community pages have been removed. These are handled by WordPress.
 

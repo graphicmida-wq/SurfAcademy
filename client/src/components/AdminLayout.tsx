@@ -14,7 +14,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { Sliders, Waves, BookOpen, Mail, Calendar, LayoutDashboard, FileText, FilePlus2, User, Users, Webhook } from "lucide-react";
+import { Sliders, Waves, BookOpen, Mail, Calendar, LayoutDashboard, FileText, FilePlus2, User, Users, Webhook, HelpCircle } from "lucide-react";
 import logoUrl from "@assets/web_logo_1760523001836.webp";
 import logoLightUrl from "@assets/chiaro1_1760538494784.webp";
 
@@ -53,6 +53,11 @@ const adminMenuItems = [
     title: "Webhook",
     url: "/admin/webhook",
     icon: Webhook,
+  },
+  {
+    title: "Guida App",
+    url: "/admin/guida-app",
+    icon: HelpCircle,
   },
 ];
 

@@ -863,4 +863,24 @@ export type InsertCourseProduct = z.infer<typeof insertCourseProductSchema>;
 export type WoocommerceWebhookLog = typeof woocommerceWebhookLogs.$inferSelect;
 export type InsertWoocommerceWebhookLog = z.infer<typeof insertWoocommerceWebhookLogSchema>;
 
+export const guidePages = pgTable("guide_pages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  videoUrl: varchar("video_url"),
+  videoUrls: text("video_urls").array(),
+  htmlContent: text("html_content"),
+  orderIndex: integer("order_index").notNull(),
+  published: boolean("published").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertGuidePageSchema = createInsertSchema(guidePages).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type GuidePage = typeof guidePages.$inferSelect;
+export type InsertGuidePage = z.infer<typeof insertGuidePageSchema>;
+
 export const TRAINING_CONTENT_TYPES = ['settimana-1', 'settimana-2', 'settimana-3', 'settimana-4', 'stretching', 'riscaldamento'] as const;

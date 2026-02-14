@@ -139,6 +139,21 @@ async function ensureProductionSchema(db: ReturnType<typeof drizzle>) {
   `);
   console.log("✅ lesson_progress.completed_days column verified/created");
 
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS guide_pages (
+      id VARCHAR PRIMARY KEY DEFAULT gen_random_uuid(),
+      title VARCHAR(255) NOT NULL,
+      description TEXT,
+      video_url VARCHAR,
+      video_urls TEXT[],
+      html_content TEXT,
+      order_index INTEGER NOT NULL,
+      published BOOLEAN DEFAULT true,
+      created_at TIMESTAMP DEFAULT NOW()
+    )
+  `);
+  console.log("✅ guide_pages table verified/created");
+
   console.log("✅ All required tables verified/created");
 }
 
