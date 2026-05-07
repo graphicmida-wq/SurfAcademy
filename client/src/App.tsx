@@ -42,6 +42,23 @@ function Router() {
     );
   }
 
+  // Non-authenticated users go always to login (even for /admin)
+  if (!isAuthenticated) {
+    return (
+      <div className="flex flex-col min-h-screen">
+        <main className="flex-1">
+          <Switch>
+            <Route path="/login" component={LocalAuth} />
+            <Route path="/sso" component={LocalAuth} />
+            <Route>
+              <LocalAuth />
+            </Route>
+          </Switch>
+        </main>
+      </div>
+    );
+  }
+
   // Admin pages have their own layout, don't render navbar/footer
   if (isAdminPage) {
     return (
@@ -123,22 +140,6 @@ function Router() {
     );
   }
 
-  // Non-authenticated users go to login
-  if (!isAuthenticated) {
-    return (
-      <div className="flex flex-col min-h-screen">
-        <main className="flex-1">
-          <Switch>
-            <Route path="/login" component={LocalAuth} />
-            <Route path="/sso" component={LocalAuth} />
-            <Route>
-              <LocalAuth />
-            </Route>
-          </Switch>
-        </main>
-      </div>
-    );
-  }
 
   // Welcome page - full screen, no navbar/footer
   if (location === "/") {
