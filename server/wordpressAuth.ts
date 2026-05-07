@@ -118,21 +118,46 @@ export async function loginWithWordPressCredentials(
       console.warn(`[WP Login] Failed to fetch user profile: ${wpUserResponse.status}`);
     }
 
-    const wpUserId = `wp_${wpUser?.id || email.replace(/[^a-zA-Z0-9]/g, '_')}`;
+    // Estrae l'ID numerico WP dal payload del token JWT restituito da WordPress.
+    // Funziona anche quando /users/me è bloccato da Cloudflare (restituisce 403).
+    // Il plugin JWT-auth memorizza l'ID numerico in data.user.id dentro il token.
+    let wpNumericId: string | null = null;
+    try {
+      const tokenPayloadRaw = wpData.token.split('.')[1];
+      if (tokenPayloadRaw) {
+        const padding = tokenPayloadRaw.length % 4 === 0 ? '' : '='.repeat(4 - (tokenPayloadRaw.length % 4));
+        const tokenPayload = JSON.parse(Buffer.from(tokenPayloadRaw + padding, 'base64').toString('utf-8'));
+        wpNumericId = tokenPayload?.data?.user?.id?.toString() || null;
+        console.log(`[WP Login] JWT payload decoded, data.user.id=${wpNumericId}`);
+      }
+    } catch (e) {
+      console.warn('[WP Login] Could not decode JWT payload to extract user ID:', e);
+    }
+
+    const wpUserId = `wp_${wpNumericId || wpUser?.id || email.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
+    console.log(`[WP Login] User ID resolved: ${wpUserId}`);
     const nameParts = wpData.user_display_name?.split(' ') || [];
     
     const existingUser = await storage.getUserByEmail(wpData.user_email);
     
     if (existingUser) {
-      if (existingUser.id !== wpUserId && existingUser.id.startsWith('manual_')) {
+      // Merge se l'ID esistente è diverso da quello numerico corretto:
+      // - ID con prefisso 'manual_' (utenti aggiunti manualmente)
+      // - ID con prefisso 'wp_' ma basato sull'email (es: wp_dadoyage_gmail_com)
+      //   questo succede quando /users/me era bloccato e non si riusciva a prendere l'ID numerico
+      const isEmailBasedId = existingUser.id.startsWith('wp_') && !/^wp_\d+$/.test(existingUser.id);
+      const needsMerge = existingUser.id !== wpUserId && (existingUser.id.startsWith('manual_') || isEmailBasedId);
+
+      if (needsMerge) {
+        console.log(`[WP Login] Merging old ID ${existingUser.id} -> ${wpUserId}`);
         await storage.mergeUserById(existingUser.id, wpUserId);
-        console.log(`[WP Login] Merged manual user ${existingUser.id} -> ${wpUserId}`);
         const user = await storage.upsertUser({
           id: wpUserId,
           email: wpData.user_email,
           firstName: wpUser?.first_name || nameParts[0] || existingUser.firstName,
           lastName: wpUser?.last_name || nameParts.slice(1).join(' ') || existingUser.lastName,
           profileImageUrl: wpUser?.avatar_urls?.['96'] || existingUser.profileImageUrl,
+          isAdmin: existingUser.isAdmin, // preserva il flag admin
         });
         return { success: true, user };
       }
