@@ -86,11 +86,9 @@ export default function AdminCourses() {
     },
   });
 
-  const watchedType = form.watch("type");
-
   const createMutation = useMutation({
     mutationFn: async (data: InsertCourse) => {
-      const res = await apiRequest("POST", "/api/admin/courses", data);
+      const res = await apiRequest("POST", "/api/admin/courses", { ...data, type: "course" });
       return await res.json();
     },
     onSuccess: () => {
@@ -294,27 +292,6 @@ export default function AdminCourses() {
                   )}
                 />
 
-                <FormField
-                  control={form.control}
-                  name="type"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Tipo *</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value ?? "course"}>
-                        <FormControl>
-                          <SelectTrigger data-testid="select-course-type">
-                            <SelectValue placeholder="Seleziona tipo" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="course">Corso</SelectItem>
-                          <SelectItem value="masterclass">Masterclass</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
 
                 <FormField
                   control={form.control}
@@ -411,8 +388,7 @@ export default function AdminCourses() {
                   />
                 </div>
 
-                {watchedType !== 'masterclass' && (
-                  <div className="border-t pt-4 space-y-4">
+                <div className="border-t pt-4 space-y-4">
                     <h3 className="text-sm font-medium">Integrazione WooCommerce</h3>
 
                     <FormItem>
@@ -432,7 +408,6 @@ export default function AdminCourses() {
                       </FormDescription>
                     </FormItem>
                   </div>
-                )}
 
                 <div className="flex justify-end gap-2 pt-4">
                   <Button
