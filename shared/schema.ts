@@ -54,6 +54,7 @@ export const courses = pgTable("courses", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   title: varchar("title", { length: 255 }).notNull(),
   description: text("description"),
+  type: varchar("type").default("course"), // course, masterclass
   level: varchar("level").default("all"), // legacy field, no longer used in UI
   courseCategory: varchar("course_category"), // remata, takeoff, noseride, gratuiti, special
   thumbnailUrl: varchar("thumbnail_url"),

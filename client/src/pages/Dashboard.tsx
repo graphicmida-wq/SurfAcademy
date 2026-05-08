@@ -8,7 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Link } from "wouter";
-import { Play, Trophy, Award, ArrowRight, User, ExternalLink, Camera } from "lucide-react";
+import { Play, Trophy, Award, ArrowRight, User, ExternalLink, Camera, Video } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { usePageHeader } from "@/hooks/usePageHeader";
 import { MediaUploadZone } from "@/components/MediaUploadZone";
@@ -195,6 +195,24 @@ export default function Dashboard() {
                 </Card>
               )}
             </div>
+
+            {/* Masterclass Gratuite CTA */}
+            <Card className="hover-elevate active-elevate-2 transition-all">
+              <Link href="/masterclass" className="block p-6">
+                <div className="flex items-center gap-4">
+                  <div className="flex-shrink-0 w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Video className="h-6 w-6 text-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-display font-semibold text-lg mb-1">Masterclass Gratuite</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Contenuti esclusivi accessibili a tutti gli utenti registrati
+                    </p>
+                  </div>
+                  <ArrowRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                </div>
+              </Link>
+            </Card>
 
             {/* Completed Courses */}
             {completedCourses && completedCourses.length > 0 && (

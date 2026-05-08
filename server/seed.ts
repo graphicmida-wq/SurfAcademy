@@ -154,6 +154,18 @@ async function ensureProductionSchema(db: ReturnType<typeof drizzle>) {
   `);
   console.log("✅ guide_pages table verified/created");
 
+  await db.execute(sql`
+    DO $$ BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'courses' AND column_name = 'type'
+      ) THEN
+        ALTER TABLE courses ADD COLUMN type VARCHAR DEFAULT 'course';
+      END IF;
+    END $$;
+  `);
+  console.log("✅ courses.type column verified/created");
+
   console.log("✅ All required tables verified/created");
 }
 
@@ -332,6 +344,26 @@ async function seedModulesAndLessons(db: ReturnType<typeof drizzle>) {
     } catch (e: any) {
       console.error(`❌ Failed to seed exercises: ${e.message}`);
     }
+  }
+}
+
+// Runs schema column migrations in all environments using the app's own db connection
+export async function ensureSchemaColumns() {
+  const { db: appDb } = await import("./db");
+  try {
+    await appDb.execute(sql`
+      DO $$ BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns 
+          WHERE table_name = 'courses' AND column_name = 'type'
+        ) THEN
+          ALTER TABLE courses ADD COLUMN type VARCHAR DEFAULT 'course';
+        END IF;
+      END $$;
+    `);
+    console.log("✅ courses.type column verified/created");
+  } catch (e: any) {
+    console.error("❌ Failed to ensure courses.type column:", e.message);
   }
 }
 

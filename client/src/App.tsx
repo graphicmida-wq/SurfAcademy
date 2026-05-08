@@ -22,7 +22,9 @@ import AdminCourseContent from "@/pages/admin/CourseContent";
 import AdminIscrizioni from "@/pages/admin/Iscrizioni";
 import AdminWebhookManager from "@/pages/admin/WebhookManager";
 import AdminGuideApp from "@/pages/admin/GuideApp";
+import AdminMasterclass from "@/pages/admin/Masterclass";
 import GuidaApp from "@/pages/GuidaApp";
+import MasterclassPage from "@/pages/Masterclass";
 import NotFound from "@/pages/not-found";
 import WelcomePage from "@/pages/WelcomePage";
 import { AdminLayout } from "@/components/AdminLayout";
@@ -106,6 +108,13 @@ function Router() {
               </AdminLayout>
             ) : <NotFound />}
           </Route>
+          <Route path="/admin/masterclass">
+            {user?.isAdmin ? (
+              <AdminLayout>
+                <AdminMasterclass />
+              </AdminLayout>
+            ) : <NotFound />}
+          </Route>
           <Route path="/admin/corsi/contenuti">
             {user?.isAdmin ? (
               <AdminLayout>
@@ -154,6 +163,7 @@ function Router() {
         <Switch>
           {/* Protected routes - more specific first */}
           <Route path="/dashboard" component={Dashboard} />
+          <Route path="/masterclass" component={MasterclassPage} />
           <Route path="/corsi/:id/player" component={CoursePlayer} />
           <Route path="/guida-app" component={GuidaApp} />
           

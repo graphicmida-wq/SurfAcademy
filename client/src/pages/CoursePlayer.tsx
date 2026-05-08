@@ -94,6 +94,11 @@ export default function CourseDetail() {
     enabled: !!id,
   });
 
+  const MASTERCLASS_EXCLUDED_TYPES = useMemo(
+    () => new Set(['esercizio', 'settimana-1', 'settimana-2', 'settimana-3', 'settimana-4']),
+    []
+  );
+
   const modules = useMemo(() => {
     if (!rawModules) return rawModules;
     return rawModules.map(mod => ({
@@ -102,9 +107,20 @@ export default function CourseDetail() {
     }));
   }, [rawModules]);
 
+  // For masterclasses, exclude exercise-type lessons from all navigation and selection logic
+  const effectiveModules = useMemo(() => {
+    if (!modules) return modules;
+    if (course?.type !== 'masterclass') return modules;
+    return modules.map(mod => ({
+      ...mod,
+      lessons: mod.lessons.filter(l => !MASTERCLASS_EXCLUDED_TYPES.has(l.contentType || '')),
+    }));
+  }, [modules, course?.type, MASTERCLASS_EXCLUDED_TYPES]);
+
   const { data: enrollment } = useQuery({
     queryKey: [`/api/enrollments/course/${id}`],
-    enabled: isAuthenticated && !!id,
+    // Skip enrollment check for masterclasses — they're freely accessible
+    enabled: isAuthenticated && !!id && course?.type !== 'masterclass',
   });
 
   const { data: lessonProgress = [] } = useQuery<{ lessonId: string; completed: boolean; completedDays: number[] }[]>({
@@ -193,15 +209,15 @@ export default function CourseDetail() {
     }
   }, [modules, expandedModules.length]);
 
-  // Auto-select first lesson when modules load
+  // Auto-select first lesson when modules load (uses effectiveModules to skip excluded types)
   useEffect(() => {
-    if (modules && modules.length > 0 && !selectedLessonId) {
-      const firstModule = modules.find(m => m.lessons && m.lessons.length > 0);
+    if (effectiveModules && effectiveModules.length > 0 && !selectedLessonId) {
+      const firstModule = effectiveModules.find(m => m.lessons && m.lessons.length > 0);
       if (firstModule && firstModule.lessons && firstModule.lessons.length > 0) {
         setSelectedLessonId(firstModule.lessons[0].id);
       }
     }
-  }, [modules, selectedLessonId]);
+  }, [effectiveModules, selectedLessonId]);
 
   if (courseLoading || !course) {
     return (
@@ -211,11 +227,12 @@ export default function CourseDetail() {
     );
   }
 
+  const isMasterclass = course.type === 'masterclass';
   const isEnrolled = !!enrollment;
-  const canAccess = course.isFree || isEnrolled;
+  const canAccess = isMasterclass || course.isFree || isEnrolled;
 
-  // Get selected lesson details
-  const selectedLesson = modules
+  // Get selected lesson details (use effectiveModules to never resolve an excluded type)
+  const selectedLesson = effectiveModules
     ?.flatMap(m => m.lessons || [])
     .find(l => l.id === selectedLessonId);
 
@@ -426,9 +443,9 @@ export default function CourseDetail() {
           <aside className="lg:sticky lg:top-20 h-fit">
             <Card className="p-4">
               <h2 className="font-display font-semibold text-lg mb-2 px-2">Contenuti del Corso</h2>
-              {modules && modules.length > 0 && (() => {
-                const totalLessons = modules.reduce((sum, m) => sum + (m.lessons?.length || 0), 0);
-                const completedLessons = modules.reduce((sum, m) => 
+              {effectiveModules && effectiveModules.length > 0 && (() => {
+                const totalLessons = effectiveModules.reduce((sum, m) => sum + (m.lessons?.length || 0), 0);
+                const completedLessons = effectiveModules.reduce((sum, m) => 
                   sum + (m.lessons?.filter(l => lessonProgress.some(p => p.lessonId === l.id && p.completed)).length || 0), 0);
                 const progressPercent = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
                 return (
@@ -438,7 +455,7 @@ export default function CourseDetail() {
                   </div>
                 );
               })()}
-              {!modules || modules.length === 0 ? (
+              {!effectiveModules || effectiveModules.length === 0 ? (
                 <p className="text-sm text-muted-foreground px-2">Nessun modulo disponibile</p>
               ) : (
                 <Accordion 
@@ -447,7 +464,7 @@ export default function CourseDetail() {
                   onValueChange={setExpandedModules}
                   className="w-full"
                 >
-                  {modules.map((module) => {
+                  {(effectiveModules ?? []).filter(m => m.lessons.length > 0).map((module) => {
                     const moduleLessonCount = module.lessons?.length || 0;
                     const moduleCompletedCount = module.lessons?.filter(l => 
                       lessonProgress.some(p => p.lessonId === l.id && p.completed)

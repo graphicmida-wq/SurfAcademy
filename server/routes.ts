@@ -111,8 +111,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/sso', async (req, res) => {
     try {
       const token = req.query.token as string;
-      const redirect = req.query.redirect as string || '/';
-      
+      const rawRedirect = req.query.redirect as string || '';
+
+      // Only allow safe internal relative paths to prevent open redirect.
+      // Must start with '/' but not '//' (protocol-relative) and must not
+      // contain backslashes or encoded external-URL sequences.
+      const isSafeRedirect = (path: string): boolean => {
+        if (!path) return false;
+        if (!path.startsWith('/')) return false;
+        if (path.startsWith('//')) return false;
+        const lower = decodeURIComponent(path).toLowerCase();
+        if (lower.startsWith('http:') || lower.startsWith('https:') || lower.includes('\\')) return false;
+        return true;
+      };
+      const redirect = isSafeRedirect(rawRedirect) ? rawRedirect : '/dashboard';
+
       if (!token) {
         return res.redirect('/login?error=Token mancante');
       }
@@ -485,9 +498,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // ========== Module Routes ==========
-  app.get("/api/courses/:id/modules", async (req, res) => {
+  // ========== Masterclass Routes ==========
+  app.get("/api/masterclasses", isAuthenticated, async (req, res) => {
     try {
+      const allCourses = await storage.getAllCourses();
+      const masterclasses = allCourses.filter(
+        c => c.type === 'masterclass' && c.activationStatus !== 'waitlist'
+      );
+      res.json(masterclasses);
+    } catch (error) {
+      console.error("Error fetching masterclasses:", error);
+      res.status(500).json({ message: "Failed to fetch masterclasses" });
+    }
+  });
+
+  // ========== Module Routes ==========
+  app.get("/api/courses/:id/modules", isAuthenticated, async (req: any, res) => {
+    try {
+      const course = await storage.getCourse(req.params.id);
+      if (!course) {
+        return res.status(404).json({ message: "Course not found" });
+      }
+
+      // Masterclasses are accessible to all authenticated users — no enrollment needed
+      if (course.type !== 'masterclass') {
+        const userId = req.user?.claims?.sub || req.user?.id;
+        if (userId) {
+          const isAdmin = (await storage.getUser(userId))?.isAdmin;
+          if (!isAdmin) {
+            const canAccess = await storage.canAccessCourse(userId, req.params.id);
+            if (!canAccess && !course.isFree) {
+              return res.status(403).json({ message: "Access denied. Please enroll in this course." });
+            }
+          }
+        }
+      }
+
       const modules = await storage.getModulesByCourse(req.params.id);
       res.json(modules);
     } catch (error) {
@@ -706,7 +752,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/enrollments", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user?.claims?.sub || req.user?.id;
-      const enrollments = await storage.getEnrollmentsBySortedByUser(userId);
+      const allEnrollments = await storage.getEnrollmentsBySortedByUser(userId);
+      // Masterclasses are freely accessible — exclude them from the paid enrollments list
+      const enrollments = allEnrollments.filter(e => e.course.type !== 'masterclass');
       res.json(enrollments);
     } catch (error) {
       console.error("Error fetching enrollments:", error);

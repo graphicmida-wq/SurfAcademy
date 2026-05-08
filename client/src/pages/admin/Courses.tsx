@@ -41,6 +41,11 @@ const CATEGORY_LABELS: Record<string, string> = {
   'special': 'SPECIAL',
 };
 
+const TYPE_LABELS: Record<string, string> = {
+  'course': 'Corso',
+  'masterclass': 'Masterclass',
+};
+
 export default function AdminCourses() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -48,9 +53,12 @@ export default function AdminCourses() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [wooProductId, setWooProductId] = useState<string>("");
 
-  const { data: courses = [], isLoading: coursesLoading } = useQuery<Course[]>({
+  const { data: allCourses = [], isLoading: coursesLoading } = useQuery<Course[]>({
     queryKey: ["/api/admin/courses"],
   });
+
+  // Only show regular courses — masterclasses are managed separately under /admin/masterclass
+  const courses = allCourses.filter(c => c.type !== "masterclass");
 
   // Fetch admin's enrollments to check which courses they're enrolled in
   const { data: myEnrollments = [] } = useQuery<(Enrollment & { course: Course })[]>({
@@ -68,6 +76,7 @@ export default function AdminCourses() {
     defaultValues: {
       title: "",
       description: "",
+      type: "course",
       courseCategory: "remata",
       level: "all",
       duration: 0,
@@ -76,6 +85,8 @@ export default function AdminCourses() {
       instructorAvatar: "",
     },
   });
+
+  const watchedType = form.watch("type");
 
   const createMutation = useMutation({
     mutationFn: async (data: InsertCourse) => {
@@ -145,6 +156,7 @@ export default function AdminCourses() {
     form.reset({
       title: course.title,
       description: course.description || "",
+      type: course.type || "course",
       courseCategory: course.courseCategory || "remata",
       level: course.level || "all",
       duration: course.duration || 0,
@@ -175,6 +187,7 @@ export default function AdminCourses() {
     form.reset({
       title: "",
       description: "",
+      type: "course",
       courseCategory: "remata",
       level: "all",
       duration: 0,
@@ -283,6 +296,28 @@ export default function AdminCourses() {
 
                 <FormField
                   control={form.control}
+                  name="type"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Tipo *</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value ?? "course"}>
+                        <FormControl>
+                          <SelectTrigger data-testid="select-course-type">
+                            <SelectValue placeholder="Seleziona tipo" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="course">Corso</SelectItem>
+                          <SelectItem value="masterclass">Masterclass</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
                   name="courseCategory"
                   render={({ field }) => (
                     <FormItem>
@@ -376,26 +411,28 @@ export default function AdminCourses() {
                   />
                 </div>
 
-                <div className="border-t pt-4 space-y-4">
-                  <h3 className="text-sm font-medium">Integrazione WooCommerce</h3>
+                {watchedType !== 'masterclass' && (
+                  <div className="border-t pt-4 space-y-4">
+                    <h3 className="text-sm font-medium">Integrazione WooCommerce</h3>
 
-                  <FormItem>
-                    <FormLabel>ID Prodotto WooCommerce</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number"
-                        value={wooProductId}
-                        onChange={(e) => setWooProductId(e.target.value)}
-                        placeholder="123"
-                        data-testid="input-woo-product-id"
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      ID numerico del prodotto per iscrizione automatica via webhook. 
-                      Lo trovi in WooCommerce → Prodotti → passa il mouse sul prodotto → l'ID appare nell'URL (es. post=123)
-                    </FormDescription>
-                  </FormItem>
-                </div>
+                    <FormItem>
+                      <FormLabel>ID Prodotto WooCommerce</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number"
+                          value={wooProductId}
+                          onChange={(e) => setWooProductId(e.target.value)}
+                          placeholder="123"
+                          data-testid="input-woo-product-id"
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        ID numerico del prodotto per iscrizione automatica via webhook. 
+                        Lo trovi in WooCommerce → Prodotti → passa il mouse sul prodotto → l'ID appare nell'URL (es. post=123)
+                      </FormDescription>
+                    </FormItem>
+                  </div>
+                )}
 
                 <div className="flex justify-end gap-2 pt-4">
                   <Button
@@ -443,9 +480,15 @@ export default function AdminCourses() {
                 <CardTitle className="line-clamp-2">{course.title}</CardTitle>
               </div>
               <div className="flex flex-wrap gap-2">
-                <Badge variant="outline" data-testid={`badge-category-${course.id}`}>
-                  {CATEGORY_LABELS[course.courseCategory || 'remata']}
-                </Badge>
+                {course.type === 'masterclass' ? (
+                  <Badge className="bg-primary/10 text-primary border-primary/20" data-testid={`badge-type-${course.id}`}>
+                    Masterclass
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" data-testid={`badge-category-${course.id}`}>
+                    {CATEGORY_LABELS[course.courseCategory || 'remata']}
+                  </Badge>
+                )}
               </div>
             </CardHeader>
             <CardContent className="space-y-3">

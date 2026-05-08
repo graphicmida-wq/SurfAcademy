@@ -1,7 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
-import { seedProductionDatabase } from "./seed";
+import { seedProductionDatabase, ensureSchemaColumns } from "./seed";
 import { storage } from "./storage";
 
 const app = express();
@@ -43,6 +43,8 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Ensure required schema columns exist in all environments
+  await ensureSchemaColumns();
   // Seed production database if needed (only runs in production)
   await seedProductionDatabase();
   
