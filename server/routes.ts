@@ -522,7 +522,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Masterclasses are accessible to all authenticated users — no enrollment needed
       if (course.type !== 'masterclass') {
-        const userId = req.user?.claims?.sub || req.user?.id;
+        const userId = req.user?.id || req.user?.claims?.sub;
         if (userId) {
           const isAdmin = (await storage.getUser(userId))?.isAdmin;
           if (!isAdmin) {
