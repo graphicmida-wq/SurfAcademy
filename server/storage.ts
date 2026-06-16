@@ -902,6 +902,10 @@ export class DatabaseStorage implements IStorage {
     const course = await this.getCourse(courseId);
     if (course?.isFree) return true;
 
+    // WooCommerce and manual admin grants create enrollments, so modules must honor them.
+    const enrollment = await this.getEnrollmentByUserAndCourse(userId, courseId);
+    if (enrollment) return true;
+
     // Check if user purchased this course
     const hasPurchased = await this.hasPurchasedCourse(userId, courseId);
     if (hasPurchased) return true;

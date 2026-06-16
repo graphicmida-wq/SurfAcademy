@@ -159,6 +159,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Email e password sono obbligatori" });
       }
 
+      if (process.env.NODE_ENV === "development") {
+        const localUser = await storage.getUserByEmail(email);
+        if (localUser?.password) {
+          const validPassword = await bcrypt.compare(password, localUser.password);
+          if (validPassword) {
+            return (req as any).login({ id: localUser.id }, (err: any) => {
+              if (err) {
+                return res.status(500).json({ message: "Errore durante il login" });
+              }
+              res.json({ success: true, message: "Login effettuato", user: localUser });
+            });
+          }
+        }
+      }
+
       // Verify credentials against WordPress
       const result = await loginWithWordPressCredentials(email, password);
       
